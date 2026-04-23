@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth'; 
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -12,7 +12,12 @@ const firebaseConfig = {
   measurementId: "G-5B5K2VB1VE"
 };
 
-export const app = initializeApp(firebaseConfig);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+// Export the services so the rest of your app can use them!
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// We can just use a static ID for your family app now instead of the dynamic Canvas one!
 export const appId = 'world-cup-family-2026';
