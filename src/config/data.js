@@ -1,0 +1,267 @@
+export const TEAMS_DATA = [
+  { id: 'MEX', name: 'Mexico', group: 'A', rank: 15 },
+  { id: 'RSA', name: 'South Africa', group: 'A', rank: 60 },
+  { id: 'KOR', name: 'Korea Republic', group: 'A', rank: 25 },
+  { id: 'CZE', name: 'Czechia', group: 'A', rank: 41 },
+  { id: 'CAN', name: 'Canada', group: 'B', rank: 30 },
+  { id: 'BIH', name: 'Bosnia & Herzegovina', group: 'B', rank: 65 },
+  { id: 'QAT', name: 'Qatar', group: 'B', rank: 55 },
+  { id: 'SUI', name: 'Switzerland', group: 'B', rank: 19 },
+  { id: 'BRA', name: 'Brasil', group: 'C', rank: 6 },
+  { id: 'HAI', name: 'Haiti', group: 'C', rank: 83 },
+  { id: 'MAR', name: 'Morocco', group: 'C', rank: 8 },
+  { id: 'SCO', name: 'Scotland', group: 'C', rank: 43 },
+  { id: 'USA', name: 'USA', group: 'D', rank: 16 },
+  { id: 'AUS', name: 'Australia', group: 'D', rank: 27 },
+  { id: 'PAR', name: 'Paraguay', group: 'D', rank: 40 },
+  { id: 'TUR', name: 'Türkiye', group: 'D', rank: 22 },
+  { id: 'CUW', name: 'Curaçao', group: 'E', rank: 82 },
+  { id: 'ECU', name: 'Ecuador', group: 'E', rank: 23 },
+  { id: 'GER', name: 'Germany', group: 'E', rank: 10 },
+  { id: 'CIV', name: "Côte d'Ivoire", group: 'E', rank: 34 },
+  { id: 'NED', name: 'Netherlands', group: 'F', rank: 7 },
+  { id: 'JPN', name: 'Japan', group: 'F', rank: 18 },
+  { id: 'SWE', name: 'Sweden', group: 'F', rank: 38 },
+  { id: 'TUN', name: 'Tunisia', group: 'F', rank: 44 },
+  { id: 'BEL', name: 'Belgium', group: 'G', rank: 9 },
+  { id: 'EGY', name: 'Egypt', group: 'G', rank: 29 },
+  { id: 'IRN', name: 'IR Iran', group: 'G', rank: 21 },
+  { id: 'NZL', name: 'New Zealand', group: 'G', rank: 85 },
+  { id: 'CPV', name: 'Cabo Verde', group: 'H', rank: 69 },
+  { id: 'KSA', name: 'Saudi Arabia', group: 'H', rank: 61 },
+  { id: 'ESP', name: 'Spain', group: 'H', rank: 2 },
+  { id: 'URU', name: 'Uruguay', group: 'H', rank: 17 },
+  { id: 'FRA', name: 'France', group: 'I', rank: 1 },
+  { id: 'NOR', name: 'Norway', group: 'I', rank: 31 },
+  { id: 'SEN', name: 'Senegal', group: 'I', rank: 14 },
+  { id: 'IRQ', name: 'Iraq', group: 'I', rank: 57 },
+  { id: 'ALG', name: 'Algeria', group: 'J', rank: 28 },
+  { id: 'ARG', name: 'Argentina', group: 'J', rank: 3 },
+  { id: 'AUT', name: 'Austria', group: 'J', rank: 24 },
+  { id: 'JOR', name: 'Jordan', group: 'J', rank: 63 },
+  { id: 'COL', name: 'Colombia', group: 'K', rank: 13 },
+  { id: 'COD', name: 'Congo DR', group: 'K', rank: 46 },
+  { id: 'POR', name: 'Portugal', group: 'K', rank: 5 },
+  { id: 'UZB', name: 'Uzbekistan', group: 'K', rank: 50 },
+  { id: 'CRO', name: 'Croatia', group: 'L', rank: 11 },
+  { id: 'ENG', name: 'England', group: 'L', rank: 4 }, 
+  { id: 'GHA', name: 'Ghana', group: 'L', rank: 74 },
+  { id: 'PAN', name: 'Panama', group: 'L', rank: 33 },
+];
+
+export const INITIAL_MEMBERS = [
+  { id: 'm1', name: 'Dad', isKid: false },
+  { id: 'm2', name: 'Mum', isKid: false },
+  { id: 'm3', name: 'Brother', isKid: false },
+  { id: 'm4', name: 'Sister', isKid: false },
+  { id: 'm5', name: 'Son', isKid: true },
+  { id: 'm6', name: 'Daughter', isKid: true },
+];
+
+export const KNOCKOUT_STAGES = [
+  { id: 'R32', name: 'Round of 32', win: 4, penLoss: 1 },
+  { id: 'R16', name: 'Round of 16', win: 5, penLoss: 1 },
+  { id: 'QF', name: 'Quarterfinals', win: 6, penLoss: 2 },
+  { id: 'SF', name: 'Semifinals', win: 8, penLoss: 2 },
+  { id: 'Final', name: 'Final', win: 10, penLoss: 4 }
+];
+
+export const DEFAULT_SCORING = {
+  group: { win: 3, draw: 1, loss: 0, topOfGroup: 0 },
+  ko: {
+    R32: { win: 4, loss: 0, penWin: 4, penLoss: 1 },
+    R16: { win: 5, loss: 0, penWin: 5, penLoss: 1 },
+    QF: { win: 6, loss: 0, penWin: 6, penLoss: 2 },
+    SF: { win: 8, loss: 0, penWin: 8, penLoss: 2 },
+    Final: { win: 10, loss: 0, penWin: 10, penLoss: 4 }
+  },
+  bonus: { perGoal: 0, cleanSheet: 0 } 
+};
+
+export const TIMEZONES = [
+  { id: 'Pacific/Honolulu', label: '(UTC-10:00) Hawaii' },
+  { id: 'America/Anchorage', label: '(UTC-09:00) Alaska' },
+  { id: 'America/Los_Angeles', label: '(UTC-08:00) Pacific Time (US & Canada)' },
+  { id: 'America/Denver', label: '(UTC-07:00) Mountain Time (US & Canada)' },
+  { id: 'America/Chicago', label: '(UTC-06:00) Central Time (US & Canada)' },
+  { id: 'America/New_York', label: '(UTC-05:00) Eastern Time (US & Canada)' },
+  { id: 'America/Halifax', label: '(UTC-04:00) Atlantic Time (Canada)' },
+  { id: 'America/Sao_Paulo', label: '(UTC-03:00) Buenos Aires, Georgetown, São Paulo' },
+  { id: 'Atlantic/South_Georgia', label: '(UTC-02:00) Mid-Atlantic' },
+  { id: 'Atlantic/Azores', label: '(UTC-01:00) Azores' },
+  { id: 'Europe/London', label: '(UTC+00:00) Dublin, London, UTC' },
+  { id: 'Europe/Paris', label: '(UTC+01:00) Amsterdam, Berlin, Paris' },
+  { id: 'Africa/Cairo', label: '(UTC+02:00) Cairo, Helsinki, Johannesburg' },
+  { id: 'Europe/Moscow', label: '(UTC+03:00) Baghdad, Moscow, Istanbul' },
+  { id: 'Asia/Dubai', label: '(UTC+04:00) Dubai' },
+  { id: 'Asia/Karachi', label: '(UTC+05:00) Islamabad, Karachi' },
+  { id: 'Asia/Kolkata', label: '(UTC+05:30) Mumbai, New Delhi' },
+  { id: 'Asia/Dhaka', label: '(UTC+06:00) Dhaka' },
+  { id: 'Asia/Bangkok', label: '(UTC+07:00) Bangkok, Hanoi, Jakarta' },
+  { id: 'Asia/Singapore', label: '(UTC+08:00) Beijing, Perth, Singapore' },
+  { id: 'Asia/Tokyo', label: '(UTC+09:00) Seoul, Tokyo' },
+  { id: 'Australia/Sydney', label: '(UTC+10:00) Canberra, Melbourne, Sydney' },
+  { id: 'Pacific/Guadalcanal', label: '(UTC+11:00) Solomon Is.' },
+  { id: 'Pacific/Auckland', label: '(UTC+12:00) Auckland, Fiji' }
+];
+
+const GROUP_MATCHES_SCHEDULE = [
+  { matchId: 'match_1', group: 'A', teamA: 'MEX', teamB: 'RSA', datetime: '2026-06-11T19:00:00Z', location: 'Estadio Azteca, Mexico City' },
+  { matchId: 'match_2', group: 'A', teamA: 'KOR', teamB: 'CZE', datetime: '2026-06-12T02:00:00Z', location: 'Estadio Akron, Zapopan' },
+  { matchId: 'match_3', group: 'B', teamA: 'CAN', teamB: 'BIH', datetime: '2026-06-12T19:00:00Z', location: 'BMO Field, Toronto' },
+  { matchId: 'match_4', group: 'D', teamA: 'USA', teamB: 'PAR', datetime: '2026-06-13T01:00:00Z', location: 'SoFi Stadium, Inglewood' },
+  { matchId: 'match_5', group: 'C', teamA: 'HAI', teamB: 'SCO', datetime: '2026-06-14T01:00:00Z', location: 'Gillette Stadium, Foxborough' },
+  { matchId: 'match_6', group: 'D', teamA: 'AUS', teamB: 'TUR', datetime: '2026-06-14T04:00:00Z', location: 'BC Place, Vancouver' },
+  { matchId: 'match_7', group: 'C', teamA: 'BRA', teamB: 'MAR', datetime: '2026-06-13T22:00:00Z', location: 'MetLife Stadium, New Jersey' },
+  { matchId: 'match_8', group: 'B', teamA: 'QAT', teamB: 'SUI', datetime: '2026-06-13T17:00:00Z', location: 'Levi`s Stadium, Santa Clara' },
+  { matchId: 'match_9', group: 'E', teamA: 'CIV', teamB: 'ECU', datetime: '2026-06-14T23:00:00Z', location: 'Lincoln Financial Field, Philadelphia' },
+  { matchId: 'match_10', group: 'E', teamA: 'GER', teamB: 'CUW', datetime: '2026-06-14T17:00:00Z', location: 'NRG Stadium, Houston' },
+  { matchId: 'match_11', group: 'F', teamA: 'NED', teamB: 'JPN', datetime: '2026-06-14T20:00:00Z', location: 'AT&T Stadium, Arlington' },
+  { matchId: 'match_12', group: 'F', teamA: 'SWE', teamB: 'TUN', datetime: '2026-06-15T02:00:00Z', location: 'Estadio BBVA, Guadalupe' },
+  { matchId: 'match_13', group: 'H', teamA: 'KSA', teamB: 'URU', datetime: '2026-06-15T22:00:00Z', location: 'Hard Rock Stadium, Miami Gardens' },
+  { matchId: 'match_14', group: 'H', teamA: 'ESP', teamB: 'CPV', datetime: '2026-06-15T16:00:00Z', location: 'Mercedes-Benz Stadium, Atlanta' },
+  { matchId: 'match_15', group: 'G', teamA: 'IRN', teamB: 'NZL', datetime: '2026-06-16T01:00:00Z', location: 'SoFi Stadium, Inglewood' },
+  { matchId: 'match_16', group: 'G', teamA: 'BEL', teamB: 'EGY', datetime: '2026-06-15T19:00:00Z', location: 'Lumen Field, Seattle' },
+  { matchId: 'match_17', group: 'I', teamA: 'FRA', teamB: 'SEN', datetime: '2026-06-16T19:00:00Z', location: 'MetLife Stadium, New Jersey' },
+  { matchId: 'match_18', group: 'I', teamA: 'IRQ', teamB: 'NOR', datetime: '2026-06-16T22:00:00Z', location: 'Gillette Stadium, Foxborough' },
+  { matchId: 'match_19', group: 'J', teamA: 'ARG', teamB: 'ALG', datetime: '2026-06-17T01:00:00Z', location: 'Arrowhead Stadium, Kansas City' },
+  { matchId: 'match_20', group: 'J', teamA: 'AUT', teamB: 'JOR', datetime: '2026-06-17T04:00:00Z', location: 'Levi`s Stadium, Santa Clara' },
+  { matchId: 'match_21', group: 'L', teamA: 'GHA', teamB: 'PAN', datetime: '2026-06-17T23:00:00Z', location: 'BMO Field, Toronto' },
+  { matchId: 'match_22', group: 'L', teamA: 'ENG', teamB: 'CRO', datetime: '2026-06-17T20:00:00Z', location: 'AT&T Stadium, Arlington' },
+  { matchId: 'match_23', group: 'K', teamA: 'POR', teamB: 'COD', datetime: '2026-06-17T17:00:00Z', location: 'NRG Stadium, Houston' },
+  { matchId: 'match_24', group: 'K', teamA: 'UZB', teamB: 'COL', datetime: '2026-06-18T02:00:00Z', location: 'Estadio Azteca, Mexico City' },
+  { matchId: 'match_25', group: 'A', teamA: 'CZE', teamB: 'RSA', datetime: '2026-06-23T22:00:00Z', location: 'Mercedes-Benz Stadium, Atlanta' },
+  { matchId: 'match_26', group: 'B', teamA: 'SUI', teamB: 'BIH', datetime: '2026-06-18T17:00:00Z', location: 'SoFi Stadium, Inglewood' },
+  { matchId: 'match_27', group: 'B', teamA: 'CAN', teamB: 'QAT', datetime: '2026-06-18T22:00:00Z', location: 'BC Place, Vancouver' },
+  { matchId: 'match_28', group: 'A', teamA: 'MEX', teamB: 'KOR', datetime: '2026-06-23T22:00:00Z', location: 'Estadio Akron, Zapopan' },
+  { matchId: 'match_29', group: 'C', teamA: 'BRA', teamB: 'HAI', datetime: '2026-06-20T00:30:00Z', location: 'Lincoln Financial Field, Philadelphia' },
+  { matchId: 'match_30', group: 'C', teamA: 'SCO', teamB: 'MAR', datetime: '2026-06-19T22:00:00Z', location: 'Gillette Stadium, Foxborough' },
+  { matchId: 'match_31', group: 'D', teamA: 'TUR', teamB: 'PAR', datetime: '2026-06-20T03:00:00Z', location: 'Levi`s Stadium, Santa Clara' },
+  { matchId: 'match_32', group: 'D', teamA: 'USA', teamB: 'AUS', datetime: '2026-06-19T19:00:00Z', location: 'Lumen Field, Seattle' },
+  { matchId: 'match_33', group: 'E', teamA: 'GER', teamB: 'CIV', datetime: '2026-06-20T20:00:00Z', location: 'BMO Field, Toronto' },
+  { matchId: 'match_34', group: 'E', teamA: 'ECU', teamB: 'CUW', datetime: '2026-06-23T00:00:00Z', location: 'Arrowhead Stadium, Kansas City' },
+  { matchId: 'match_35', group: 'F', teamA: 'NED', teamB: 'SWE', datetime: '2026-06-20T17:00:00Z', location: 'NRG Stadium, Houston' },
+  { matchId: 'match_36', group: 'F', teamA: 'TUN', teamB: 'JPN', datetime: '2026-06-21T04:00:00Z', location: 'Estadio BBVA, Guadalupe' },
+  { matchId: 'match_37', group: 'H', teamA: 'URU', teamB: 'CPV', datetime: '2026-06-21T22:00:00Z', location: 'Hard Rock Stadium, Miami Gardens' },
+  { matchId: 'match_38', group: 'H', teamA: 'ESP', teamB: 'KSA', datetime: '2026-06-21T16:00:00Z', location: 'Mercedes-Benz Stadium, Atlanta' },
+  { matchId: 'match_39', group: 'G', teamA: 'BEL', teamB: 'IRN', datetime: '2026-06-21T19:00:00Z', location: 'SoFi Stadium, Inglewood' },
+  { matchId: 'match_40', group: 'G', teamA: 'NZL', teamB: 'EGY', datetime: '2026-06-22T01:00:00Z', location: 'BC Place, Vancouver' },
+  { matchId: 'match_41', group: 'I', teamA: 'NOR', teamB: 'SEN', datetime: '2026-06-23T00:00:00Z', location: 'MetLife Stadium, New Jersey' },
+  { matchId: 'match_42', group: 'I', teamA: 'FRA', teamB: 'IRQ', datetime: '2026-06-22T21:00:00Z', location: 'Lincoln Financial Field, Philadelphia' },
+  { matchId: 'match_43', group: 'J', teamA: 'ARG', teamB: 'AUT', datetime: '2026-06-26T05:00:00Z', location: 'AT&T Stadium, Arlington' },
+  { matchId: 'match_44', group: 'J', teamA: 'JOR', teamB: 'ALG', datetime: '2026-06-23T03:00:00Z', location: 'Levi`s Stadium, Santa Clara' },
+  { matchId: 'match_45', group: 'L', teamA: 'ENG', teamB: 'GHA', datetime: '2026-06-23T20:00:00Z', location: 'Gillette Stadium, Foxborough' },
+  { matchId: 'match_46', group: 'L', teamA: 'PAN', teamB: 'CRO', datetime: '2026-06-23T23:00:00Z', location: 'BMO Field, Toronto' },
+  { matchId: 'match_47', group: 'K', teamA: 'POR', teamB: 'UZB', datetime: '2026-06-23T17:00:00Z', location: 'NRG Stadium, Houston' },
+  { matchId: 'match_48', group: 'K', teamA: 'COL', teamB: 'COD', datetime: '2026-06-24T02:00:00Z', location: 'Estadio Akron, Zapopan' },
+  { matchId: 'match_49', group: 'C', teamA: 'SCO', teamB: 'BRA', datetime: '2026-06-24T22:00:00Z', location: 'Hard Rock Stadium, Miami Gardens' },
+  { matchId: 'match_50', group: 'C', teamA: 'MAR', teamB: 'HAI', datetime: '2026-06-24T22:00:00Z', location: 'Mercedes-Benz Stadium, Atlanta' },
+  { matchId: 'match_51', group: 'B', teamA: 'SUI', teamB: 'CAN', datetime: '2026-06-24T19:00:00Z', location: 'BC Place, Vancouver' },
+  { matchId: 'match_52', group: 'B', teamA: 'BIH', teamB: 'QAT', datetime: '2026-06-24T19:00:00Z', location: 'Lumen Field, Seattle' },
+  { matchId: 'match_53', group: 'A', teamA: 'CZE', teamB: 'MEX', datetime: '2026-06-25T01:00:00Z', location: 'Estadio Azteca, Mexico City' },
+  { matchId: 'match_54', group: 'A', teamA: 'RSA', teamB: 'KOR', datetime: '2026-06-25T01:00:00Z', location: 'Estadio BBVA, Guadalupe' },
+  { matchId: 'match_55', group: 'E', teamA: 'CUW', teamB: 'CIV', datetime: '2026-06-25T20:00:00Z', location: 'Lincoln Financial Field, Philadelphia' },
+  { matchId: 'match_56', group: 'E', teamA: 'ECU', teamB: 'GER', datetime: '2026-06-25T20:00:00Z', location: 'MetLife Stadium, New Jersey' },
+  { matchId: 'match_57', group: 'F', teamA: 'JPN', teamB: 'SWE', datetime: '2026-06-25T23:00:00Z', location: 'AT&T Stadium, Arlington' },
+  { matchId: 'match_58', group: 'F', teamA: 'TUN', teamB: 'NED', datetime: '2026-06-25T23:00:00Z', location: 'Arrowhead Stadium, Kansas City' },
+  { matchId: 'match_59', group: 'D', teamA: 'TUR', teamB: 'USA', datetime: '2026-06-26T02:00:00Z', location: 'SoFi Stadium, Inglewood' },
+  { matchId: 'match_60', group: 'D', teamA: 'PAR', teamB: 'AUS', datetime: '2026-06-26T02:00:00Z', location: 'Levi`s Stadium, Santa Clara' },
+  { matchId: 'match_61', group: 'I', teamA: 'NOR', teamB: 'FRA', datetime: '2026-06-26T19:00:00Z', location: 'Gillette Stadium, Foxborough' },
+  { matchId: 'match_62', group: 'I', teamA: 'SEN', teamB: 'IRQ', datetime: '2026-06-26T19:00:00Z', location: 'BMO Field, Toronto' },
+  { matchId: 'match_63', group: 'G', teamA: 'EGY', teamB: 'IRN', datetime: '2026-06-27T03:00:00Z', location: 'Lumen Field, Seattle' },
+  { matchId: 'match_64', group: 'G', teamA: 'NZL', teamB: 'BEL', datetime: '2026-06-27T03:00:00Z', location: 'BC Place, Vancouver' },
+  { matchId: 'match_65', group: 'H', teamA: 'CPV', teamB: 'KSA', datetime: '2026-06-27T00:00:00Z', location: 'NRG Stadium, Houston' },
+  { matchId: 'match_66', group: 'H', teamA: 'URU', teamB: 'ESP', datetime: '2026-06-27T00:00:00Z', location: 'Estadio Akron, Zapopan' },
+  { matchId: 'match_67', group: 'L', teamA: 'PAN', teamB: 'ENG', datetime: '2026-06-27T21:00:00Z', location: 'MetLife Stadium, New Jersey' },
+  { matchId: 'match_68', group: 'L', teamA: 'CRO', teamB: 'GHA', datetime: '2026-06-27T21:00:00Z', location: 'Lincoln Financial Field, Philadelphia' },
+  { matchId: 'match_69', group: 'J', teamA: 'ALG', teamB: 'AUT', datetime: '2026-06-28T02:00:00Z', location: 'Arrowhead Stadium, Kansas City' },
+  { matchId: 'match_70', group: 'J', teamA: 'JOR', teamB: 'ARG', datetime: '2026-06-28T02:00:00Z', location: 'AT&T Stadium, Arlington' },
+  { matchId: 'match_71', group: 'K', teamA: 'COL', teamB: 'POR', datetime: '2026-06-27T23:30:00Z', location: 'Hard Rock Stadium, Miami Gardens' },
+  { matchId: 'match_72', group: 'K', teamA: 'COD', teamB: 'UZB', datetime: '2026-06-27T23:30:00Z', location: 'Mercedes-Benz Stadium, Atlanta' },
+];
+
+// --- RESTORED THE INVISIBLE BRACKET ROUTING KEYS (nextMatch & nextSlot)! ---
+const KNOCKOUT_MATCHES_SCHEDULE = [
+  // Round of 32 (Matches 73-88)
+  { id: 'ko_R32_1', stage: 'R32', labelA: '2nd Grp A', labelB: '2nd Grp B', datetime: '2026-06-28T19:00:00Z', location: 'SoFi Stadium, Inglewood', nextMatch: 'ko_R16_2', nextSlot: 'teamA' },
+  { id: 'ko_R32_2', stage: 'R32', labelA: '1st Grp E', labelB: '3rd Place A/B/C/D/F', datetime: '2026-06-29T20:30:00Z', location: 'Gillette Stadium, Foxborough', nextMatch: 'ko_R16_1', nextSlot: 'teamA' },
+  { id: 'ko_R32_3', stage: 'R32', labelA: '1st Grp F', labelB: '2nd Grp C', datetime: '2026-06-30T01:00:00Z', location: 'Estadio BBVA, Guadalupe', nextMatch: 'ko_R16_2', nextSlot: 'teamB' },
+  { id: 'ko_R32_4', stage: 'R32', labelA: '1st Grp C', labelB: '2nd Grp F', datetime: '2026-06-29T17:00:00Z', location: 'NRG Stadium, Houston', nextMatch: 'ko_R16_3', nextSlot: 'teamA' },
+  { id: 'ko_R32_5', stage: 'R32', labelA: '1st Grp I', labelB: '3rd Place C/D/F/G/H', datetime: '2026-06-30T21:00:00Z', location: 'MetLife Stadium, New Jersey', nextMatch: 'ko_R16_1', nextSlot: 'teamB' },
+  { id: 'ko_R32_6', stage: 'R32', labelA: '2nd Grp E', labelB: '2nd Grp I', datetime: '2026-06-30T17:00:00Z', location: 'AT&T Stadium, Arlington', nextMatch: 'ko_R16_3', nextSlot: 'teamB' },
+  { id: 'ko_R32_7', stage: 'R32', labelA: '1st Grp A', labelB: '3rd Place C/E/F/H/I', datetime: '2026-07-01T01:00:00Z', location: 'Estadio Azteca, Mexico City', nextMatch: 'ko_R16_4', nextSlot: 'teamA' },
+  { id: 'ko_R32_8', stage: 'R32', labelA: '1st Grp L', labelB: '3rd Place E/H/I/J/K', datetime: '2026-07-01T16:00:00Z', location: 'Mercedes-Benz Stadium, Atlanta', nextMatch: 'ko_R16_4', nextSlot: 'teamB' },
+  { id: 'ko_R32_9', stage: 'R32', labelA: '1st Grp D', labelB: '3rd Place B/E/G/I/J', datetime: '2026-07-01T00:00:00Z', location: 'Levi\'s Stadium, San Francisco', nextMatch: 'ko_R16_6', nextSlot: 'teamA' },
+  { id: 'ko_R32_10', stage: 'R32', labelA: '1st Grp G', labelB: '3rd Place A/E/H/I/J', datetime: '2026-07-01T20:00:00Z', location: 'Lumen Field, Seattle', nextMatch: 'ko_R16_6', nextSlot: 'teamB' },
+  { id: 'ko_R32_11', stage: 'R32', labelA: '2nd Grp K', labelB: '2nd Grp L', datetime: '2026-07-02T23:00:00Z', location: 'BMO Field, Toronto', nextMatch: 'ko_R16_5', nextSlot: 'teamA' },
+  { id: 'ko_R32_12', stage: 'R32', labelA: '1st Grp H', labelB: '2nd Grp J', datetime: '2026-07-02T19:00:00Z', location: 'SoFi Stadium, Inglewood', nextMatch: 'ko_R16_5', nextSlot: 'teamB' },
+  { id: 'ko_R32_13', stage: 'R32', labelA: '1st Grp B', labelB: '3rd Place E/F/G/I/J', datetime: '2026-07-03T03:00:00Z', location: 'BC Place, Vancouver', nextMatch: 'ko_R16_8', nextSlot: 'teamA' },
+  { id: 'ko_R32_14', stage: 'R32', labelA: '1st Grp J', labelB: '2nd Grp H', datetime: '2026-07-03T22:00:00Z', location: 'Hard Rock Stadium, Miami Gardens', nextMatch: 'ko_R16_7', nextSlot: 'teamA' },
+  { id: 'ko_R32_15', stage: 'R32', labelA: '1st Grp K', labelB: '3rd Place D/E/I/J/L', datetime: '2026-07-04T01:30:00Z', location: 'Arrowhead Stadium, Kansas City', nextMatch: 'ko_R16_8', nextSlot: 'teamB' },
+  { id: 'ko_R32_16', stage: 'R32', labelA: '2nd Grp D', labelB: '2nd Grp G', datetime: '2026-07-03T18:00:00Z', location: 'AT&T Stadium, Arlington', nextMatch: 'ko_R16_7', nextSlot: 'teamB' },
+
+  // Round of 16 (Matches 89-96)
+  { id: 'ko_R16_1', stage: 'R16', labelA: 'Winner Match 74', labelB: 'Winner Match 77', datetime: '2026-07-04T21:00:00Z', location: 'Lincoln Financial Field, Philadelphia', nextMatch: 'ko_QF_1', nextSlot: 'teamA' },
+  { id: 'ko_R16_2', stage: 'R16', labelA: 'Winner Match 73', labelB: 'Winner Match 75', datetime: '2026-07-04T17:00:00Z', location: 'NRG Stadium, Houston', nextMatch: 'ko_QF_1', nextSlot: 'teamB' },
+  { id: 'ko_R16_3', stage: 'R16', labelA: 'Winner Match 76', labelB: 'Winner Match 78', datetime: '2026-07-05T20:00:00Z', location: 'MetLife Stadium, New Jersey', nextMatch: 'ko_QF_3', nextSlot: 'teamA' },
+  { id: 'ko_R16_4', stage: 'R16', labelA: 'Winner Match 79', labelB: 'Winner Match 80', datetime: '2026-07-06T00:00:00Z', location: 'Estadio Azteca, Mexico City', nextMatch: 'ko_QF_3', nextSlot: 'teamB' },
+  { id: 'ko_R16_5', stage: 'R16', labelA: 'Winner Match 83', labelB: 'Winner Match 84', datetime: '2026-07-06T19:00:00Z', location: 'AT&T Stadium, Arlington', nextMatch: 'ko_QF_2', nextSlot: 'teamA' },
+  { id: 'ko_R16_6', stage: 'R16', labelA: 'Winner Match 81', labelB: 'Winner Match 82', datetime: '2026-07-07T00:00:00Z', location: 'Lumen Field, Seattle', nextMatch: 'ko_QF_2', nextSlot: 'teamB' },
+  { id: 'ko_R16_7', stage: 'R16', labelA: 'Winner Match 86', labelB: 'Winner Match 88', datetime: '2026-07-07T16:00:00Z', location: 'Mercedes-Benz Stadium, Atlanta', nextMatch: 'ko_QF_4', nextSlot: 'teamA' },
+  { id: 'ko_R16_8', stage: 'R16', labelA: 'Winner Match 85', labelB: 'Winner Match 87', datetime: '2026-07-07T20:00:00Z', location: 'BC Place, Vancouver', nextMatch: 'ko_QF_4', nextSlot: 'teamB' },
+
+  // Quarterfinals (Matches 97-100)
+  { id: 'ko_QF_1', stage: 'QF', labelA: 'Winner Match 89', labelB: 'Winner Match 90', datetime: '2026-07-09T20:00:00Z', location: 'Gillette Stadium, Foxborough', nextMatch: 'ko_SF_1', nextSlot: 'teamA' },
+  { id: 'ko_QF_2', stage: 'QF', labelA: 'Winner Match 93', labelB: 'Winner Match 94', datetime: '2026-07-10T19:00:00Z', location: 'SoFi Stadium, Inglewood', nextMatch: 'ko_SF_1', nextSlot: 'teamB' },
+  { id: 'ko_QF_3', stage: 'QF', labelA: 'Winner Match 91', labelB: 'Winner Match 92', datetime: '2026-07-11T21:00:00Z', location: 'Hard Rock Stadium, Miami Gardens', nextMatch: 'ko_SF_2', nextSlot: 'teamA' },
+  { id: 'ko_QF_4', stage: 'QF', labelA: 'Winner Match 95', labelB: 'Winner Match 96', datetime: '2026-07-12T01:00:00Z', location: 'Arrowhead Stadium, Kansas City', nextMatch: 'ko_SF_2', nextSlot: 'teamB' },
+
+  // Semifinals (Matches 101-102)
+  { id: 'ko_SF_1', stage: 'SF', labelA: 'Winner Match 97', labelB: 'Winner Match 98', datetime: '2026-07-14T19:00:00Z', location: 'AT&T Stadium, Arlington', nextMatch: 'ko_Final_1', nextSlot: 'teamA' },
+  { id: 'ko_SF_2', stage: 'SF', labelA: 'Winner Match 99', labelB: 'Winner Match 100', datetime: '2026-07-15T19:00:00Z', location: 'Mercedes-Benz Stadium, Atlanta', nextMatch: 'ko_Final_1', nextSlot: 'teamB' },
+
+  // Final (Match 104)
+  { id: 'ko_Final_1', stage: 'Final', labelA: 'Winner Match 101', labelB: 'Winner Match 102', datetime: '2026-07-19T19:00:00Z', location: 'MetLife Stadium, New Jersey', nextMatch: null, nextSlot: null }
+];
+
+export const generateAllMatches = () => {
+  const matches = [];
+
+  GROUP_MATCHES_SCHEDULE.forEach(matchInfo => {
+    matches.push({
+      id: matchInfo.matchId,
+      stage: 'Group',
+      teamA: matchInfo.teamA || '', 
+      teamB: matchInfo.teamB || '', 
+      scoreA: '',
+      scoreB: '',
+      isPlayed: false,
+      penWinner: null,
+      location: matchInfo.location || 'Stadium TBD',
+      datetime: matchInfo.datetime || '',
+      nextMatch: null, 
+      nextSlot: null
+    });
+  });
+
+  KNOCKOUT_MATCHES_SCHEDULE.forEach(matchInfo => {
+    matches.push({
+      id: matchInfo.id,
+      stage: matchInfo.stage,
+      labelA: matchInfo.labelA || '',
+      labelB: matchInfo.labelB || '',
+      nextMatch: matchInfo.nextMatch || null, // Engine explicitly uses these strings to route the winners!
+      nextSlot: matchInfo.nextSlot || null,   
+      teamA: '',
+      teamB: '',
+      scoreA: '',
+      scoreB: '',
+      isPlayed: false,
+      penWinner: null,
+      location: matchInfo.location || 'Stadium TBD',
+      datetime: matchInfo.datetime || ''
+    });
+  });
+
+  return matches;
+};
