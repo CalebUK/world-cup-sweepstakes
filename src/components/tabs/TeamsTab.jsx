@@ -1,140 +1,192 @@
-import React from 'react';
-import { Users, Info, TrendingUp, Clock } from 'lucide-react';
-import { TEAMS_DATA } from '../../config/data';
-import { TEAM_ODDS, ODDS_LAST_UPDATED } from '../../config/odds'; 
-import { TeamLogo } from '../TeamLogo';
-import { TeamPixelArt } from '../TeamPixelArt'; 
+import React, { useState } from 'react';
+import { Info, Filter, ArrowUpDown, ShieldAlert } from 'lucide-react';
+import { TEAMS_DATA } from '../../config/data.js';
+import { TEAM_ODDS } from '../../config/odds.js';
+import { TeamLogo } from '../TeamLogo.jsx';
 
 export const TeamsTab = ({ 
   eliminatedTeams, 
   isViewer, 
-  getOwnerName, 
   assignments, 
   members, 
   handleAssign, 
   toggleEliminated 
 }) => {
-  
-  // Sort teams so eliminated ones fall safely to the bottom of the grid
-  const sortedTeams = [...TEAMS_DATA].sort((a, b) => {
-    const aElim = eliminatedTeams[a.id] ? 1 : 0;
-    const bElim = eliminatedTeams[b.id] ? 1 : 0;
-    if (aElim !== bElim) return aElim - bElim;
-    return 0; 
+  // Local storage states for filters
+  const [managerFilter, setManagerFilter] = useState(() => {
+    return localStorage.getItem('worldCupTeamsFilter') || 'All';
+  });
+  const [sortBy, setSortBy] = useState(() => {
+    return localStorage.getItem('worldCupTeamsSort') || 'Group';
+  });
+
+  const handleFilterChange = (val) => {
+    setManagerFilter(val);
+    localStorage.setItem('worldCupTeamsFilter', val);
+  };
+
+  const handleSortChange = (val) => {
+    setSortBy(val);
+    localStorage.setItem('worldCupTeamsSort', val);
+  };
+
+  // Filter Logic
+  let displayedTeams = TEAMS_DATA;
+  if (managerFilter !== 'All') {
+    if (managerFilter === 'Unassigned') {
+      displayedTeams = displayedTeams.filter(t => !assignments[t.id]);
+    } else {
+      displayedTeams = displayedTeams.filter(t => assignments[t.id] === managerFilter);
+    }
+  }
+
+  // Sort Logic
+  displayedTeams = [...displayedTeams].sort((a, b) => {
+    if (sortBy === 'Group') {
+      if (a.group === b.group) return a.name.localeCompare(b.name);
+      return a.group.localeCompare(b.group);
+    }
+    if (sortBy === 'Rank') {
+      return (a.rank || 999) - (b.rank || 999);
+    }
+    if (sortBy === 'Odds') {
+      const getOddsVal = (id) => {
+        const str = TEAM_ODDS[id];
+        if (!str) return 999999;
+        const val = parseInt(str.replace(/\D/g, ''));
+        return isNaN(val) ? 999999 : val;
+      };
+      return getOddsVal(a.id) - getOddsVal(b.id);
+    }
+    return 0;
   });
 
   return (
-    <div className="space-y-6 animate-fade-in pb-8">
-      <div className="bg-white rounded-xl shadow-md border-2 border-green-100 p-4 sm:p-6">
-        
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b-2 border-green-50 pb-4 gap-4">
-          <div>
-            <h2 className="text-xl font-black text-green-800 flex items-center gap-2 uppercase tracking-wide">
-              <Users className="w-6 h-6 text-emerald-500" /> Draft & Squad Status
-            </h2>
-            <p className="text-slate-500 font-medium mt-1 text-sm sm:text-base">
-              Assign teams to family members. Manage their active status as the tournament progresses.
-            </p>
-          </div>
-          
-          <div className="flex flex-col gap-2 self-start sm:self-end shrink-0">
-             <div className="bg-blue-50 border border-blue-200 text-blue-800 px-3 py-1.5 rounded-lg flex items-center justify-between sm:justify-start gap-3 shadow-sm w-full sm:w-auto">
-               <div className="flex items-center gap-1.5">
-                 <Info className="w-4 h-4 text-blue-500" />
-                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">FIFA Ranks: April 2026</span>
-               </div>
-             </div>
-             
-             <div className="bg-purple-50 border border-purple-200 text-purple-800 px-3 py-1.5 rounded-lg flex flex-col sm:flex-row sm:items-center gap-2 shadow-sm w-full sm:w-auto">
-               <div className="flex items-center gap-1.5">
-                 <TrendingUp className="w-4 h-4 text-purple-500" />
-                 <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">DraftKings Odds</span>
-               </div>
-               <div className="hidden sm:block text-purple-300">|</div>
-               <div className="flex items-center gap-1.5 text-purple-600/80">
-                 <Clock className="w-3.5 h-3.5" />
-                 <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider">Updated: {ODDS_LAST_UPDATED}</span>
-               </div>
-             </div>
-          </div>
+    <div className="space-y-6 animate-fade-in">
+      
+      {/* Instructional Banner */}
+      {!isViewer && (
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm flex items-start gap-3">
+          <Info className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
+          <p className="text-sm sm:text-base font-bold text-blue-800 leading-relaxed">
+            Please assign teams to their respective managers (as listed in the settings) in line with how they were drawn (from a hat, randomiser, penalties etc).
+          </p>
         </div>
-        
-        {/* Fully Responsive "Trading Card" Grid */}
-        <div className="grid grid-cols-2 min-[550px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-5">
-          {sortedTeams.map(team => {
-            const currentOdds = TEAM_ODDS[team.id] || 'N/A';
-            
-            return (
-              <div 
-                key={team.id} 
-                className={`group relative flex flex-col justify-between p-2.5 sm:p-4 rounded-2xl border-2 transition-all aspect-square overflow-hidden shadow-sm hover:shadow-md ${eliminatedTeams[team.id] ? 'bg-red-50/90 border-red-200 grayscale opacity-90' : 'bg-white border-green-100 hover:border-emerald-300'}`}
-              >
-                
-                {/* Giant Full-Background Pixel Art */}
-                <div className="absolute inset-0 z-0 pointer-events-none transition-transform duration-700 group-hover:scale-105">
-                   <TeamPixelArt teamId={team.id} className={`w-full h-full object-cover ${eliminatedTeams[team.id] ? 'opacity-10' : 'opacity-25'}`} />
-                   <div className={`absolute inset-0 ${eliminatedTeams[team.id] ? 'bg-red-50/70' : 'bg-gradient-to-t from-white/95 via-white/80 to-white/20'}`}></div>
-                </div>
+      )}
 
-                {/* Top Details (Logo, Name, Badges) */}
-                <div className="relative z-10 flex flex-col items-center text-center mt-0 sm:mt-1">
-                  <TeamLogo teamId={team.id} className="w-8 h-8 sm:w-12 sm:h-12 bg-white/95 rounded-full p-1 sm:p-1.5 shadow-sm border border-slate-100" />
-                  
-                  <div className={`font-black text-xs sm:text-base leading-tight mt-1.5 sm:mt-2 ${eliminatedTeams[team.id] ? 'line-through text-slate-500' : 'text-slate-800'}`}>
-                    {team.name}
-                  </div>
-                  
-                  <div className="flex flex-col items-center justify-center gap-1 mt-1.5 sm:mt-2 w-full">
-                    {/* Rank & Group Row */}
-                    <div className="flex items-center justify-center gap-1 w-full">
-                      <span className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-white/90 px-1.5 py-0.5 rounded border border-slate-100 shadow-sm">
-                        Group {team.group}
-                      </span>
-                      <span className="text-[8px] sm:text-[10px] font-bold text-emerald-700 uppercase tracking-wider bg-emerald-50/95 border border-emerald-200 px-1.5 py-0.5 rounded shadow-sm">
-                        Rank: {team.rank}
-                      </span>
-                    </div>
-                    
-                    {/* Vegas Odds Badge! */}
-                    <div className="flex items-center justify-center gap-1 w-full mt-0.5">
-                      <span className="text-[9px] sm:text-[10px] font-black text-purple-100 uppercase tracking-wider bg-purple-800 border border-purple-900 px-2 py-0.5 rounded shadow-inner w-auto truncate flex items-center gap-1">
-                         Odds: <span className="text-yellow-300">{currentOdds}</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Bottom Details (Dropdown & Eliminate Button) */}
-                <div className="relative z-10 flex flex-col gap-1.5 sm:gap-2 mt-auto pt-2 w-full">
-                  {isViewer ? (
-                     <div className="w-full p-1.5 sm:p-2 text-[10px] sm:text-xs border border-slate-200 rounded bg-white/95 font-bold text-slate-700 text-center truncate shadow-sm">
-                       {getOwnerName(team.id)}
-                     </div>
-                  ) : (
-                    <>
-                      <select 
-                        className="w-full p-1 sm:p-1.5 text-[9px] sm:text-xs border border-slate-200 rounded bg-white/95 font-bold text-slate-700 focus:border-emerald-500 focus:outline-none shadow-sm cursor-pointer"
-                        value={assignments[team.id] || ''}
-                        onChange={(e) => handleAssign(team.id, e.target.value)}
-                      >
-                        <option value="">Manager...</option>
-                        {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                      </select>
-                      
-                      <button onClick={() => toggleEliminated(team.id)} 
-                              className={`text-[9px] sm:text-[10px] py-1 sm:py-1.5 px-1 rounded font-bold border transition-colors uppercase tracking-wider shadow-sm ${eliminatedTeams[team.id] ? 'bg-white/95 text-green-600 border-green-200 hover:bg-green-50' : 'bg-red-50/95 text-red-600 border-red-200 hover:bg-red-100'}`}>
-                        {eliminatedTeams[team.id] ? 'Revive' : 'Eliminate'}
-                      </button>
-                    </>
-                  )}
-                </div>
+      {/* Control Bar */}
+      <div className="bg-white rounded-xl shadow-sm border-2 border-emerald-100 p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="flex items-center gap-2 w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+          <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:block">Manager:</span>
+          <select 
+            value={managerFilter}
+            onChange={(e) => handleFilterChange(e.target.value)}
+            className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer"
+          >
+            <option value="All">All Teams</option>
+            <option value="Unassigned">Unassigned Teams</option>
+            <option disabled>──────────</option>
+            {members.map(m => (
+              <option key={m.id} value={m.id}>{m.name}'s Teams</option>
+            ))}
+          </select>
+        </div>
 
-              </div>
-            );
-          })}
+        <div className="flex items-center gap-2 w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+          <ArrowUpDown className="w-4 h-4 text-slate-400 shrink-0" />
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:block">Sort By:</span>
+          <select 
+            value={sortBy}
+            onChange={(e) => handleSortChange(e.target.value)}
+            className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer"
+          >
+            <option value="Group">Group (A-Z)</option>
+            <option value="Rank">FIFA Ranking (High to Low)</option>
+            <option value="Odds">Tournament Odds</option>
+          </select>
         </div>
       </div>
+
+      {/* Teams Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {displayedTeams.map(team => {
+          const isEliminated = eliminatedTeams[team.id];
+          const oddsStr = TEAM_ODDS[team.id];
+          
+          return (
+            <div key={team.id} className={`bg-white rounded-xl border-2 transition-all shadow-sm flex flex-col overflow-hidden ${
+              isEliminated ? 'border-red-200 opacity-75 grayscale' : 'border-slate-200 hover:border-emerald-300 hover:shadow-md hover:-translate-y-1'
+            }`}>
+              
+              {/* Team Header */}
+              <div className="p-4 flex items-center gap-3 border-b border-slate-100 relative">
+                {isEliminated && (
+                  <div className="absolute top-2 right-2 text-[10px] font-black uppercase bg-red-100 text-red-600 px-2 py-0.5 rounded tracking-widest">
+                    Eliminated
+                  </div>
+                )}
+                <TeamLogo teamId={team.id} className="w-10 h-10 shrink-0" />
+                <div className="flex flex-col truncate">
+                  <span className="font-black text-slate-800 text-lg truncate">{team.name}</span>
+                  <div className="flex gap-2 items-center">
+                    <span className="text-xs font-bold bg-slate-100 text-slate-500 px-2 rounded">Grp {team.group}</span>
+                    <span className="text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 rounded">Rank {team.rank}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assignments & Controls */}
+              <div className="p-4 bg-slate-50 flex-1 flex flex-col justify-between gap-4">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Odds</span>
+                  <span className="font-black text-purple-600">{oddsStr || 'N/A'}</span>
+                </div>
+
+                <div className="space-y-3">
+                  {isViewer ? (
+                    <div className="w-full text-center py-2 bg-white border-2 border-slate-200 rounded-lg font-black text-emerald-800 shadow-inner">
+                      {assignments[team.id] ? members.find(m => m.id === assignments[team.id])?.name : 'Unassigned'}
+                    </div>
+                  ) : (
+                    <select 
+                      value={assignments[team.id] || ''} 
+                      onChange={(e) => handleAssign(team.id, e.target.value)}
+                      className="w-full p-2 border-2 border-emerald-200 rounded-lg text-sm font-black text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white cursor-pointer shadow-sm transition-all"
+                    >
+                      <option value="">-- Assign Manager --</option>
+                      {members.map(m => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
+                    </select>
+                  )}
+
+                  {!isViewer && (
+                    <button
+                      onClick={() => toggleEliminated(team.id)}
+                      className={`w-full py-2 flex items-center justify-center gap-2 rounded-lg font-bold text-sm transition-colors border-2 ${
+                        isEliminated 
+                          ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' 
+                          : 'bg-white text-slate-400 border-slate-200 hover:border-red-300 hover:text-red-500'
+                      }`}
+                    >
+                      <ShieldAlert className="w-4 h-4" />
+                      {isEliminated ? 'Restore Team' : 'Mark Eliminated'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          );
+        })}
+        {displayedTeams.length === 0 && (
+          <div className="col-span-full py-12 text-center text-slate-400 font-bold">
+            No teams found for this filter.
+          </div>
+        )}
+      </div>
+
     </div>
   );
 };
