@@ -120,41 +120,49 @@ export const TeamsTab = ({
               isEliminated ? 'border-red-200 opacity-80 grayscale' : 'border-slate-200 hover:border-emerald-400 hover:shadow-xl hover:-translate-y-1.5'
             }`}>
               
-              {/* TOP HALF: The Un-blurred Art Gallery! */}
+              {/* TOP HALF: The Art Gallery! */}
               <div className="relative w-full aspect-square bg-slate-100 overflow-hidden border-b border-slate-200">
                 
                 {/* Full visibility pixel art filling the square */}
                 <TeamPixelArt teamId={team.id} className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105" />
 
-                {/* Dark gradient overlay solely at the bottom to make the white text pop */}
-                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
-
                 {isEliminated && (
-                  <div className="absolute top-3 right-3 text-[10px] font-black uppercase bg-red-600 text-white px-2.5 py-1 rounded shadow-md tracking-widest z-10">
+                  <div className="absolute top-3 right-3 text-[10px] font-black uppercase bg-red-600 text-white px-2.5 py-1 rounded shadow-md tracking-widest z-20">
                     Eliminated
                   </div>
                 )}
                 
-                {/* Team Info Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end gap-3 z-10">
-                  <TeamLogo teamId={team.id} className="w-14 h-14 shrink-0 drop-shadow-xl border-2 border-white/20 rounded-full" />
-                  <div className="flex flex-col truncate mb-1">
-                    <span className="font-black text-white text-2xl truncate drop-shadow-md">{team.name}</span>
-                    <div className="flex gap-2 items-center mt-1">
-                      <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 text-white px-2 py-0.5 rounded backdrop-blur-sm border border-white/30">Grp {team.group}</span>
-                      <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-500/80 text-white px-2 py-0.5 rounded backdrop-blur-sm border border-emerald-400/50">Rank {team.rank}</span>
-                    </div>
+                {/* Frosted Glass Information Panel */}
+                <div className="absolute bottom-0 left-0 right-0 bg-slate-900/60 backdrop-blur-md border-t border-white/10 p-3 sm:p-4 flex flex-col gap-2 z-10 transition-colors group-hover:bg-slate-900/70">
+                  
+                  {/* Row 1: Full Width Team Name */}
+                  <div className="font-black text-white text-xl leading-tight drop-shadow-md w-full">
+                    {team.name}
                   </div>
+
+                  {/* Row 2: Stats & Logo */}
+                  <div className="flex items-center flex-wrap gap-2 pt-1 border-t border-white/10">
+                    <TeamLogo teamId={team.id} className="w-8 h-8 shrink-0 drop-shadow-lg" />
+                    
+                    <span className="text-[9px] font-black uppercase tracking-wider bg-white/20 text-white px-2 py-1 rounded border border-white/20 shadow-sm">
+                      Grp {team.group}
+                    </span>
+                    
+                    <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-500/80 text-white px-2 py-1 rounded border border-emerald-400/50 shadow-sm">
+                      Rank {team.rank}
+                    </span>
+                    
+                    {/* The Odds in its own little pill box */}
+                    <span className="text-[9px] font-black uppercase tracking-wider bg-purple-500/80 text-white px-2 py-1 rounded border border-purple-400/50 shadow-sm ml-auto">
+                      {oddsStr || 'N/A'}
+                    </span>
+                  </div>
+
                 </div>
               </div>
 
               {/* BOTTOM HALF: Crisp, White Controls */}
-              <div className="p-5 flex-1 flex flex-col justify-between gap-4 bg-white relative z-10">
-                <div className="flex justify-between items-center text-sm border-b border-slate-100 pb-3">
-                  <span className="font-black text-slate-400 uppercase tracking-widest text-[11px]">Winning Odds</span>
-                  <span className="font-black text-purple-700 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-100">{oddsStr || 'N/A'}</span>
-                </div>
-
+              <div className="p-4 sm:p-5 flex-1 flex flex-col justify-end gap-3 bg-white relative z-10">
                 <div className="space-y-3">
                   {isViewer ? (
                     <div className="w-full text-center py-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-black text-emerald-800">
