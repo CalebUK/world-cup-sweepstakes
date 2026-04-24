@@ -6,7 +6,8 @@ import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 // --- CONFIGURATION ---
 import { auth, db, appId } from './config/firebase.js';
 import { TEAMS_DATA, INITIAL_MEMBERS, DEFAULT_SCORING, TIMEZONES, generateAllMatches } from './config/data.js';
-import { calculateStats, getR32Mappings, sortGroupTeams } from './utils/tournamentLogic.js';
+// NEW: Imported getThirdPlaceStandings for the massive auto-elimination hammer!
+import { calculateStats, getR32Mappings, sortGroupTeams, getThirdPlaceStandings } from './utils/tournamentLogic.js';
 
 // --- COMPONENTS & TABS ---
 import { StandingsTab } from './components/tabs/StandingsTab.jsx';
@@ -60,7 +61,15 @@ export default function App() {
     initAuth();
     
     const unsubscribe = onAuthStateChanged(auth, setUser);
-    return () => unsubscribe();
+    
+    const emergencyTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(emergencyTimeout);
+    };
   }, []);
 
   useEffect(() => {
@@ -85,8 +94,9 @@ export default function App() {
              if (savedMatch) {
                return {
                  ...freshMatch, 
-                 scoreA: savedMatch.scoreA !== undefined ? savedMatch.scoreA : '',
-                 scoreB: savedMatch.scoreB !== undefined ? savedMatch.scoreB : '',
+                 // NEW: Strictly enforces '0' if undefined or somehow blank!
+                 scoreA: (savedMatch.scoreA !== undefined && savedMatch.scoreA !== '') ? savedMatch.scoreA : '0',
+                 scoreB: (savedMatch.scoreB !== undefined && savedMatch.scoreB !== '') ? savedMatch.scoreB : '0',
                  isPlayed: savedMatch.isPlayed || false,
                  penWinner: savedMatch.penWinner || null,
                  teamA: freshMatch.teamA !== '' ? freshMatch.teamA : (savedMatch.teamA || ''),
@@ -179,12 +189,12 @@ export default function App() {
       groupMatchesPlayed += playedInGroup;
       
       if (gMatches.length === 6 && playedInGroup === 6) {
-        const gTeams = Object.values(teamStats)
-          .filter(t => t.group === g)
-          .sort((a,b) => b.groupPts !== a.groupPts ? b.groupPts - a.groupPts : (b.groupGd !== a.groupGd ? b.groupGd - a.groupGd : b.groupGf - a.groupGf));
+        const gTeams = Object.values(teamStats).filter(t => t.group === g);
+        // NEW: Switched to OFFICIAL FIFA Head-to-Head sorting to properly catch 3-way ties for 4th place!
+        const sortedGTeams = sortGroupTeams(gTeams, nextMatches, settings); 
           
-        if (gTeams.length === 4) {
-          const fourthPlaceId = gTeams[3].id;
+        if (sortedGTeams.length === 4) {
+          const fourthPlaceId = sortedGTeams[3].id;
           if (!nextEliminations[fourthPlaceId]) {
             nextEliminations[fourthPlaceId] = true;
             newlyEliminated = true;
@@ -192,6 +202,19 @@ export default function App() {
         }
       }
     });
+
+    // NEW: Drop the elimination hammer on the bottom 4 third-place teams!
+    // Triggers exactly when all 72 group matches are marked FT.
+    if (groupMatchesPlayed === 72) {
+       const thirdsList = getThirdPlaceStandings(teamStats, nextMatches, settings);
+       // Slice from index 8 (which grabs the 9th, 10th, 11th, and 12th teams)
+       thirdsList.slice(8).forEach(t => {
+          if (!nextEliminations[t.id]) {
+             nextEliminations[t.id] = true;
+             newlyEliminated = true;
+          }
+       });
+    }
 
     if (groupMatchesPlayed >= 24) {
         const r32Mappings = getR32Mappings(teamStats, nextMatches, settings);
@@ -510,50 +533,49 @@ export default function App() {
       {/* WELCOME ONBOARDING MODAL */}
       {showWelcomeModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
-           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border-4 border-emerald-600 relative overflow-hidden animate-fade-in">
+           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border-4 border-emerald-600 relative flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden animate-fade-in">
              
              {/* Modal Header */}
-             <div className="bg-gradient-to-r from-green-800 to-emerald-700 text-white p-5 flex justify-between items-center relative overflow-hidden">
+             <div className="bg-gradient-to-r from-green-800 to-emerald-700 text-white p-4 sm:p-5 flex justify-between items-center shrink-0 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_20px,#fff_20px,#fff_40px)] pointer-events-none transform -skew-x-12 scale-150"></div>
-                <h2 className="text-xl sm:text-2xl font-black flex items-center gap-3 relative z-10">
-                  <img src="/logos/world-cup.svg" className="w-8 h-8" alt="" onError={(e) => e.target.style.display='none'} />
+                <h2 className="text-lg sm:text-2xl font-black flex items-center gap-3 relative z-10">
+                  <img src="/logos/world-cup.svg" className="w-6 h-6 sm:w-8 sm:h-8" alt="" onError={(e) => e.target.style.display='none'} />
                   World Cup Sweepstakes
                 </h2>
                 <button onClick={handleCloseWelcome} className="text-emerald-200 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-lg transition-colors relative z-10">
-                   <X className="w-6 h-6" />
+                   <X className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
              </div>
 
-             {/* Modal Body */}
-             <div className="p-6 sm:p-5 space-y-2 text-slate-700">
-                <p className="text-lg font-medium leading-relaxed">
-                  Welcome to a place to help to keep track of your World Cup Sweepstakes with your Friends, Family, Colleauges, or complete strangers!
+             {/* Modal Body - SCROLLABLE & RESPONSIVE */}
+             <div className="p-4 sm:p-5 space-y-3 text-slate-700 overflow-y-auto">
+                <p className="text-base sm:text-lg font-medium leading-relaxed">
+                  Welcome to a place to help to keep track of your World Cup Sweepstakes with your Friends, Family, Colleagues, or complete strangers!
                 </p>
-<p className="text-lg font-medium leading-relaxed">
+                <p className="text-base sm:text-lg font-medium leading-relaxed">
                   Head over to the settings tab where you can add all of the members.  
                 </p>
-<p className="text-lg font-medium leading-relaxed">
+                <p className="text-base sm:text-lg font-medium leading-relaxed">
                   Once you have set it up you can create a sharing link that allows everyone to view everything but not make any changes. 
                 </p>
-
                 
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-4 space-y-3">
-                   <h3 className="font-black text-slate-800 uppercase tracking-wider text-sm border-b border-slate-200 pb-2">How It Works:</h3>
-                   <ul className="space-y-2 text-sm">
-                     <li className="flex items-start gap-2"><CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" /> <span><strong>The Teams:</strong> Once you have drawn the teams for your sweepstakes make sure to update the Teams section</span></li>
-                     <li className="flex items-start gap-2"><CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" /> <span><strong>Live Scoring:</strong> You earn points every time your teams win, draw, score goals, or keep a clean sheet. Make sure to check the settings tab to customise your scoring.</span></li>
-                     <li className="flex items-start gap-2"><CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" /> <span><strong>The Bracket:</strong> As matches finish, the Knockout Bracket automatically populates and routes the winners. However if you notice a mistake feel free to select the correct teams yourself.</span></li>
-                     <li className="flex items-start gap-2"><CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" /> <span><strong>The Prizes:</strong> You can tracking the overall champion, the best kids' squad, and even the dreaded Wooden Spoon!</span></li>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 mt-2 space-y-2 sm:space-y-3">
+                   <h3 className="font-black text-slate-800 uppercase tracking-wider text-xs sm:text-sm border-b border-slate-200 pb-2">How It Works:</h3>
+                   <ul className="space-y-2 text-xs sm:text-sm">
+                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Teams:</strong> Once you have drawn the teams for your sweepstakes make sure to update the Teams section.</span></li>
+                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>Live Scoring:</strong> You earn points every time your teams win, draw, score goals, or keep a clean sheet. Make sure to check the settings tab to customise your scoring.</span></li>
+                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Bracket:</strong> As matches finish, the Knockout Bracket automatically populates and routes the winners. However if you notice a mistake feel free to select the correct teams yourself.</span></li>
+                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Prizes:</strong> You can track the overall champion, the best kids' squad, and even the dreaded Wooden Spoon!</span></li>
                    </ul>
                 </div>
                 
-                <p className="text-center font-black text-emerald-700 text-lg pt-2">
+                <p className="text-center font-black text-emerald-700 text-base sm:text-lg pt-2 pb-2">
                   May the best manager win!
                 </p>
              </div>
 
-             {/* Modal Footer */}
-             <div className="bg-slate-50 p-4 sm:p-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+             {/* Modal Footer - PINNED */}
+             <div className="bg-slate-50 p-4 border-t border-slate-200 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <input 
                     type="checkbox" 

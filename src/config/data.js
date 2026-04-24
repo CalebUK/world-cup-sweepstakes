@@ -180,9 +180,7 @@ const GROUP_MATCHES_SCHEDULE = [
   { matchId: 'match_72', group: 'K', teamA: 'COD', teamB: 'UZB', datetime: '2026-06-27T23:30:00Z', location: 'Mercedes-Benz Stadium, Atlanta' },
 ];
 
-// --- RESTORED THE INVISIBLE BRACKET ROUTING KEYS (nextMatch & nextSlot)! ---
 const KNOCKOUT_MATCHES_SCHEDULE = [
-  // Round of 32 (Matches 73-88)
   { id: 'ko_R32_1', stage: 'R32', labelA: '2nd Grp A', labelB: '2nd Grp B', datetime: '2026-06-28T19:00:00Z', location: 'SoFi Stadium, Inglewood', nextMatch: 'ko_R16_2', nextSlot: 'teamA' },
   { id: 'ko_R32_2', stage: 'R32', labelA: '1st Grp E', labelB: '3rd Place A/B/C/D/F', datetime: '2026-06-29T20:30:00Z', location: 'Gillette Stadium, Foxborough', nextMatch: 'ko_R16_1', nextSlot: 'teamA' },
   { id: 'ko_R32_3', stage: 'R32', labelA: '1st Grp F', labelB: '2nd Grp C', datetime: '2026-06-30T01:00:00Z', location: 'Estadio BBVA, Guadalupe', nextMatch: 'ko_R16_2', nextSlot: 'teamB' },
@@ -200,7 +198,6 @@ const KNOCKOUT_MATCHES_SCHEDULE = [
   { id: 'ko_R32_15', stage: 'R32', labelA: '1st Grp K', labelB: '3rd Place D/E/I/J/L', datetime: '2026-07-04T01:30:00Z', location: 'Arrowhead Stadium, Kansas City', nextMatch: 'ko_R16_8', nextSlot: 'teamB' },
   { id: 'ko_R32_16', stage: 'R32', labelA: '2nd Grp D', labelB: '2nd Grp G', datetime: '2026-07-03T18:00:00Z', location: 'AT&T Stadium, Arlington', nextMatch: 'ko_R16_7', nextSlot: 'teamB' },
 
-  // Round of 16 (Matches 89-96)
   { id: 'ko_R16_1', stage: 'R16', labelA: 'Winner Match 74', labelB: 'Winner Match 77', datetime: '2026-07-04T21:00:00Z', location: 'Lincoln Financial Field, Philadelphia', nextMatch: 'ko_QF_1', nextSlot: 'teamA' },
   { id: 'ko_R16_2', stage: 'R16', labelA: 'Winner Match 73', labelB: 'Winner Match 75', datetime: '2026-07-04T17:00:00Z', location: 'NRG Stadium, Houston', nextMatch: 'ko_QF_1', nextSlot: 'teamB' },
   { id: 'ko_R16_3', stage: 'R16', labelA: 'Winner Match 76', labelB: 'Winner Match 78', datetime: '2026-07-05T20:00:00Z', location: 'MetLife Stadium, New Jersey', nextMatch: 'ko_QF_3', nextSlot: 'teamA' },
@@ -210,17 +207,14 @@ const KNOCKOUT_MATCHES_SCHEDULE = [
   { id: 'ko_R16_7', stage: 'R16', labelA: 'Winner Match 86', labelB: 'Winner Match 88', datetime: '2026-07-07T16:00:00Z', location: 'Mercedes-Benz Stadium, Atlanta', nextMatch: 'ko_QF_4', nextSlot: 'teamA' },
   { id: 'ko_R16_8', stage: 'R16', labelA: 'Winner Match 85', labelB: 'Winner Match 87', datetime: '2026-07-07T20:00:00Z', location: 'BC Place, Vancouver', nextMatch: 'ko_QF_4', nextSlot: 'teamB' },
 
-  // Quarterfinals (Matches 97-100)
   { id: 'ko_QF_1', stage: 'QF', labelA: 'Winner Match 89', labelB: 'Winner Match 90', datetime: '2026-07-09T20:00:00Z', location: 'Gillette Stadium, Foxborough', nextMatch: 'ko_SF_1', nextSlot: 'teamA' },
   { id: 'ko_QF_2', stage: 'QF', labelA: 'Winner Match 93', labelB: 'Winner Match 94', datetime: '2026-07-10T19:00:00Z', location: 'SoFi Stadium, Inglewood', nextMatch: 'ko_SF_1', nextSlot: 'teamB' },
   { id: 'ko_QF_3', stage: 'QF', labelA: 'Winner Match 91', labelB: 'Winner Match 92', datetime: '2026-07-11T21:00:00Z', location: 'Hard Rock Stadium, Miami Gardens', nextMatch: 'ko_SF_2', nextSlot: 'teamA' },
   { id: 'ko_QF_4', stage: 'QF', labelA: 'Winner Match 95', labelB: 'Winner Match 96', datetime: '2026-07-12T01:00:00Z', location: 'Arrowhead Stadium, Kansas City', nextMatch: 'ko_SF_2', nextSlot: 'teamB' },
 
-  // Semifinals (Matches 101-102)
   { id: 'ko_SF_1', stage: 'SF', labelA: 'Winner Match 97', labelB: 'Winner Match 98', datetime: '2026-07-14T19:00:00Z', location: 'AT&T Stadium, Arlington', nextMatch: 'ko_Final_1', nextSlot: 'teamA' },
   { id: 'ko_SF_2', stage: 'SF', labelA: 'Winner Match 99', labelB: 'Winner Match 100', datetime: '2026-07-15T19:00:00Z', location: 'Mercedes-Benz Stadium, Atlanta', nextMatch: 'ko_Final_1', nextSlot: 'teamB' },
 
-  // Final (Match 104)
   { id: 'ko_Final_1', stage: 'Final', labelA: 'Winner Match 101', labelB: 'Winner Match 102', datetime: '2026-07-19T19:00:00Z', location: 'MetLife Stadium, New Jersey', nextMatch: null, nextSlot: null }
 ];
 
@@ -233,8 +227,10 @@ export const generateAllMatches = () => {
       stage: 'Group',
       teamA: matchInfo.teamA || '', 
       teamB: matchInfo.teamB || '', 
-      scoreA: '',
-      scoreB: '',
+      // NEW: Defaulting all matches to mathematically read as 0 - 0 
+      // instead of empty string, allowing instant 1-click FT functionality!
+      scoreA: '0',
+      scoreB: '0',
       isPlayed: false,
       penWinner: null,
       location: matchInfo.location || 'Stadium TBD',
@@ -250,12 +246,12 @@ export const generateAllMatches = () => {
       stage: matchInfo.stage,
       labelA: matchInfo.labelA || '',
       labelB: matchInfo.labelB || '',
-      nextMatch: matchInfo.nextMatch || null, // Engine explicitly uses these strings to route the winners!
+      nextMatch: matchInfo.nextMatch || null, 
       nextSlot: matchInfo.nextSlot || null,   
       teamA: '',
       teamB: '',
-      scoreA: '',
-      scoreB: '',
+      scoreA: '0', // Applied Knockout default 0s here too!
+      scoreB: '0',
       isPlayed: false,
       penWinner: null,
       location: matchInfo.location || 'Stadium TBD',
