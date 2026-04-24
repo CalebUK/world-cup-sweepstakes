@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Loader2, Share2, CheckCircle, Settings, Globe, Info, X } from 'lucide-react';
+import { Loader2, Share2, CheckCircle, Settings, Info, X } from 'lucide-react';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'; 
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 // --- CONFIGURATION ---
 import { auth, db, appId } from './config/firebase.js';
-import { TEAMS_DATA, INITIAL_MEMBERS, DEFAULT_SCORING, TIMEZONES, generateAllMatches } from './config/data.js';
-// NEW: Imported getThirdPlaceStandings for the massive auto-elimination hammer!
+import { TEAMS_DATA, INITIAL_MEMBERS, DEFAULT_SCORING, generateAllMatches } from './config/data.js';
 import { calculateStats, getR32Mappings, sortGroupTeams, getThirdPlaceStandings } from './utils/tournamentLogic.js';
 
 // --- COMPONENTS & TABS ---
@@ -15,6 +14,7 @@ import { GroupsTab } from './components/tabs/GroupsTab.jsx';
 import { MatchesTab } from './components/tabs/MatchesTab.jsx';
 import { TeamsTab } from './components/tabs/TeamsTab.jsx';
 import { SettingsTab } from './components/tabs/SettingsTab.jsx';
+import { BracketTab } from './components/tabs/BracketTab.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -94,7 +94,6 @@ export default function App() {
              if (savedMatch) {
                return {
                  ...freshMatch, 
-                 // NEW: Strictly enforces '0' if undefined or somehow blank!
                  scoreA: (savedMatch.scoreA !== undefined && savedMatch.scoreA !== '') ? savedMatch.scoreA : '0',
                  scoreB: (savedMatch.scoreB !== undefined && savedMatch.scoreB !== '') ? savedMatch.scoreB : '0',
                  isPlayed: savedMatch.isPlayed || false,
@@ -190,7 +189,6 @@ export default function App() {
       
       if (gMatches.length === 6 && playedInGroup === 6) {
         const gTeams = Object.values(teamStats).filter(t => t.group === g);
-        // NEW: Switched to OFFICIAL FIFA Head-to-Head sorting to properly catch 3-way ties for 4th place!
         const sortedGTeams = sortGroupTeams(gTeams, nextMatches, settings); 
           
         if (sortedGTeams.length === 4) {
@@ -203,11 +201,8 @@ export default function App() {
       }
     });
 
-    // NEW: Drop the elimination hammer on the bottom 4 third-place teams!
-    // Triggers exactly when all 72 group matches are marked FT.
     if (groupMatchesPlayed === 72) {
        const thirdsList = getThirdPlaceStandings(teamStats, nextMatches, settings);
-       // Slice from index 8 (which grabs the 9th, 10th, 11th, and 12th teams)
        thirdsList.slice(8).forEach(t => {
           if (!nextEliminations[t.id]) {
              nextEliminations[t.id] = true;
@@ -430,25 +425,6 @@ export default function App() {
                   </button>
                 )}
              </div>
-             
-             <div className="flex items-center justify-between sm:justify-start gap-2 bg-black/20 border border-white/10 rounded-lg px-3 py-2 w-full backdrop-blur-sm" title="Change your local timezone">
-                <div className="flex items-center gap-2 text-green-200/80">
-                  <Globe className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-wider hidden sm:block">Timezone:</span>
-                </div>
-                <select 
-                  value={localTimezone} 
-                  onChange={e => {
-                    setLocalTimezone(e.target.value);
-                    localStorage.setItem('worldCupTimezone', e.target.value);
-                  }}
-                  className="bg-transparent text-sm font-bold text-white focus:outline-none max-w-full sm:max-w-[200px] truncate cursor-pointer [&>option]:text-slate-800"
-                >
-                  {TIMEZONES.map(tz => (
-                    <option key={tz.id} value={tz.id}>{tz.label}</option>
-                  ))}
-                </select>
-             </div>
           </div>
         </div>
       </header>
@@ -456,9 +432,9 @@ export default function App() {
       {/* NAVIGATION BAR */}
       <div className="max-w-6xl mx-auto px-4 -mt-5 relative z-20">
         <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/50 p-2 flex flex-wrap gap-2">
-          {['standings', 'groups', 'matches', 'teams'].map(tab => (
+          {['standings', 'groups', 'matches', 'bracket', 'teams'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`flex-1 min-w-[100px] py-3 px-4 rounded-lg font-black text-sm uppercase tracking-wider transition-all duration-200 ${
+              className={`flex-1 min-w-[80px] py-3 px-2 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 ${
                 activeTab === tab 
                   ? 'bg-green-600 text-white shadow-md scale-[1.02]' 
                   : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700'
@@ -483,11 +459,20 @@ export default function App() {
           <MatchesTab 
             matches={matches} 
             localTimezone={localTimezone} 
+            setLocalTimezone={setLocalTimezone}
             isViewer={isViewer} 
             handleMatchUpdate={handleMatchUpdate} 
             getOwnerName={getOwnerName} 
             eliminatedTeams={eliminatedTeams}
             handleRandomizeGroups={handleRandomizeGroups}
+          />
+        )}
+
+        {activeTab === 'bracket' && (
+          <BracketTab 
+            matches={matches} 
+            members={members} 
+            assignments={assignments}
           />
         )}
         

@@ -1,10 +1,8 @@
 import React from 'react';
-import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Globe, Calculator, Clock } from 'lucide-react';
-import { TIMEZONES, KNOCKOUT_STAGES, DEFAULT_SCORING } from '../../config/data.js';
+import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock } from 'lucide-react';
+import { KNOCKOUT_STAGES, DEFAULT_SCORING } from '../../config/data.js';
 
 export const SettingsTab = ({ settings, updateSettings, members, handleAddMember, handleUpdateMember, handleDeleteMember }) => {
-  
-  const defaultTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/London';
 
   const handleScoringUpdate = (stageGroup, stage, field, value) => {
     const numVal = parseInt(value) || 0;
@@ -41,23 +39,6 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
         </h2>
         
         <div className="space-y-6">
-
-          {/* Timezone Configuration */}
-          <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-lg border border-slate-200 hover:border-emerald-300 transition-colors">
-             <label className="font-black text-slate-800 cursor-pointer text-lg flex items-center gap-2">
-               <Globe className="w-5 h-5 text-blue-600" /> Match Display Timezone
-             </label>
-             <p className="text-sm text-slate-500 font-medium -mt-1 mb-2">Select your local timezone so kick-off times align perfectly. Useful for family across the UK and US!</p>
-             <select 
-               value={settings.timezone || defaultTimezone}
-               onChange={(e) => updateSettings({ timezone: e.target.value })}
-               className="p-3 border-2 border-slate-300 rounded-lg font-bold text-slate-700 focus:border-emerald-500 focus:outline-none bg-white w-full max-w-md"
-             >
-               {TIMEZONES.map(tz => (
-                 <option key={tz.id} value={tz.id}>{tz.label}</option>
-               ))}
-             </select>
-          </div>
 
           {/* Custom Scoring Configuration */}
           <div className="flex flex-col gap-4 bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Calendar, Filter, ChevronDown, ChevronRight, Clock, MapPin, ArrowUp } from 'lucide-react';
-import { TEAMS_DATA, KNOCKOUT_STAGES } from '../../config/data';
-import { TeamLogo } from '../TeamLogo';
-import { TeamPixelArt } from '../TeamPixelArt';
+import { Trophy, Calendar, Filter, ChevronDown, ChevronRight, Clock, MapPin, ArrowUp, Globe } from 'lucide-react';
+import { TEAMS_DATA, KNOCKOUT_STAGES, TIMEZONES } from '../../config/data.js';
+import { TeamLogo } from '../TeamLogo.jsx';
+import { TeamPixelArt } from '../TeamPixelArt.jsx';
 
 const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer, handleMatchUpdate, getOwnerName, eliminatedTeams }) => {
   const tA = TEAMS_DATA.find(t => t.id === match.teamA);
@@ -36,8 +36,6 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
      }
   }
 
-  // --- LOOSENED DROPDOWN ENGINE ---
-  // Safely shows any active tournament team, or the team already selected to prevent flickering!
   const getEligibleTeams = (currentTeamId) => {
       if (match.stage === 'Group') return [];
       return TEAMS_DATA.filter(t => !eliminatedTeams[t.id] || t.id === currentTeamId);
@@ -70,9 +68,10 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
               <TeamPixelArt teamId={tA?.id} className="w-28 h-28" />
             </div>
             
-            <div className="hidden md:flex flex-col items-center justify-center bg-slate-50 border border-slate-100 rounded-lg px-3 py-1 mr-3 shrink-0 relative z-10">
-               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">FIFA</span>
-               <span className="text-sm font-black text-emerald-600">{tA?.rank || '-'}</span>
+            {/* MOBILE FRIENDLY FIFA RANKING */}
+            <div className="flex flex-col items-center justify-center bg-slate-50/90 border border-slate-100 rounded-md px-1.5 py-0.5 sm:px-3 sm:py-1 mr-2 sm:mr-3 shrink-0 relative z-10">
+               <span className="text-[6px] sm:text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">FIFA</span>
+               <span className="text-xs sm:text-sm font-black text-emerald-600 leading-tight">{tA?.rank || '-'}</span>
             </div>
             
             <div className="flex flex-col w-full relative z-10">
@@ -85,7 +84,7 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
                   ))}
                 </select>
               ) : (
-                <div className="font-black text-slate-800 text-left md:text-right text-lg truncate pr-2 drop-shadow-sm">
+                <div className="font-black text-slate-800 text-left md:text-right text-base sm:text-lg truncate pr-2 drop-shadow-sm">
                   {tA?.name || match.teamA || match.labelA || 'TBD'}
                 </div>
               )}
@@ -93,7 +92,7 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
                 Manager: <span className="text-emerald-700">{getOwnerName(match.teamA)}</span>
               </div>
             </div>
-            <TeamLogo teamId={tA?.id} className="w-10 h-10 ml-3 shrink-0 relative z-10" />
+            <TeamLogo teamId={tA?.id} className="w-8 h-8 sm:w-10 sm:h-10 ml-2 sm:ml-3 shrink-0 relative z-10" />
           </div>
         </div>
 
@@ -144,7 +143,7 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
               <TeamPixelArt teamId={tB?.id} className="w-28 h-28" />
             </div>
 
-            <TeamLogo teamId={tB?.id} className="w-10 h-10 mr-3 shrink-0 relative z-10" />
+            <TeamLogo teamId={tB?.id} className="w-8 h-8 sm:w-10 sm:h-10 mr-2 sm:mr-3 shrink-0 relative z-10" />
             
             <div className="flex flex-col w-full relative z-10">
               {isKnockout && !isViewer ? (
@@ -156,7 +155,7 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
                   ))}
                 </select>
               ) : (
-                <div className="font-black text-slate-800 text-right md:text-left text-lg truncate pl-2 drop-shadow-sm">
+                <div className="font-black text-slate-800 text-right md:text-left text-base sm:text-lg truncate pl-2 drop-shadow-sm">
                   {tB?.name || match.teamB || match.labelB || 'TBD'}
                 </div>
               )}
@@ -165,9 +164,10 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
               </div>
             </div>
 
-            <div className="hidden md:flex flex-col items-center justify-center bg-slate-50 border border-slate-100 rounded-lg px-3 py-1 ml-3 shrink-0 relative z-10">
-               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">FIFA</span>
-               <span className="text-sm font-black text-emerald-600">{tB?.rank || '-'}</span>
+            {/* MOBILE FRIENDLY FIFA RANKING */}
+            <div className="flex flex-col items-center justify-center bg-slate-50/90 border border-slate-100 rounded-md px-1.5 py-0.5 sm:px-3 sm:py-1 ml-2 sm:ml-3 shrink-0 relative z-10">
+               <span className="text-[6px] sm:text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">FIFA</span>
+               <span className="text-xs sm:text-sm font-black text-emerald-600 leading-tight">{tB?.rank || '-'}</span>
             </div>
           </div>
         </div>
@@ -198,6 +198,7 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
 export const MatchesTab = ({ 
   matches, 
   localTimezone, 
+  setLocalTimezone,
   isViewer, 
   handleMatchUpdate, 
   getOwnerName,
@@ -287,22 +288,39 @@ export const MatchesTab = ({
         </button>
       )}
 
-      {/* --- NEW: GLOBAL CONTROLS BAR --- */}
-      <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-         <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
+      {/* GLOBAL CONTROLS BAR WITH MOVED TIMEZONE SELECTOR */}
+      <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
             {!isViewer && (
               <button 
                 onClick={handleRandomizeGroups}
-                className="bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-300 font-black px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-sm"
+                className="bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-300 font-black px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-sm w-full sm:w-auto"
                 title="Instantly sets all group games to FT with random scores!"
               >
                 🎲 Randomize Groups
               </button>
             )}
+            
+            {/* TIMEZONE SELECTOR MOVED HERE */}
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 w-full sm:w-auto">
+              <Globe className="w-4 h-4 text-slate-400" />
+              <select 
+                value={localTimezone} 
+                onChange={e => {
+                  setLocalTimezone(e.target.value);
+                  localStorage.setItem('worldCupTimezone', e.target.value);
+                }}
+                className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer w-full sm:max-w-[180px] truncate"
+              >
+                {TIMEZONES.map(tz => (
+                  <option key={tz.id} value={tz.id}>{tz.label}</option>
+                ))}
+              </select>
+            </div>
          </div>
          
-         <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-end">
-            <label className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2 cursor-pointer hover:bg-emerald-100 transition-colors shadow-sm" title="Push all completed matches in the tournament to the bottom of their lists">
+         <div className="flex items-center w-full md:w-auto justify-center md:justify-end">
+            <label className="flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2 cursor-pointer hover:bg-emerald-100 transition-colors shadow-sm w-full sm:w-auto" title="Push all completed matches in the tournament to the bottom of their lists">
               <input 
                 type="checkbox" 
                 checked={uiState.sortFinishedBottom || false}
