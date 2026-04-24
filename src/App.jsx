@@ -165,7 +165,6 @@ export default function App() {
     document.body.removeChild(textArea);
   };
 
-  // --- MASTER RESET FUNCTION ---
   const handleResetData = () => {
     if (isViewer) return;
     if (window.confirm("🚨 WARNING: Are you sure you want to reset the entire tournament? This will erase all match scores, team assignments, and custom rules!")) {
@@ -453,7 +452,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* NAVIGATION BAR - REORDERED */}
+      {/* NAVIGATION BAR - REORDERED: Standings -> Groups -> Bracket -> Matches -> Teams */}
       <div className="max-w-6xl mx-auto px-4 -mt-5 relative z-20">
         <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/50 p-2 flex flex-wrap gap-2">
           {['standings', 'groups', 'bracket', 'matches', 'teams'].map(tab => (
@@ -557,7 +556,7 @@ export default function App() {
                 </button>
              </div>
 
-             {/* Modal Body - SCROLLABLE & RESPONSIVE */}
+             {/* Modal Body */}
              <div className="p-4 sm:p-5 space-y-3 text-slate-700 overflow-y-auto">
                 <p className="text-base sm:text-lg font-medium leading-relaxed">
                   Welcome to a place to help to keep track of your World Cup Sweepstakes with your Friends, Family, Colleagues, or complete strangers!
@@ -584,7 +583,7 @@ export default function App() {
                 </p>
              </div>
 
-             {/* Modal Footer - PINNED */}
+             {/* Modal Footer */}
              <div className="bg-slate-50 p-4 border-t border-slate-200 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <input 

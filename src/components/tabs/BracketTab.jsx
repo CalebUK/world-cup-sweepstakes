@@ -3,7 +3,7 @@ import { Trophy, User } from 'lucide-react';
 import { TEAMS_DATA, KNOCKOUT_STAGES } from '../../config/data.js';
 import { TeamLogo } from '../TeamLogo.jsx';
 
-// This exact mapping guarantees the visual tree aligns perfectly and structurally feeds into the next round!
+// This exact mapping guarantees the visual tree aligns perfectly, feeding correctly into the next round!
 const VISUAL_ORDER = {
   R32: ['ko_R32_2', 'ko_R32_5', 'ko_R32_1', 'ko_R32_3', 'ko_R32_11', 'ko_R32_12', 'ko_R32_9', 'ko_R32_10', 'ko_R32_4', 'ko_R32_6', 'ko_R32_7', 'ko_R32_8', 'ko_R32_14', 'ko_R32_16', 'ko_R32_13', 'ko_R32_15'],
   R16: ['ko_R16_1', 'ko_R16_2', 'ko_R16_5', 'ko_R16_6', 'ko_R16_3', 'ko_R16_4', 'ko_R16_7', 'ko_R16_8'],
@@ -13,6 +13,7 @@ const VISUAL_ORDER = {
 };
 
 export const BracketTab = ({ matches, members, assignments }) => {
+  // Saves your highlight choice so it remembers it when you refresh!
   const [highlightMember, setHighlightMember] = useState(() => {
     return localStorage.getItem('worldCupBracketHighlight') || '';
   });
@@ -34,20 +35,22 @@ export const BracketTab = ({ matches, members, assignments }) => {
       <div className={`flex items-center justify-between px-2 py-1.5 border-b last:border-0 border-slate-100 transition-all ${
         isHighlighted ? 'bg-emerald-100' : 'bg-white'
       } ${isWinner ? 'font-black text-slate-900' : 'font-medium text-slate-500'}`}>
-        <div className="flex items-center gap-1.5 overflow-hidden w-full">
-          <TeamLogo teamId={teamId} className="w-4 h-4 shrink-0" />
-          <div className="flex items-baseline gap-1 truncate">
-            <span className="text-[11px] sm:text-xs truncate leading-none">
-              {team ? team.name : (label || 'TBD')}
+        
+        {/* ULTRA COMPACT INLINE LAYOUT: Logo - Team Name - Owner */}
+        <div className="flex items-center gap-1.5 overflow-hidden w-full pr-2">
+          <TeamLogo teamId={teamId} className="w-3.5 h-3.5 shrink-0" />
+          <span className="text-[10px] sm:text-[11px] truncate leading-none mt-0.5">
+            {team ? team.name : (label || 'TBD')}
+          </span>
+          {owner && (
+            <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-wider shrink-0 mt-0.5 ${isHighlighted ? 'text-emerald-800' : 'text-emerald-600'}`}>
+              - {owner.name}
             </span>
-            {owner && (
-              <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-wider leading-none shrink-0 ${isHighlighted ? 'text-emerald-800' : 'text-emerald-600'}`}>
-                - {owner.name}
-              </span>
-            )}
-          </div>
+          )}
         </div>
-        <span className="text-[11px] sm:text-xs font-black ml-1 w-5 py-0.5 text-center bg-slate-100 rounded leading-none">
+
+        {/* COMPACT SCORE */}
+        <span className="text-[10px] font-black w-4 py-0.5 text-center bg-slate-100 rounded leading-none shrink-0">
           {score !== '' ? score : '-'}
         </span>
       </div>
@@ -79,11 +82,12 @@ export const BracketTab = ({ matches, members, assignments }) => {
         </div>
       </div>
 
-      {/* Bracket Visualizer (Shrunken Symmetrical Pyramid) */}
+      {/* Bracket Visualizer (Shrunken Symmetrical Pyramid with Gaps) */}
       <div className="bg-slate-900 rounded-xl shadow-xl border-2 border-slate-800 overflow-hidden relative">
-        <div className="p-4 sm:p-6 overflow-x-auto">
-          {/* Shrunk the min-height and gaps to fit more on screen! */}
-          <div className="flex gap-4 sm:gap-6 min-w-[900px] min-h-[900px]">
+        <div className="p-3 sm:p-5 overflow-x-auto">
+          
+          {/* Shrunk the overall height to fit on screen easier! */}
+          <div className="flex gap-4 sm:gap-6 min-w-[850px] min-h-[850px]">
             
             {KNOCKOUT_STAGES.map((stage) => {
               const orderedIds = VISUAL_ORDER[stage.id] || [];
@@ -92,15 +96,16 @@ export const BracketTab = ({ matches, members, assignments }) => {
               if (stageMatches.length === 0) return null;
 
               return (
-                <div key={stage.id} className="flex flex-col flex-1 min-w-[180px]">
+                <div key={stage.id} className="flex flex-col flex-1 min-w-[170px]">
+                  
                   {/* Column Header */}
-                  <div className="text-center mb-4 shrink-0 h-6">
+                  <div className="text-center mb-2 shrink-0 h-6">
                     <span className="bg-slate-800 text-slate-300 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-slate-700 shadow-sm">
                       {stage.name}
                     </span>
                   </div>
 
-                  {/* Matches Container stretches vertically */}
+                  {/* Matches Container - Flex evenly distributes the boxes to form the pyramid! */}
                   <div className="flex-1 flex flex-col">
                     {stageMatches.map(m => {
                       let winnerId = null;
@@ -115,17 +120,18 @@ export const BracketTab = ({ matches, members, assignments }) => {
                       const isHighlighted = highlightMember && (assignments[m.teamA] === highlightMember || assignments[m.teamB] === highlightMember);
 
                       return (
-                        <div key={m.id} className="flex-1 flex flex-col justify-center px-1">
+                        // THIS py-1.5 GUARANTEES THE BOXES WILL NEVER TOUCH EACH OTHER
+                        <div key={m.id} className="flex-1 flex flex-col justify-center px-1 py-1.5">
                           <div className="relative group">
                             <div className={`bg-white rounded-lg overflow-hidden border shadow-sm transition-all ${
-                              isHighlighted ? 'border-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.4)] scale-105 z-10 relative' : 'border-slate-200'
+                              isHighlighted ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.5)] scale-105 z-10 relative' : 'border-slate-200 hover:border-emerald-200'
                             }`}>
                               <BracketTeam teamId={m.teamA} label={m.labelA} score={m.scoreA} isWinner={winnerId === m.teamA} />
                               <BracketTeam teamId={m.teamB} label={m.labelB} score={m.scoreB} isWinner={winnerId === m.teamB} />
                               
                               {/* Penalty Indicator Overlay */}
                               {m.isPlayed && m.penWinner && (
-                                <div className="absolute top-1/2 right-1 -translate-y-1/2 bg-amber-100 text-amber-800 text-[7px] font-black px-1 py-0.5 rounded border border-amber-200">
+                                <div className="absolute top-1/2 right-1 -translate-y-1/2 bg-amber-100 text-amber-800 text-[7px] font-black px-1 py-0.5 rounded border border-amber-200 shadow-sm">
                                   PEN
                                 </div>
                               )}
