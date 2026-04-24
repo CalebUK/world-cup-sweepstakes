@@ -8,9 +8,6 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
   const tA = TEAMS_DATA.find(t => t.id === match.teamA);
   const tB = TEAMS_DATA.find(t => t.id === match.teamB);
   
-  // The magic trigger: If the main scores are tied, it instantly pops the penalty box!
-  const isDraw = match.scoreA !== '' && match.scoreB !== '' && match.scoreA === match.scoreB;
-  
   let groupText = match.stage;
   if (match.stage === 'Group' && tA) {
      groupText = `Group ${tA.group}`;
@@ -131,11 +128,25 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
               </>
             )}
           </div>
-          <label className={`flex items-center gap-2 text-sm font-bold text-slate-500 mt-1 ${isViewer ? 'cursor-default' : 'cursor-pointer hover:text-emerald-600 transition-colors'}`}>
-            <input type="checkbox" checked={match.isPlayed} onChange={(e) => !isViewer && handleMatchUpdate(match.id, 'isPlayed', e.target.checked)}
-                   disabled={isViewer} className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 disabled:opacity-70 cursor-pointer" />
-            FT
-          </label>
+          
+          {/* CONTROL TOGGLES (FT AND AET) */}
+          <div className="flex items-center gap-4 mt-2">
+            <label className={`flex items-center gap-2 text-sm font-bold text-slate-500 ${isViewer ? 'cursor-default' : 'cursor-pointer hover:text-emerald-600 transition-colors'}`}>
+              <input type="checkbox" checked={match.isPlayed} onChange={(e) => !isViewer && handleMatchUpdate(match.id, 'isPlayed', e.target.checked)}
+                     disabled={isViewer} className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 disabled:opacity-70 cursor-pointer" />
+              FT
+            </label>
+            
+            {/* NEW: The AET Checkbox (Knockouts Only) */}
+            {isKnockout && (
+              <label className={`flex items-center gap-2 text-sm font-bold text-slate-500 ${isViewer ? 'cursor-default' : 'cursor-pointer hover:text-amber-600 transition-colors'}`}>
+                <input type="checkbox" checked={match.isAET || false} onChange={(e) => !isViewer && handleMatchUpdate(match.id, 'isAET', e.target.checked)}
+                       disabled={isViewer} className="w-5 h-5 text-amber-600 rounded border-slate-300 focus:ring-amber-500 disabled:opacity-70 cursor-pointer" />
+                AET
+              </label>
+            )}
+          </div>
+
         </div>
 
         {/* TEAM B SIDE */}
@@ -175,14 +186,13 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
         </div>
       </div>
 
-      {/* NEW PENALTIES OVERLAY - Auto Pops when scores are tied! */}
-      {isKnockout && isDraw && (
+      {/* NEW PENALTIES OVERLAY - Only shows if they tick AET! */}
+      {isKnockout && match.isAET && (
         <div className="relative z-10 mt-4 pt-4 border-t-2 border-white/20 flex flex-col items-center bg-white/90 backdrop-blur rounded-b-lg -mx-4 -mb-4 pb-4 shadow-inner animate-fade-in">
-          <span className="text-xs font-black text-amber-600 mb-3 uppercase tracking-widest">AET / Penalty Shootout</span>
+          <span className="text-xs font-black text-amber-600 mb-3 uppercase tracking-widest">Penalty Shootout</span>
           
-          <div className="flex items-center gap-6">
+          <div className="flex items-center justify-center gap-16 sm:gap-32 w-full">
             <div className="flex flex-col items-center">
-              <span className="text-[10px] font-bold text-slate-500 mb-1">{tA?.name || match.teamA} Pens</span>
               {isViewer ? (
                 <div className="w-12 h-12 flex items-center justify-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800">{match.penScoreA || '-'}</div>
               ) : (
@@ -191,10 +201,9 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
               )}
             </div>
             
-            <span className="text-slate-300 font-black text-xl mt-4">-</span>
+            <span className="text-slate-300 font-black text-xl">-</span>
             
             <div className="flex flex-col items-center">
-              <span className="text-[10px] font-bold text-slate-500 mb-1">{tB?.name || match.teamB} Pens</span>
               {isViewer ? (
                 <div className="w-12 h-12 flex items-center justify-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800">{match.penScoreB || '-'}</div>
               ) : (

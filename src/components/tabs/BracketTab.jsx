@@ -23,7 +23,6 @@ export const BracketTab = ({ matches, members, assignments }) => {
 
   const koMatches = matches.filter(m => m.stage !== 'Group');
 
-  // NEW: Accepts penScore to render dynamically!
   const BracketTeam = ({ teamId, label, score, penScore, isWinner }) => {
     const team = TEAMS_DATA.find(t => t.id === teamId);
     const ownerId = assignments[teamId];
@@ -35,7 +34,6 @@ export const BracketTab = ({ matches, members, assignments }) => {
         isHighlighted ? 'bg-emerald-100' : 'bg-white'
       } ${isWinner ? 'font-black text-slate-900' : 'font-medium text-slate-500'}`}>
         
-        {/* INLINE LAYOUT: Logo - Team Name - Owner */}
         <div className="flex items-center gap-1.5 overflow-hidden w-full pr-2">
           <TeamLogo teamId={teamId} className="w-3.5 h-3.5 shrink-0" />
           <span className="text-[11px] truncate leading-none pt-0.5">
@@ -88,10 +86,8 @@ export const BracketTab = ({ matches, members, assignments }) => {
         </div>
       </div>
 
-      {/* Bracket Visualizer (Shrunken Symmetrical Pyramid) */}
       <div className="bg-slate-900 rounded-xl shadow-xl border-2 border-slate-800 overflow-hidden relative">
         <div className="p-3 sm:p-5 overflow-x-auto">
-          
           <div className="flex gap-3 sm:gap-5 min-w-[850px] min-h-[800px]">
             
             {KNOCKOUT_STAGES.map((stage) => {
@@ -103,14 +99,12 @@ export const BracketTab = ({ matches, members, assignments }) => {
               return (
                 <div key={stage.id} className="flex flex-col flex-1 min-w-[160px]">
                   
-                  {/* Column Header */}
                   <div className="text-center mb-3 shrink-0 h-6">
                     <span className="bg-slate-800 text-slate-300 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-slate-700 shadow-sm">
                       {stage.name}
                     </span>
                   </div>
 
-                  {/* Matches Container */}
                   <div className="flex-1 flex flex-col">
                     {stageMatches.map(m => {
                       let winnerId = null;
@@ -119,7 +113,7 @@ export const BracketTab = ({ matches, members, assignments }) => {
                         const sB = parseInt(m.scoreB);
                         if (sA > sB) winnerId = m.teamA;
                         else if (sB > sA) winnerId = m.teamB;
-                        else {
+                        else if (m.isAET) { // ONLY CALCULATE PENALTIES IF AET IS TICKED!
                           const pA = parseInt(m.penScoreA);
                           const pB = parseInt(m.penScoreB);
                           if (!isNaN(pA) && !isNaN(pB)) {
@@ -132,25 +126,16 @@ export const BracketTab = ({ matches, members, assignments }) => {
                       }
 
                       const isHighlighted = highlightMember && (assignments[m.teamA] === highlightMember || assignments[m.teamB] === highlightMember);
-                      // Fallback overlay check
-                      const hasPenalties = m.isPlayed && (m.penScoreA || m.penScoreB || m.penWinner);
-
+                      
                       return (
                         <div key={m.id} className="flex-1 flex flex-col justify-center px-1 py-1.5">
                           <div className="relative group">
                             <div className={`bg-white rounded-md overflow-hidden border shadow-sm transition-all ${
                               isHighlighted ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.5)] scale-[1.02] z-10 relative' : 'border-slate-200 hover:border-emerald-200'
                             }`}>
-                              {/* Pass penScore down to the Team generator */}
-                              <BracketTeam teamId={m.teamA} label={m.labelA} score={m.scoreA} penScore={m.penScoreA} isWinner={winnerId === m.teamA} />
-                              <BracketTeam teamId={m.teamB} label={m.labelB} score={m.scoreB} penScore={m.penScoreB} isWinner={winnerId === m.teamB} />
-                              
-                              {/* Penalty Indicator Overlay (Optional since we now show scores, but still cool) */}
-                              {hasPenalties && (
-                                <div className="absolute top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 bg-amber-100 text-amber-800 text-[7px] font-black px-1 py-0.5 rounded border border-amber-200 shadow-sm opacity-90">
-                                  PEN
-                                </div>
-                              )}
+                              {/* Only pass penScore if AET was actually checked! */}
+                              <BracketTeam teamId={m.teamA} label={m.labelA} score={m.scoreA} penScore={m.isAET ? m.penScoreA : undefined} isWinner={winnerId === m.teamA} />
+                              <BracketTeam teamId={m.teamB} label={m.labelB} score={m.scoreB} penScore={m.isAET ? m.penScoreB : undefined} isWinner={winnerId === m.teamB} />
                             </div>
                           </div>
                         </div>

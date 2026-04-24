@@ -96,9 +96,10 @@ export default function App() {
                  scoreA: (savedMatch.scoreA !== undefined && savedMatch.scoreA !== '') ? savedMatch.scoreA : '0',
                  scoreB: (savedMatch.scoreB !== undefined && savedMatch.scoreB !== '') ? savedMatch.scoreB : '0',
                  isPlayed: savedMatch.isPlayed || false,
+                 isAET: savedMatch.isAET || false, // <-- NEW: Ingest the AET status
                  penWinner: savedMatch.penWinner || null,
-                 penScoreA: savedMatch.penScoreA || '', // <-- NEW PENALTY INGEST
-                 penScoreB: savedMatch.penScoreB || '', // <-- NEW PENALTY INGEST
+                 penScoreA: savedMatch.penScoreA || '',
+                 penScoreB: savedMatch.penScoreB || '',
                  teamA: freshMatch.teamA !== '' ? freshMatch.teamA : (savedMatch.teamA || ''),
                  teamB: freshMatch.teamB !== '' ? freshMatch.teamB : (savedMatch.teamB || '')
                };
@@ -260,15 +261,14 @@ export default function App() {
            if (!isNaN(scoreA) && !isNaN(scoreB)) {
              if (scoreA > scoreB) winnerId = m.teamA;
              else if (scoreB > scoreA) winnerId = m.teamB;
-             else {
-               // --- NEW PENALTY LOGIC ---
+             else if (m.isAET) { // <-- NEW: Only calculate pens if AET is checked
                const pA = parseInt(m.penScoreA);
                const pB = parseInt(m.penScoreB);
                if (!isNaN(pA) && !isNaN(pB)) {
                  if (pA > pB) winnerId = m.teamA;
                  else if (pB > pA) winnerId = m.teamB;
                } else if (m.penWinner) {
-                 winnerId = m.penWinner; // Fallback to old radio button if exists
+                 winnerId = m.penWinner;
                }
              }
            }
@@ -294,8 +294,7 @@ export default function App() {
          if (!isNaN(scoreA) && !isNaN(scoreB)) {
            if (scoreA > scoreB) loserId = m.teamB;
            else if (scoreB > scoreA) loserId = m.teamA;
-           else {
-             // --- NEW PENALTY LOGIC ---
+           else if (m.isAET) { // <-- NEW: Only calculate pens if AET is checked
              const pA = parseInt(m.penScoreA);
              const pB = parseInt(m.penScoreB);
              if (!isNaN(pA) && !isNaN(pB)) {
@@ -564,6 +563,8 @@ export default function App() {
       {showWelcomeModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border-4 border-emerald-600 relative flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden animate-fade-in">
+             
+             {/* Modal Header */}
              <div className="bg-gradient-to-r from-green-800 to-emerald-700 text-white p-4 sm:p-5 flex justify-between items-center shrink-0 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_20px,#fff_20px,#fff_40px)] pointer-events-none transform -skew-x-12 scale-150"></div>
                 <h2 className="text-lg sm:text-2xl font-black flex items-center gap-3 relative z-10">
@@ -574,10 +575,19 @@ export default function App() {
                    <X className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
              </div>
+
+             {/* Modal Body */}
              <div className="p-4 sm:p-5 space-y-3 text-slate-700 overflow-y-auto">
                 <p className="text-base sm:text-lg font-medium leading-relaxed">
                   Welcome to a place to help to keep track of your World Cup Sweepstakes with your Friends, Family, Colleagues, or complete strangers!
                 </p>
+                <p className="text-base sm:text-lg font-medium leading-relaxed">
+                  Head over to the settings tab where you can add all of the members.  
+                </p>
+                <p className="text-base sm:text-lg font-medium leading-relaxed">
+                  Once you have set it up you can create a sharing link that allows everyone to view everything but not make any changes. 
+                </p>
+                
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 mt-2 space-y-2 sm:space-y-3">
                    <h3 className="font-black text-slate-800 uppercase tracking-wider text-xs sm:text-sm border-b border-slate-200 pb-2">How It Works:</h3>
                    <ul className="space-y-2 text-xs sm:text-sm">
@@ -587,13 +597,32 @@ export default function App() {
                      <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Prizes:</strong> You can track the overall champion, the best kids' squad, and even the dreaded Wooden Spoon!</span></li>
                    </ul>
                 </div>
+                
+                <p className="text-center font-black text-emerald-700 text-base sm:text-lg pt-2 pb-2">
+                  May the best manager win!
+                </p>
              </div>
+
+             {/* Modal Footer */}
              <div className="bg-slate-50 p-4 border-t border-slate-200 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <label className="flex items-center gap-2 cursor-pointer group">
-                  <input type="checkbox" checked={dontShowAgain} onChange={(e) => setDontShowAgain(e.target.checked)} className="w-5 h-5 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer" />
-                  <span className="text-sm font-bold text-slate-500 group-hover:text-slate-800 transition-colors select-none">Don't show this again</span>
+                  <input 
+                    type="checkbox" 
+                    checked={dontShowAgain}
+                    onChange={(e) => setDontShowAgain(e.target.checked)}
+                    className="w-5 h-5 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer" 
+                  />
+                  <span className="text-sm font-bold text-slate-500 group-hover:text-slate-800 transition-colors select-none">
+                    Don't show this again
+                  </span>
                 </label>
-                <button onClick={handleCloseWelcome} className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-3 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 uppercase tracking-wider">Let's Go!</button>
+                
+                <button 
+                  onClick={handleCloseWelcome}
+                  className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-3 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 uppercase tracking-wider"
+                >
+                  Let's Go!
+                </button>
              </div>
            </div>
         </div>
