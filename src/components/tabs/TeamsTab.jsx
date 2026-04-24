@@ -102,7 +102,7 @@ export const TeamsTab = ({
             onChange={(e) => handleSortChange(e.target.value)}
             className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer"
           >
-            <option value="Group">Group (A-Z)</option>
+            <option value="Group">Group</option>
             <option value="Rank">FIFA Ranking (High to Low)</option>
             <option value="Odds">Tournament Odds</option>
           </select>
@@ -116,53 +116,51 @@ export const TeamsTab = ({
           const oddsStr = TEAM_ODDS[team.id];
           
           return (
-            <div key={team.id} className={`bg-white rounded-xl border-2 transition-all shadow-sm flex flex-col overflow-hidden ${
+            <div key={team.id} className={`group relative bg-white rounded-xl border-2 transition-all shadow-sm flex flex-col overflow-hidden ${
               isEliminated ? 'border-red-200 opacity-75 grayscale' : 'border-slate-200 hover:border-emerald-300 hover:shadow-md hover:-translate-y-1'
             }`}>
               
-              {/* Team Header */}
-              <div className="p-4 flex items-center gap-3 border-b border-slate-100 relative overflow-hidden bg-white">
-                
-                {/* PIXEL ART WATERMARK */}
-                <div className="absolute -right-4 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none z-0">
-                  <TeamPixelArt teamId={team.id} className="w-24 h-24" />
-                </div>
+              {/* FULL CARD PIXEL ART BACKGROUND */}
+              <div className="absolute inset-0 opacity-30 pointer-events-none z-0 transition-opacity group-hover:opacity-40">
+                <TeamPixelArt teamId={team.id} className="w-full h-full object-cover object-center" />
+              </div>
 
+              {/* Team Header - Now translucent so art shows through */}
+              <div className="p-4 flex items-center gap-3 border-b border-slate-200/50 relative z-10 bg-white/40 backdrop-blur-[2px]">
                 {isEliminated && (
-                  <div className="absolute top-2 right-2 text-[10px] font-black uppercase bg-red-100 text-red-600 px-2 py-0.5 rounded tracking-widest z-10">
+                  <div className="absolute top-2 right-2 text-[10px] font-black uppercase bg-red-100 text-red-600 px-2 py-0.5 rounded tracking-widest z-10 shadow-sm">
                     Eliminated
                   </div>
                 )}
                 
-                {/* TEAM LOGO */}
-                <TeamLogo teamId={team.id} className="w-10 h-10 shrink-0 relative z-10" />
+                <TeamLogo teamId={team.id} className="w-10 h-10 shrink-0 relative z-10 drop-shadow-md" />
                 
                 <div className="flex flex-col truncate relative z-10">
-                  <span className="font-black text-slate-800 text-lg truncate">{team.name}</span>
+                  <span className="font-black text-slate-800 text-lg truncate drop-shadow-sm">{team.name}</span>
                   <div className="flex gap-2 items-center">
-                    <span className="text-xs font-bold bg-slate-100 text-slate-500 px-2 rounded">Grp {team.group}</span>
-                    <span className="text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 rounded">Rank {team.rank}</span>
+                    <span className="text-xs font-bold bg-slate-100/90 text-slate-600 px-2 rounded backdrop-blur-sm border border-slate-200/50 shadow-sm">Grp {team.group}</span>
+                    <span className="text-xs font-bold bg-emerald-50/90 text-emerald-700 border border-emerald-200/50 px-2 rounded backdrop-blur-sm shadow-sm">Rank {team.rank}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Assignments & Controls */}
-              <div className="p-4 bg-slate-50 flex-1 flex flex-col justify-between gap-4">
+              {/* Assignments & Controls - Now translucent so art shows through */}
+              <div className="p-4 flex-1 flex flex-col justify-between gap-4 relative z-10 bg-white/60 backdrop-blur-[3px]">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Odds</span>
-                  <span className="font-black text-purple-600">{oddsStr || 'N/A'}</span>
+                  <span className="font-bold text-slate-600 uppercase tracking-wider text-[10px] bg-white/50 px-2 py-1 rounded-md shadow-sm">Odds</span>
+                  <span className="font-black text-purple-700 bg-white/80 px-2 py-0.5 rounded-md shadow-sm border border-purple-100/50">{oddsStr || 'N/A'}</span>
                 </div>
 
                 <div className="space-y-3">
                   {isViewer ? (
-                    <div className="w-full text-center py-2 bg-white border-2 border-slate-200 rounded-lg font-black text-emerald-800 shadow-inner">
+                    <div className="w-full text-center py-2 bg-white/90 border-2 border-slate-200 rounded-lg font-black text-emerald-800 shadow-inner backdrop-blur-md">
                       {assignments[team.id] ? members.find(m => m.id === assignments[team.id])?.name : 'Unassigned'}
                     </div>
                   ) : (
                     <select 
                       value={assignments[team.id] || ''} 
                       onChange={(e) => handleAssign(team.id, e.target.value)}
-                      className="w-full p-2 border-2 border-emerald-200 rounded-lg text-sm font-black text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white cursor-pointer shadow-sm transition-all relative z-10"
+                      className="w-full p-2 border-2 border-emerald-200/80 rounded-lg text-sm font-black text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white/90 backdrop-blur-sm cursor-pointer shadow-sm transition-all relative z-10"
                     >
                       <option value="">-- Assign Manager --</option>
                       {members.map(m => (
@@ -174,10 +172,10 @@ export const TeamsTab = ({
                   {!isViewer && (
                     <button
                       onClick={() => toggleEliminated(team.id)}
-                      className={`w-full py-2 flex items-center justify-center gap-2 rounded-lg font-bold text-sm transition-colors border-2 relative z-10 ${
+                      className={`w-full py-2 flex items-center justify-center gap-2 rounded-lg font-bold text-sm transition-colors border-2 relative z-10 backdrop-blur-sm shadow-sm ${
                         isEliminated 
-                          ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' 
-                          : 'bg-white text-slate-400 border-slate-200 hover:border-red-300 hover:text-red-500'
+                          ? 'bg-red-50/90 text-red-600 border-red-200/80 hover:bg-red-100' 
+                          : 'bg-white/90 text-slate-500 border-slate-200/80 hover:border-red-300 hover:text-red-600'
                       }`}
                     >
                       <ShieldAlert className="w-4 h-4" />
