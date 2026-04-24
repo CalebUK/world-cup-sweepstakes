@@ -7,7 +7,9 @@ import { TeamPixelArt } from '../TeamPixelArt.jsx';
 const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer, handleMatchUpdate, getOwnerName, eliminatedTeams }) => {
   const tA = TEAMS_DATA.find(t => t.id === match.teamA);
   const tB = TEAMS_DATA.find(t => t.id === match.teamB);
-  const isDraw = match.isPlayed && match.scoreA !== '' && match.scoreB !== '' && match.scoreA === match.scoreB;
+  
+  // The magic trigger: If the main scores are tied, it instantly pops the penalty box!
+  const isDraw = match.scoreA !== '' && match.scoreB !== '' && match.scoreA === match.scoreB;
   
   let groupText = match.stage;
   if (match.stage === 'Group' && tA) {
@@ -173,21 +175,33 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
         </div>
       </div>
 
-      {/* PENALTIES OVERLAY */}
-      {isKnockout && isDraw && match.isPlayed && (
-        <div className="relative z-10 mt-4 pt-4 border-t-2 border-white/20 flex flex-col items-center bg-white/90 backdrop-blur rounded-b-lg -mx-4 -mb-4 pb-4 shadow-inner">
-          <span className="text-xs font-black text-amber-600 mb-3 uppercase tracking-widest">Penalties</span>
-          <div className="flex gap-6">
-            <label className={`flex items-center gap-2 font-bold text-slate-700 ${isViewer ? 'cursor-default' : 'cursor-pointer hover:text-amber-700'}`}>
-              <input type="radio" name={`pen_${match.id}`} checked={match.penWinner === match.teamA} onChange={() => !isViewer && handleMatchUpdate(match.id, 'penWinner', match.teamA)}
-                     disabled={isViewer} className="w-4 h-4 text-amber-600 focus:ring-amber-500 disabled:opacity-70" />
-              {tA?.name || match.teamA} wins
-            </label>
-            <label className={`flex items-center gap-2 font-bold text-slate-700 ${isViewer ? 'cursor-default' : 'cursor-pointer hover:text-amber-700'}`}>
-              <input type="radio" name={`pen_${match.id}`} checked={match.penWinner === match.teamB} onChange={() => !isViewer && handleMatchUpdate(match.id, 'penWinner', match.teamB)}
-                     disabled={isViewer} className="w-4 h-4 text-amber-600 focus:ring-amber-500 disabled:opacity-70" />
-              {tB?.name || match.teamB} wins
-            </label>
+      {/* NEW PENALTIES OVERLAY - Auto Pops when scores are tied! */}
+      {isKnockout && isDraw && (
+        <div className="relative z-10 mt-4 pt-4 border-t-2 border-white/20 flex flex-col items-center bg-white/90 backdrop-blur rounded-b-lg -mx-4 -mb-4 pb-4 shadow-inner animate-fade-in">
+          <span className="text-xs font-black text-amber-600 mb-3 uppercase tracking-widest">AET / Penalty Shootout</span>
+          
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] font-bold text-slate-500 mb-1">{tA?.name || match.teamA} Pens</span>
+              {isViewer ? (
+                <div className="w-12 h-12 flex items-center justify-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800">{match.penScoreA || '-'}</div>
+              ) : (
+                <input type="number" min="0" value={match.penScoreA || ''} onChange={(e) => handleMatchUpdate(match.id, 'penScoreA', e.target.value)}
+                       className="w-12 h-12 text-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 focus:border-amber-500 focus:bg-white focus:outline-none transition-all shadow-inner" />
+              )}
+            </div>
+            
+            <span className="text-slate-300 font-black text-xl mt-4">-</span>
+            
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] font-bold text-slate-500 mb-1">{tB?.name || match.teamB} Pens</span>
+              {isViewer ? (
+                <div className="w-12 h-12 flex items-center justify-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800">{match.penScoreB || '-'}</div>
+              ) : (
+                <input type="number" min="0" value={match.penScoreB || ''} onChange={(e) => handleMatchUpdate(match.id, 'penScoreB', e.target.value)}
+                       className="w-12 h-12 text-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 focus:border-amber-500 focus:bg-white focus:outline-none transition-all shadow-inner" />
+              )}
+            </div>
           </div>
         </div>
       )}
