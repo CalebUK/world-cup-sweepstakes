@@ -1,8 +1,8 @@
 import React from 'react';
-import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock } from 'lucide-react';
+import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock, AlertTriangle, RotateCcw } from 'lucide-react';
 import { KNOCKOUT_STAGES, DEFAULT_SCORING } from '../../config/data.js';
 
-export const SettingsTab = ({ settings, updateSettings, members, handleAddMember, handleUpdateMember, handleDeleteMember }) => {
+export const SettingsTab = ({ settings, updateSettings, members, handleAddMember, handleUpdateMember, handleDeleteMember, handleResetData }) => {
 
   const handleScoringUpdate = (stageGroup, stage, field, value) => {
     const numVal = parseInt(value) || 0;
@@ -209,6 +209,22 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
             <PlusCircle className="w-5 h-5" /> Add New Manager
           </button>
         </div>
+      </div>
+
+      {/* DANGER ZONE - MASTER DATA RESET */}
+      <div className="bg-red-50 rounded-xl shadow-md border-2 border-red-200 p-4 sm:p-6 overflow-hidden">
+        <h2 className="text-xl font-black text-red-800 flex items-center gap-2 uppercase tracking-wide border-b-2 border-red-100 pb-4 mb-4">
+          <AlertTriangle className="w-6 h-6" /> Danger Zone
+        </h2>
+        <p className="text-sm text-red-700 font-medium mb-5">
+          Need to start over? This will permanently erase all match scores, restore default rules, and completely remove all team squad allocations.
+        </p>
+        <button 
+          onClick={handleResetData}
+          className="bg-red-600 hover:bg-red-700 text-white font-black px-6 py-3 rounded-xl shadow-sm hover:shadow-md transition-all flex items-center gap-2 w-full sm:w-auto justify-center"
+        >
+          <RotateCcw className="w-5 h-5" /> Reset All Tournament Data
+        </button>
       </div>
 
     </div>

@@ -165,6 +165,30 @@ export default function App() {
     document.body.removeChild(textArea);
   };
 
+  // --- NEW: MASTER RESET FUNCTION ---
+  const handleResetData = () => {
+    if (isViewer) return;
+    if (window.confirm("🚨 WARNING: Are you sure you want to reset the entire tournament? This will erase all match scores, team assignments, and custom rules!")) {
+      const resetMatches = generateAllMatches();
+      const defaultSettings = { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all' };
+      
+      setMembers(INITIAL_MEMBERS);
+      setAssignments({});
+      setEliminatedTeams({});
+      setMatches(resetMatches);
+      setSettings(defaultSettings);
+
+      saveState('members', INITIAL_MEMBERS);
+      saveState('assignments', {});
+      saveState('eliminatedTeams', {});
+      saveState('matches', resetMatches);
+      saveState('settings', defaultSettings);
+      
+      setShowSettingsModal(false);
+      setActiveTab('standings');
+    }
+  };
+
   const { teamStats, memberStats, awards } = useMemo(() => {
     return calculateStats(matches, eliminatedTeams, settings, members, assignments);
   }, [members, assignments, matches, eliminatedTeams, settings]);
@@ -509,6 +533,7 @@ export default function App() {
                   handleAddMember={handleAddMember} 
                   handleUpdateMember={handleUpdateMember} 
                   handleDeleteMember={handleDeleteMember} 
+                  handleResetData={handleResetData}
                 />
              </div>
            </div>
