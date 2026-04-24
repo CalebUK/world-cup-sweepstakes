@@ -102,7 +102,7 @@ export const TeamsTab = ({
             onChange={(e) => handleSortChange(e.target.value)}
             className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer"
           >
-            <option value="Group">Group</option>
+            <option value="Group">Group (A-Z)</option>
             <option value="Rank">FIFA Ranking (High to Low)</option>
             <option value="Odds">Tournament Odds</option>
           </select>
@@ -110,57 +110,61 @@ export const TeamsTab = ({
       </div>
 
       {/* Teams Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {displayedTeams.map(team => {
           const isEliminated = eliminatedTeams[team.id];
           const oddsStr = TEAM_ODDS[team.id];
           
           return (
-            <div key={team.id} className={`group relative bg-white rounded-xl border-2 transition-all shadow-sm flex flex-col overflow-hidden ${
-              isEliminated ? 'border-red-200 opacity-75 grayscale' : 'border-slate-200 hover:border-emerald-300 hover:shadow-md hover:-translate-y-1'
+            <div key={team.id} className={`group relative bg-white rounded-2xl border-2 transition-all shadow-md flex flex-col overflow-hidden ${
+              isEliminated ? 'border-red-200 opacity-80 grayscale' : 'border-slate-200 hover:border-emerald-400 hover:shadow-xl hover:-translate-y-1.5'
             }`}>
               
-              {/* FULL CARD PIXEL ART BACKGROUND */}
-              <div className="absolute inset-0 opacity-30 pointer-events-none z-0 transition-opacity group-hover:opacity-40">
-                <TeamPixelArt teamId={team.id} className="w-full h-full object-cover object-center" />
-              </div>
+              {/* TOP HALF: The Un-blurred Art Gallery! */}
+              <div className="relative w-full aspect-square bg-slate-100 overflow-hidden border-b border-slate-200">
+                
+                {/* Full visibility pixel art filling the square */}
+                <TeamPixelArt teamId={team.id} className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105" />
 
-              {/* Team Header - Now translucent so art shows through */}
-              <div className="p-4 flex items-center gap-3 border-b border-slate-200/50 relative z-10 bg-white/40 backdrop-blur-[2px]">
+                {/* Dark gradient overlay solely at the bottom to make the white text pop */}
+                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+
                 {isEliminated && (
-                  <div className="absolute top-2 right-2 text-[10px] font-black uppercase bg-red-100 text-red-600 px-2 py-0.5 rounded tracking-widest z-10 shadow-sm">
+                  <div className="absolute top-3 right-3 text-[10px] font-black uppercase bg-red-600 text-white px-2.5 py-1 rounded shadow-md tracking-widest z-10">
                     Eliminated
                   </div>
                 )}
                 
-                <TeamLogo teamId={team.id} className="w-10 h-10 shrink-0 relative z-10 drop-shadow-md" />
-                
-                <div className="flex flex-col truncate relative z-10">
-                  <span className="font-black text-slate-800 text-lg truncate drop-shadow-sm">{team.name}</span>
-                  <div className="flex gap-2 items-center">
-                    <span className="text-xs font-bold bg-slate-100/90 text-slate-600 px-2 rounded backdrop-blur-sm border border-slate-200/50 shadow-sm">Grp {team.group}</span>
-                    <span className="text-xs font-bold bg-emerald-50/90 text-emerald-700 border border-emerald-200/50 px-2 rounded backdrop-blur-sm shadow-sm">Rank {team.rank}</span>
+                {/* Team Info Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end gap-3 z-10">
+                  <TeamLogo teamId={team.id} className="w-14 h-14 shrink-0 drop-shadow-xl border-2 border-white/20 rounded-full" />
+                  <div className="flex flex-col truncate mb-1">
+                    <span className="font-black text-white text-2xl truncate drop-shadow-md">{team.name}</span>
+                    <div className="flex gap-2 items-center mt-1">
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 text-white px-2 py-0.5 rounded backdrop-blur-sm border border-white/30">Grp {team.group}</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-500/80 text-white px-2 py-0.5 rounded backdrop-blur-sm border border-emerald-400/50">Rank {team.rank}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Assignments & Controls - Now translucent so art shows through */}
-              <div className="p-4 flex-1 flex flex-col justify-between gap-4 relative z-10 bg-white/60 backdrop-blur-[3px]">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="font-bold text-slate-600 uppercase tracking-wider text-[10px] bg-white/50 px-2 py-1 rounded-md shadow-sm">Odds</span>
-                  <span className="font-black text-purple-700 bg-white/80 px-2 py-0.5 rounded-md shadow-sm border border-purple-100/50">{oddsStr || 'N/A'}</span>
+              {/* BOTTOM HALF: Crisp, White Controls */}
+              <div className="p-5 flex-1 flex flex-col justify-between gap-4 bg-white relative z-10">
+                <div className="flex justify-between items-center text-sm border-b border-slate-100 pb-3">
+                  <span className="font-black text-slate-400 uppercase tracking-widest text-[11px]">Winning Odds</span>
+                  <span className="font-black text-purple-700 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-100">{oddsStr || 'N/A'}</span>
                 </div>
 
                 <div className="space-y-3">
                   {isViewer ? (
-                    <div className="w-full text-center py-2 bg-white/90 border-2 border-slate-200 rounded-lg font-black text-emerald-800 shadow-inner backdrop-blur-md">
+                    <div className="w-full text-center py-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-black text-emerald-800">
                       {assignments[team.id] ? members.find(m => m.id === assignments[team.id])?.name : 'Unassigned'}
                     </div>
                   ) : (
                     <select 
                       value={assignments[team.id] || ''} 
                       onChange={(e) => handleAssign(team.id, e.target.value)}
-                      className="w-full p-2 border-2 border-emerald-200/80 rounded-lg text-sm font-black text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white/90 backdrop-blur-sm cursor-pointer shadow-sm transition-all relative z-10"
+                      className="w-full p-3 border-2 border-emerald-200 rounded-xl text-sm font-black text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 bg-white cursor-pointer shadow-sm transition-all"
                     >
                       <option value="">-- Assign Manager --</option>
                       {members.map(m => (
@@ -172,10 +176,10 @@ export const TeamsTab = ({
                   {!isViewer && (
                     <button
                       onClick={() => toggleEliminated(team.id)}
-                      className={`w-full py-2 flex items-center justify-center gap-2 rounded-lg font-bold text-sm transition-colors border-2 relative z-10 backdrop-blur-sm shadow-sm ${
+                      className={`w-full py-2.5 flex items-center justify-center gap-2 rounded-xl font-bold text-sm transition-all border-2 ${
                         isEliminated 
-                          ? 'bg-red-50/90 text-red-600 border-red-200/80 hover:bg-red-100' 
-                          : 'bg-white/90 text-slate-500 border-slate-200/80 hover:border-red-300 hover:text-red-600'
+                          ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' 
+                          : 'bg-white text-slate-400 border-slate-200 hover:border-red-300 hover:bg-red-50 hover:text-red-500'
                       }`}
                     >
                       <ShieldAlert className="w-4 h-4" />
@@ -189,7 +193,7 @@ export const TeamsTab = ({
           );
         })}
         {displayedTeams.length === 0 && (
-          <div className="col-span-full py-12 text-center text-slate-400 font-bold">
+          <div className="col-span-full py-12 text-center text-slate-400 font-bold text-lg">
             No teams found for this filter.
           </div>
         )}
