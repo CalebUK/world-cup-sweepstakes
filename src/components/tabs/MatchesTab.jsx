@@ -137,7 +137,7 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
               FT
             </label>
             
-            {/* NEW: The AET Checkbox (Knockouts Only) */}
+            {/* The AET Checkbox (Knockouts Only) */}
             {isKnockout && (
               <label className={`flex items-center gap-2 text-sm font-bold text-slate-500 ${isViewer ? 'cursor-default' : 'cursor-pointer hover:text-amber-600 transition-colors'}`}>
                 <input type="checkbox" checked={match.isAET || false} onChange={(e) => !isViewer && handleMatchUpdate(match.id, 'isAET', e.target.checked)}
@@ -186,7 +186,7 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
         </div>
       </div>
 
-      {/* NEW PENALTIES OVERLAY - Only shows if they tick AET! */}
+      {/* PENALTIES OVERLAY - Only shows if AET is checked! */}
       {isKnockout && match.isAET && (
         <div className="relative z-10 mt-4 pt-4 border-t-2 border-white/20 flex flex-col items-center bg-white/90 backdrop-blur rounded-b-lg -mx-4 -mb-4 pb-4 shadow-inner animate-fade-in">
           <span className="text-xs font-black text-amber-600 mb-3 uppercase tracking-widest">Penalty Shootout</span>
@@ -311,7 +311,7 @@ export const MatchesTab = ({
         </button>
       )}
 
-      {/* GLOBAL CONTROLS BAR WITH MOVED TIMEZONE SELECTOR */}
+      {/* GLOBAL CONTROLS BAR WITH TIMEZONE SELECTOR */}
       <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4 flex flex-col md:flex-row items-center justify-between gap-4">
          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
             {!isViewer && (
@@ -324,7 +324,6 @@ export const MatchesTab = ({
               </button>
             )}
             
-            {/* TIMEZONE SELECTOR MOVED HERE */}
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 w-full sm:w-auto">
               <Globe className="w-4 h-4 text-slate-400" />
               <select 

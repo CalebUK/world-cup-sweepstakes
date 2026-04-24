@@ -126,6 +126,7 @@ export const TeamsTab = ({
                     Eliminated
                   </div>
                 )}
+                {/* LOGO IMPORT RESTORED HERE! */}
                 <TeamLogo teamId={team.id} className="w-10 h-10 shrink-0" />
                 <div className="flex flex-col truncate">
                   <span className="font-black text-slate-800 text-lg truncate">{team.name}</span>
