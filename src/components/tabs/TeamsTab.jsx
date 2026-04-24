@@ -3,6 +3,7 @@ import { Info, Filter, ArrowUpDown, ShieldAlert } from 'lucide-react';
 import { TEAMS_DATA } from '../../config/data.js';
 import { TEAM_ODDS } from '../../config/odds.js';
 import { TeamLogo } from '../TeamLogo.jsx';
+import { TeamPixelArt } from '../TeamPixelArt.jsx';
 
 export const TeamsTab = ({ 
   eliminatedTeams, 
@@ -120,15 +121,23 @@ export const TeamsTab = ({
             }`}>
               
               {/* Team Header */}
-              <div className="p-4 flex items-center gap-3 border-b border-slate-100 relative">
+              <div className="p-4 flex items-center gap-3 border-b border-slate-100 relative overflow-hidden bg-white">
+                
+                {/* PIXEL ART WATERMARK */}
+                <div className="absolute -right-4 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none z-0">
+                  <TeamPixelArt teamId={team.id} className="w-24 h-24" />
+                </div>
+
                 {isEliminated && (
-                  <div className="absolute top-2 right-2 text-[10px] font-black uppercase bg-red-100 text-red-600 px-2 py-0.5 rounded tracking-widest">
+                  <div className="absolute top-2 right-2 text-[10px] font-black uppercase bg-red-100 text-red-600 px-2 py-0.5 rounded tracking-widest z-10">
                     Eliminated
                   </div>
                 )}
-                {/* LOGO IMPORT RESTORED HERE! */}
-                <TeamLogo teamId={team.id} className="w-10 h-10 shrink-0" />
-                <div className="flex flex-col truncate">
+                
+                {/* TEAM LOGO */}
+                <TeamLogo teamId={team.id} className="w-10 h-10 shrink-0 relative z-10" />
+                
+                <div className="flex flex-col truncate relative z-10">
                   <span className="font-black text-slate-800 text-lg truncate">{team.name}</span>
                   <div className="flex gap-2 items-center">
                     <span className="text-xs font-bold bg-slate-100 text-slate-500 px-2 rounded">Grp {team.group}</span>
@@ -153,7 +162,7 @@ export const TeamsTab = ({
                     <select 
                       value={assignments[team.id] || ''} 
                       onChange={(e) => handleAssign(team.id, e.target.value)}
-                      className="w-full p-2 border-2 border-emerald-200 rounded-lg text-sm font-black text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white cursor-pointer shadow-sm transition-all"
+                      className="w-full p-2 border-2 border-emerald-200 rounded-lg text-sm font-black text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-white cursor-pointer shadow-sm transition-all relative z-10"
                     >
                       <option value="">-- Assign Manager --</option>
                       {members.map(m => (
@@ -165,7 +174,7 @@ export const TeamsTab = ({
                   {!isViewer && (
                     <button
                       onClick={() => toggleEliminated(team.id)}
-                      className={`w-full py-2 flex items-center justify-center gap-2 rounded-lg font-bold text-sm transition-colors border-2 ${
+                      className={`w-full py-2 flex items-center justify-center gap-2 rounded-lg font-bold text-sm transition-colors border-2 relative z-10 ${
                         isEliminated 
                           ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' 
                           : 'bg-white text-slate-400 border-slate-200 hover:border-red-300 hover:text-red-500'

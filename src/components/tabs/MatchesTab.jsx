@@ -63,12 +63,13 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
         {/* TEAM A SIDE */}
         <div className="w-full md:w-1/3 flex flex-col gap-2">
           <div className="bg-white/95 backdrop-blur-sm p-2 md:p-3 rounded-xl shadow-lg border border-emerald-100 flex items-center justify-between w-full relative overflow-hidden">
-            <div className="absolute -left-6 top-1/2 -translate-y-1/2 opacity-15 pointer-events-none z-0">
+            
+            {/* TEAM A PIXEL ART WATERMARK */}
+            <div className="absolute -left-4 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none z-0">
               <TeamPixelArt teamId={tA?.id} className="w-28 h-28" />
             </div>
             
-            {/* MOBILE FRIENDLY FIFA RANKING */}
-            <div className="flex flex-col items-center justify-center bg-slate-50/90 border border-slate-100 rounded-md px-1.5 py-0.5 sm:px-3 sm:py-1 mr-2 sm:mr-3 shrink-0 relative z-10">
+            <div className="flex flex-col items-center justify-center bg-slate-50/90 border border-slate-100 rounded-md px-1.5 py-0.5 sm:px-3 sm:py-1 mr-2 sm:mr-3 shrink-0 relative z-10 shadow-sm">
                <span className="text-[6px] sm:text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">FIFA</span>
                <span className="text-xs sm:text-sm font-black text-emerald-600 leading-tight">{tA?.rank || '-'}</span>
             </div>
@@ -87,11 +88,13 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
                   {tA?.name || match.teamA || match.labelA || 'TBD'}
                 </div>
               )}
-              <div className="text-[10px] text-slate-400 text-left md:text-right uppercase tracking-wider font-bold">
+              <div className="text-[10px] text-slate-500 text-left md:text-right uppercase tracking-wider font-bold">
                 Manager: <span className="text-emerald-700">{getOwnerName(match.teamA)}</span>
               </div>
             </div>
-            <TeamLogo teamId={tA?.id} className="w-8 h-8 sm:w-10 sm:h-10 ml-2 sm:ml-3 shrink-0 relative z-10" />
+
+            {/* TEAM A LOGO */}
+            <TeamLogo teamId={tA?.id} className="w-8 h-8 sm:w-10 sm:h-10 ml-2 sm:ml-3 shrink-0 relative z-10 drop-shadow-md" />
           </div>
         </div>
 
@@ -129,7 +132,6 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
             )}
           </div>
           
-          {/* CONTROL TOGGLES (FT AND AET) */}
           <div className="flex items-center gap-4 mt-2">
             <label className={`flex items-center gap-2 text-sm font-bold text-slate-500 ${isViewer ? 'cursor-default' : 'cursor-pointer hover:text-emerald-600 transition-colors'}`}>
               <input type="checkbox" checked={match.isPlayed} onChange={(e) => !isViewer && handleMatchUpdate(match.id, 'isPlayed', e.target.checked)}
@@ -137,7 +139,6 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
               FT
             </label>
             
-            {/* The AET Checkbox (Knockouts Only) */}
             {isKnockout && (
               <label className={`flex items-center gap-2 text-sm font-bold text-slate-500 ${isViewer ? 'cursor-default' : 'cursor-pointer hover:text-amber-600 transition-colors'}`}>
                 <input type="checkbox" checked={match.isAET || false} onChange={(e) => !isViewer && handleMatchUpdate(match.id, 'isAET', e.target.checked)}
@@ -146,17 +147,19 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
               </label>
             )}
           </div>
-
         </div>
 
         {/* TEAM B SIDE */}
         <div className="w-full md:w-1/3 flex flex-col gap-2">
           <div className="bg-white/95 backdrop-blur-sm p-2 md:p-3 rounded-xl shadow-lg border border-emerald-100 flex items-center justify-between w-full relative overflow-hidden">
-            <div className="absolute -right-6 top-1/2 -translate-y-1/2 opacity-15 pointer-events-none z-0">
+            
+            {/* TEAM B PIXEL ART WATERMARK */}
+            <div className="absolute -right-4 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none z-0">
               <TeamPixelArt teamId={tB?.id} className="w-28 h-28" />
             </div>
 
-            <TeamLogo teamId={tB?.id} className="w-8 h-8 sm:w-10 sm:h-10 mr-2 sm:mr-3 shrink-0 relative z-10" />
+            {/* TEAM B LOGO */}
+            <TeamLogo teamId={tB?.id} className="w-8 h-8 sm:w-10 sm:h-10 mr-2 sm:mr-3 shrink-0 relative z-10 drop-shadow-md" />
             
             <div className="flex flex-col w-full relative z-10">
               {isKnockout && !isViewer ? (
@@ -172,13 +175,12 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
                   {tB?.name || match.teamB || match.labelB || 'TBD'}
                 </div>
               )}
-              <div className="text-[10px] text-slate-400 text-right md:text-left uppercase tracking-wider font-bold">
+              <div className="text-[10px] text-slate-500 text-right md:text-left uppercase tracking-wider font-bold">
                 Manager: <span className="text-emerald-700">{getOwnerName(match.teamB)}</span>
               </div>
             </div>
 
-            {/* MOBILE FRIENDLY FIFA RANKING */}
-            <div className="flex flex-col items-center justify-center bg-slate-50/90 border border-slate-100 rounded-md px-1.5 py-0.5 sm:px-3 sm:py-1 ml-2 sm:ml-3 shrink-0 relative z-10">
+            <div className="flex flex-col items-center justify-center bg-slate-50/90 border border-slate-100 rounded-md px-1.5 py-0.5 sm:px-3 sm:py-1 ml-2 sm:ml-3 shrink-0 relative z-10 shadow-sm">
                <span className="text-[6px] sm:text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">FIFA</span>
                <span className="text-xs sm:text-sm font-black text-emerald-600 leading-tight">{tB?.rank || '-'}</span>
             </div>
@@ -186,7 +188,7 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
         </div>
       </div>
 
-      {/* PENALTIES OVERLAY - Only shows if AET is checked! */}
+      {/* PENALTIES OVERLAY */}
       {isKnockout && match.isAET && (
         <div className="relative z-10 mt-4 pt-4 border-t-2 border-white/20 flex flex-col items-center bg-white/90 backdrop-blur rounded-b-lg -mx-4 -mb-4 pb-4 shadow-inner animate-fade-in">
           <span className="text-xs font-black text-amber-600 mb-3 uppercase tracking-widest">Penalty Shootout</span>
@@ -194,7 +196,7 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
           <div className="flex items-center justify-center gap-16 sm:gap-32 w-full">
             <div className="flex flex-col items-center">
               {isViewer ? (
-                <div className="w-12 h-12 flex items-center justify-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800">{match.penScoreA || '-'}</div>
+                <div className="w-12 h-12 flex items-center justify-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 shadow-inner">{match.penScoreA || '-'}</div>
               ) : (
                 <input type="number" min="0" value={match.penScoreA || ''} onChange={(e) => handleMatchUpdate(match.id, 'penScoreA', e.target.value)}
                        className="w-12 h-12 text-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 focus:border-amber-500 focus:bg-white focus:outline-none transition-all shadow-inner" />
@@ -205,7 +207,7 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
             
             <div className="flex flex-col items-center">
               {isViewer ? (
-                <div className="w-12 h-12 flex items-center justify-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800">{match.penScoreB || '-'}</div>
+                <div className="w-12 h-12 flex items-center justify-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 shadow-inner">{match.penScoreB || '-'}</div>
               ) : (
                 <input type="number" min="0" value={match.penScoreB || ''} onChange={(e) => handleMatchUpdate(match.id, 'penScoreB', e.target.value)}
                        className="w-12 h-12 text-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 focus:border-amber-500 focus:bg-white focus:outline-none transition-all shadow-inner" />
