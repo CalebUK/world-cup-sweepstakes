@@ -165,7 +165,7 @@ export default function App() {
     document.body.removeChild(textArea);
   };
 
-  // --- NEW: MASTER RESET FUNCTION ---
+  // --- MASTER RESET FUNCTION ---
   const handleResetData = () => {
     if (isViewer) return;
     if (window.confirm("🚨 WARNING: Are you sure you want to reset the entire tournament? This will erase all match scores, team assignments, and custom rules!")) {
@@ -453,12 +453,12 @@ export default function App() {
         </div>
       </header>
 
-      {/* NAVIGATION BAR */}
+      {/* NAVIGATION BAR - REORDERED */}
       <div className="max-w-6xl mx-auto px-4 -mt-5 relative z-20">
         <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/50 p-2 flex flex-wrap gap-2">
-          {['standings', 'groups', 'matches', 'bracket', 'teams'].map(tab => (
+          {['standings', 'groups', 'bracket', 'matches', 'teams'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`flex-1 min-w-[80px] py-3 px-2 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 ${
+              className={`flex-1 min-w-[60px] sm:min-w-[80px] py-3 px-1 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 ${
                 activeTab === tab 
                   ? 'bg-green-600 text-white shadow-md scale-[1.02]' 
                   : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700'
@@ -479,6 +479,14 @@ export default function App() {
           <GroupsTab teamStats={teamStats} matches={matches} settings={settings} />
         )}
         
+        {activeTab === 'bracket' && (
+          <BracketTab 
+            matches={matches} 
+            members={members} 
+            assignments={assignments}
+          />
+        )}
+
         {activeTab === 'matches' && (
           <MatchesTab 
             matches={matches} 
@@ -489,14 +497,6 @@ export default function App() {
             getOwnerName={getOwnerName} 
             eliminatedTeams={eliminatedTeams}
             handleRandomizeGroups={handleRandomizeGroups}
-          />
-        )}
-
-        {activeTab === 'bracket' && (
-          <BracketTab 
-            matches={matches} 
-            members={members} 
-            assignments={assignments}
           />
         )}
         
