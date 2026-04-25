@@ -13,7 +13,6 @@ export const TeamsTab = ({
   handleAssign, 
   toggleEliminated 
 }) => {
-  // Local storage states for filters
   const [managerFilter, setManagerFilter] = useState(() => {
     return localStorage.getItem('worldCupTeamsFilter') || 'All';
   });
@@ -31,7 +30,6 @@ export const TeamsTab = ({
     localStorage.setItem('worldCupTeamsSort', val);
   };
 
-  // Filter Logic
   let displayedTeams = TEAMS_DATA;
   if (managerFilter !== 'All') {
     if (managerFilter === 'Unassigned') {
@@ -41,7 +39,6 @@ export const TeamsTab = ({
     }
   }
 
-  // Sort Logic
   displayedTeams = [...displayedTeams].sort((a, b) => {
     if (sortBy === 'Group') {
       if (a.group === b.group) return a.name.localeCompare(b.name);
@@ -65,7 +62,6 @@ export const TeamsTab = ({
   return (
     <div className="space-y-6 animate-fade-in">
       
-      {/* Instructional Banner */}
       {!isViewer && (
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm flex items-start gap-3">
           <Info className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
@@ -75,7 +71,6 @@ export const TeamsTab = ({
         </div>
       )}
 
-      {/* Control Bar */}
       <div className="bg-white rounded-xl shadow-sm border-2 border-emerald-100 p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="flex items-center gap-2 w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
           <Filter className="w-4 h-4 text-slate-400 shrink-0" />
@@ -109,7 +104,7 @@ export const TeamsTab = ({
         </div>
       </div>
 
-      {/* Teams Grid - Strict responsive columns */}
+      {/* Teams Grid */}
       <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {displayedTeams.map(team => {
           const isEliminated = eliminatedTeams[team.id];
@@ -120,11 +115,10 @@ export const TeamsTab = ({
               isEliminated ? 'border-red-200 opacity-80 grayscale' : 'border-slate-200 hover:border-emerald-400 hover:shadow-xl hover:-translate-y-1'
             }`}>
               
-              {/* THE ARTWORK BACKGROUND (Restored original colors with a glossy fade at the bottom) */}
-              <div className="absolute inset-0 z-0 bg-slate-100">
-                <TeamPixelArt teamId={team.id} className="w-full h-full object-cover object-center opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
-                {/* Gradient to darken ONLY the bottom so white UI components pop perfectly, leaving top art untouched */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/40 to-transparent"></div>
+              {/* THE ARTWORK BACKGROUND: Dropped to 60% opacity */}
+              <div className="absolute inset-0 z-0 bg-slate-800">
+                <TeamPixelArt teamId={team.id} className="w-full h-full object-cover object-center opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-900/10 via-slate-900/40 to-slate-900/95"></div>
               </div>
 
               {isEliminated && (
@@ -133,14 +127,14 @@ export const TeamsTab = ({
                 </div>
               )}
               
-              {/* TOP/MIDDLE: Centered Logo in a White Circle, and Team Name */}
-              <div className="relative z-10 flex flex-col items-center justify-center pt-6 sm:pt-8 flex-1 px-2">
-                {/* The White Circle to make the logo pop! */}
-                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-full p-2.5 flex items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.5)] mb-2 sm:mb-3 shrink-0">
+              {/* TOP/MIDDLE: Centered Logo and Wrapped Team Name */}
+              <div className="relative z-10 flex flex-col items-center justify-center pt-5 sm:pt-8 flex-1 px-2">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-full p-2 flex items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.5)] mb-2 sm:mb-3 shrink-0">
                   <TeamLogo teamId={team.id} className="w-full h-full object-contain" />
                 </div>
                 
-                <span className="font-black text-white text-xl sm:text-2xl text-center leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] px-1">
+                {/* line-clamp-2 allows long names like Bosnia and Herzegovina to stack cleanly */}
+                <span className="font-black text-white text-base sm:text-2xl text-center leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] px-1 w-full line-clamp-2">
                   {team.name}
                 </span>
               </div>
@@ -148,20 +142,20 @@ export const TeamsTab = ({
               {/* BOTTOM: Stats and Controls */}
               <div className="relative z-10 flex flex-col gap-2 p-2 sm:p-3 mt-auto w-full">
                 
-                {/* Single Row: Group, Rank, Odds (FORCED ON ONE LINE) */}
-                <div className="flex items-center justify-center gap-1 sm:gap-1.5 w-full flex-nowrap px-1">
-                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-slate-800 px-1.5 py-1 rounded shadow-sm whitespace-nowrap">
+                {/* Single Row: Group, Rank, Odds - Reduced to text-[7px] on mobile to guarantee fitting! */}
+                <div className="flex items-center justify-center gap-0.5 sm:gap-1.5 w-full flex-nowrap px-0.5">
+                  <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-slate-800 px-1 py-0.5 sm:py-1 rounded shadow-sm whitespace-nowrap shrink-0">
                     Group {team.group}
                   </span>
-                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-emerald-800 px-1.5 py-1 rounded shadow-sm whitespace-nowrap">
+                  <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-emerald-800 px-1 py-0.5 sm:py-1 rounded shadow-sm whitespace-nowrap shrink-0">
                     Rank {team.rank}
                   </span>
-                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-purple-800 px-1.5 py-1 rounded shadow-sm whitespace-nowrap truncate">
+                  <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-purple-800 px-1 py-0.5 sm:py-1 rounded shadow-sm whitespace-nowrap shrink-0">
                     Odds {oddsStr || 'N/A'}
                   </span>
                 </div>
 
-                {/* Single Line Controls: Manager Dropdown & Eliminate Button */}
+                {/* Controls: Manager Dropdown & Eliminate Button */}
                 <div className="flex items-center gap-1.5 sm:gap-2 w-full pb-1">
                   {isViewer ? (
                     <div className="flex-1 text-center py-2 bg-white/95 backdrop-blur-md border border-white/50 rounded-lg font-black text-[11px] sm:text-xs text-emerald-800 shadow-sm truncate px-2">
