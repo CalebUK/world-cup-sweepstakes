@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Loader2, Settings, X, Trophy, Plus, Globe, Trash2 } from 'lucide-react';
+import { Loader2, Settings, X, Trophy, Plus, Globe, Trash2, CheckCircle } from 'lucide-react';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'; 
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 
@@ -22,34 +22,32 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('standings');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   
-  // --- MULTI-LEAGUE STATE ---
+  // --- SAFELY WRAPPED LOCAL STORAGE STATE ---
   const [joinedLeagues, setJoinedLeagues] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('wcJoinedLeagues')) || []; }
-    catch { return []; }
+    try { return JSON.parse(localStorage.getItem('wcJoinedLeagues')) || []; } catch { return []; }
   });
   const [activeLeagueId, setActiveLeagueId] = useState(() => {
-    return localStorage.getItem('wcActiveLeague') || null;
+    try { return localStorage.getItem('wcActiveLeague') || null; } catch { return null; }
   });
 
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [pendingJoinCode, setPendingJoinCode] = useState('');
   const [pendingJoinName, setPendingJoinName] = useState('');
 
-  // Is Viewer calculation based on Active League vs Your UID
   const isViewer = user ? activeLeagueId !== user.uid : true;
 
-  // --- WELCOME MODAL STATE ---
   const [showWelcomeModal, setShowWelcomeModal] = useState(() => {
-    return localStorage.getItem('hideWorldCupWelcome') !== 'true';
+    try { return localStorage.getItem('hideWorldCupWelcome') !== 'true'; } catch { return true; }
   });
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const handleCloseWelcome = () => {
-    if (dontShowAgain) localStorage.setItem('hideWorldCupWelcome', 'true');
+    if (dontShowAgain) {
+      try { localStorage.setItem('hideWorldCupWelcome', 'true'); } catch (e) {}
+    }
     setShowWelcomeModal(false);
   };
   
-  // --- SWEEPSTAKES DATA STATE ---
   const [members, setMembers] = useState([]);
   const [assignments, setAssignments] = useState({});
   const [eliminatedTeams, setEliminatedTeams] = useState({});
@@ -57,7 +55,11 @@ export default function App() {
   const [settings, setSettings] = useState({});
 
   const [localTimezone, setLocalTimezone] = useState(() => {
-    return localStorage.getItem('worldCupTimezone') || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/London';
+    try {
+      return localStorage.getItem('worldCupTimezone') || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/London';
+    } catch {
+      return 'Europe/London';
+    }
   });
 
   // --- AUTH & URL INTERCEPTION ---
@@ -71,7 +73,6 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       if (u) {
-        // Intercept sharing links
         const urlParams = new URLSearchParams(window.location.search);
         const hostParam = urlParams.get('host');
         
@@ -82,12 +83,12 @@ export default function App() {
             setShowJoinModal(true);
           } else {
             setActiveLeagueId(hostParam);
-            localStorage.setItem('wcActiveLeague', hostParam);
+            try { localStorage.setItem('wcActiveLeague', hostParam); } catch (e) {}
             window.history.replaceState({}, '', window.location.pathname);
           }
         } else if (!activeLeagueId) {
           setActiveLeagueId(u.uid);
-          localStorage.setItem('wcActiveLeague', u.uid);
+          try { localStorage.setItem('wcActiveLeague', u.uid); } catch (e) {}
         }
       }
     });
@@ -102,7 +103,7 @@ export default function App() {
     
     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sweepstakes', activeLeagueId);
     
-    setLoading(true); // Show loader briefly when switching leagues
+    setLoading(true); 
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -142,7 +143,6 @@ export default function App() {
         setMatches(generateAllMatches());
         setSettings({ woodenSpoon: true, kidAwards: true, kidAwardsType: 'all' });
         
-        // Only initialize default data if it's YOUR hosted league
         if (activeLeagueId === user.uid) {
           setDoc(docRef, {
             members: INITIAL_MEMBERS,
@@ -163,7 +163,6 @@ export default function App() {
   }, [user, activeLeagueId]);
 
   const saveState = async (key, value) => {
-    // SECURITY: Only save if you are the host!
     if (!user || isViewer) return; 
     try {
       const safeValue = JSON.parse(JSON.stringify(value));
@@ -174,10 +173,9 @@ export default function App() {
     }
   };
 
-  // --- LEAGUE MANAGEMENT FUNCTIONS ---
   const handleSwitchLeague = (id) => {
     setActiveLeagueId(id);
-    localStorage.setItem('wcActiveLeague', id);
+    try { localStorage.setItem('wcActiveLeague', id); } catch (e) {}
   };
 
   const handleJoinSubmit = () => {
@@ -193,7 +191,7 @@ export default function App() {
     const currentLeagues = [...joinedLeagues];
     if (!currentLeagues.find(l => l.id === finalCode)) {
       const newLeagues = [...currentLeagues, { id: finalCode, name: pendingJoinName.trim() }];
-      localStorage.setItem('wcJoinedLeagues', JSON.stringify(newLeagues));
+      try { localStorage.setItem('wcJoinedLeagues', JSON.stringify(newLeagues)); } catch (e) {}
       setJoinedLeagues(newLeagues);
     }
     
@@ -210,12 +208,9 @@ export default function App() {
     if (window.confirm("Are you sure you want to remove this league from your list? You can always rejoin later with the invite link.")) {
       const newLeagues = joinedLeagues.filter(l => l.id !== activeLeagueId);
       setJoinedLeagues(newLeagues);
-      localStorage.setItem('wcJoinedLeagues', JSON.stringify(newLeagues));
+      try { localStorage.setItem('wcJoinedLeagues', JSON.stringify(newLeagues)); } catch (e) {}
       
-      // Automatically switch back to their own hosted league
-      if (user) {
-        handleSwitchLeague(user.uid);
-      }
+      if (user) handleSwitchLeague(user.uid);
       window.history.replaceState({}, '', window.location.pathname);
     }
   };
@@ -247,7 +242,6 @@ export default function App() {
     return calculateStats(matches, eliminatedTeams, settings, members, assignments);
   }, [members, assignments, matches, eliminatedTeams, settings]);
 
-  // --- CENTRAL AUTOMATION ENGINE (Knockout Routing) ---
   useEffect(() => {
     if (isViewer || matches.length === 0 || Object.keys(teamStats).length === 0) return;
 
@@ -306,7 +300,6 @@ export default function App() {
     nextMatches.forEach(m => {
       if (m.nextMatch && m.nextSlot) {
          let winnerId = null;
-         
          if (m.isPlayed && m.teamA && m.teamB) {
            const scoreA = parseInt(m.scoreA);
            const scoreB = parseInt(m.scoreB);
@@ -325,7 +318,6 @@ export default function App() {
              }
            }
          }
-
          const targetMatchIndex = nextMatches.findIndex(x => x.id === m.nextMatch);
          if (targetMatchIndex !== -1) {
             const targetMatch = nextMatches[targetMatchIndex];
@@ -342,7 +334,6 @@ export default function App() {
          let loserId = null;
          const scoreA = parseInt(m.scoreA);
          const scoreB = parseInt(m.scoreB);
-         
          if (!isNaN(scoreA) && !isNaN(scoreB)) {
            if (scoreA > scoreB) loserId = m.teamB;
            else if (scoreB > scoreA) loserId = m.teamA;
@@ -357,7 +348,6 @@ export default function App() {
              }
            }
          }
-
          if (loserId && !nextEliminations[loserId]) {
             nextEliminations[loserId] = true;
             newlyEliminated = true;
@@ -375,17 +365,11 @@ export default function App() {
     }
   }, [matches, teamStats, eliminatedTeams, isViewer, user, settings]);
 
-
   const handleRandomizeGroups = () => {
     if (isViewer) return;
     const nextMatches = matches.map(m => {
       if (m.stage === 'Group') {
-        return {
-          ...m,
-          scoreA: Math.floor(Math.random() * 4).toString(),
-          scoreB: Math.floor(Math.random() * 4).toString(),
-          isPlayed: true
-        };
+        return { ...m, scoreA: Math.floor(Math.random() * 4).toString(), scoreB: Math.floor(Math.random() * 4).toString(), isPlayed: true };
       }
       return m;
     });
@@ -476,21 +460,16 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 font-sans pb-20 selection:bg-green-200 relative">
-      
-      {/* HEADER WITH LEAGUE SWITCHER */}
       <header className="bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 text-white pt-10 pb-8 px-6 shadow-xl relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_40px,#fff_40px,#fff_80px)] pointer-events-none transform -skew-x-12 scale-150"></div>
-        
         <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex-1 w-full">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase drop-shadow-md flex items-center gap-3 mb-2">
                <img src="/logos/world-cup.svg" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" alt="World Cup Logo" onError={(e) => e.target.style.display='none'} />
                World Cup 2026
             </h1>
-            
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-4 w-full sm:max-w-xl bg-white/10 p-2 sm:p-2.5 rounded-xl border border-white/20 backdrop-blur-sm shadow-sm">
                <span className="text-xs font-bold text-green-200 uppercase tracking-widest pl-2 hidden sm:block">Active League:</span>
-               
                <div className="flex w-full gap-2 items-center">
                  <div className="relative flex-1">
                    <select 
@@ -505,40 +484,23 @@ export default function App() {
                    </select>
                    <Trophy className="w-4 h-4 text-emerald-700 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                  </div>
-                 
-                 {/* NEW: LEAVE LEAGUE BUTTON (Only shows if viewing a joined league) */}
                  {user && activeLeagueId !== user.uid && (
-                   <button 
-                     onClick={handleLeaveLeague}
-                     className="bg-red-500/90 hover:bg-red-500 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-red-400 flex items-center justify-center shrink-0"
-                     title="Remove this league"
-                   >
+                   <button onClick={handleLeaveLeague} className="bg-red-500/90 hover:bg-red-500 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-red-400 flex items-center justify-center shrink-0" title="Remove this league">
                      <Trash2 className="w-5 h-5" />
                    </button>
                  )}
-
-                 <button 
-                   onClick={() => setShowJoinModal(true)}
-                   className="bg-emerald-500 hover:bg-emerald-400 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-emerald-400 flex items-center gap-1 shrink-0"
-                   title="Join another league"
-                 >
+                 <button onClick={() => setShowJoinModal(true)} className="bg-emerald-500 hover:bg-emerald-400 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-emerald-400 flex items-center gap-1 shrink-0" title="Join another league">
                    <Plus className="w-5 h-5 sm:hidden" />
                    <span className="hidden sm:block font-black text-sm uppercase tracking-wider px-2">+ Join</span>
                  </button>
                </div>
             </div>
-
           </div>
-          
           <div className="flex flex-col items-stretch gap-3 w-full md:w-auto mt-2 md:mt-0">
              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 {!isViewer && user && (
-                  <button 
-                    onClick={() => setShowSettingsModal(true)}
-                    className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-green-800 rounded-xl transition-all shadow-md hover:shadow-lg font-black uppercase tracking-wider hover:-translate-y-0.5 border-b-4 border-green-200"
-                  >
-                    <Settings className="w-5 h-5" />
-                    Admin Settings
+                  <button onClick={() => setShowSettingsModal(true)} className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-green-800 rounded-xl transition-all shadow-md hover:shadow-lg font-black uppercase tracking-wider hover:-translate-y-0.5 border-b-4 border-green-200">
+                    <Settings className="w-5 h-5" /> Admin Settings
                   </button>
                 )}
              </div>
@@ -546,100 +508,42 @@ export default function App() {
         </div>
       </header>
 
-      {/* NAVIGATION BAR */}
       <div className="max-w-6xl mx-auto px-4 -mt-5 relative z-20">
         <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/50 p-2 flex flex-wrap gap-2">
           {['standings', 'groups', 'bracket', 'matches', 'teams'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`flex-1 min-w-[60px] sm:min-w-[80px] py-3 px-1 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 ${
-                activeTab === tab 
-                  ? 'bg-green-600 text-white shadow-md scale-[1.02]' 
-                  : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700'
-              }`}>
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 min-w-[60px] sm:min-w-[80px] py-3 px-1 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 ${activeTab === tab ? 'bg-green-600 text-white shadow-md scale-[1.02]' : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700'}`}>
               {tab}
             </button>
           ))}
         </div>
       </div>
 
-      {/* MAIN CONTENT AREA */}
       <main className="max-w-6xl mx-auto px-4 mt-10">
-        {activeTab === 'standings' && (
-          <StandingsTab settings={settings} awards={awards} memberStats={memberStats} />
-        )}
-        
-        {activeTab === 'groups' && (
-          <GroupsTab teamStats={teamStats} matches={matches} settings={settings} />
-        )}
-        
-        {activeTab === 'bracket' && (
-          <BracketTab matches={matches} members={members} assignments={assignments} />
-        )}
-
-        {activeTab === 'matches' && (
-          <MatchesTab 
-            matches={matches} 
-            localTimezone={localTimezone} 
-            setLocalTimezone={setLocalTimezone}
-            isViewer={isViewer} 
-            handleMatchUpdate={handleMatchUpdate} 
-            getOwnerName={getOwnerName} 
-            eliminatedTeams={eliminatedTeams}
-            handleRandomizeGroups={handleRandomizeGroups}
-          />
-        )}
-        
-        {activeTab === 'teams' && (
-          <TeamsTab 
-            eliminatedTeams={eliminatedTeams} 
-            isViewer={isViewer} 
-            getOwnerName={getOwnerName} 
-            assignments={assignments} 
-            members={members} 
-            handleAssign={handleAssign} 
-            toggleEliminated={toggleEliminated} 
-          />
-        )}
+        {activeTab === 'standings' && <StandingsTab settings={settings} awards={awards} memberStats={memberStats} />}
+        {activeTab === 'groups' && <GroupsTab teamStats={teamStats} matches={matches} settings={settings} />}
+        {activeTab === 'bracket' && <BracketTab matches={matches} members={members} assignments={assignments} />}
+        {activeTab === 'matches' && <MatchesTab matches={matches} localTimezone={localTimezone} setLocalTimezone={setLocalTimezone} isViewer={isViewer} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} handleRandomizeGroups={handleRandomizeGroups} />}
+        {activeTab === 'teams' && <TeamsTab eliminatedTeams={eliminatedTeams} isViewer={isViewer} getOwnerName={getOwnerName} assignments={assignments} members={members} handleAssign={handleAssign} toggleEliminated={toggleEliminated} />}
       </main>
 
-      {/* JOIN LEAGUE MODAL */}
       {showJoinModal && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md border-4 border-emerald-600 relative">
-            <button onClick={() => setShowJoinModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 bg-slate-100 p-1.5 rounded-lg transition-colors">
-               <X className="w-5 h-5" />
-            </button>
+            <button onClick={() => setShowJoinModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 bg-slate-100 p-1.5 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
             <div className="flex items-center gap-3 mb-6 border-b-2 border-emerald-50 pb-4">
                <Globe className="w-8 h-8 text-emerald-600 bg-emerald-100 p-1.5 rounded-lg" />
                <h2 className="text-xl font-black text-emerald-800 uppercase tracking-widest">Join a League</h2>
             </div>
-            
             <div className="space-y-4">
                <div>
                  <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1">League Invite Code (or URL)</label>
-                 <input 
-                   type="text" 
-                   placeholder="e.g. paste the link here"
-                   value={pendingJoinCode}
-                   onChange={e => setPendingJoinCode(e.target.value)}
-                   className="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-800 focus:border-emerald-500 focus:ring-0 outline-none"
-                 />
+                 <input type="text" placeholder="e.g. paste the link here" value={pendingJoinCode} onChange={e => setPendingJoinCode(e.target.value)} className="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-800 focus:border-emerald-500 focus:ring-0 outline-none" />
                </div>
                <div>
                  <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1">Nickname for this League</label>
-                 <input 
-                   type="text" 
-                   placeholder="e.g. The Office Pool"
-                   value={pendingJoinName}
-                   onChange={e => setPendingJoinName(e.target.value)}
-                   className="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-800 focus:border-emerald-500 focus:ring-0 outline-none"
-                 />
+                 <input type="text" placeholder="e.g. The Office Pool" value={pendingJoinName} onChange={e => setPendingJoinName(e.target.value)} className="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-800 focus:border-emerald-500 focus:ring-0 outline-none" />
                </div>
-               <button 
-                 onClick={handleJoinSubmit}
-                 disabled={!pendingJoinCode.trim() || !pendingJoinName.trim()}
-                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-md uppercase tracking-widest mt-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5"
-               >
+               <button onClick={handleJoinSubmit} disabled={!pendingJoinCode.trim() || !pendingJoinName.trim()} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-md uppercase tracking-widest mt-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5">
                  Add to My Leagues
                </button>
             </div>
@@ -647,7 +551,6 @@ export default function App() {
         </div>
       )}
 
-      {/* SETTINGS MODAL */}
       {showSettingsModal && !isViewer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border-4 border-green-800 relative">
@@ -655,44 +558,25 @@ export default function App() {
                 <h2 className="text-xl font-black text-green-800 flex items-center gap-2 uppercase tracking-wide">
                   <Settings className="w-6 h-6 text-slate-500" /> Sweepstakes Rules & Settings
                 </h2>
-                <button onClick={() => setShowSettingsModal(false)} className="text-slate-400 hover:text-red-600 bg-slate-100 hover:bg-red-50 p-2 rounded-lg transition-colors">
-                   <X className="w-6 h-6" />
-                </button>
+                <button onClick={() => setShowSettingsModal(false)} className="text-slate-400 hover:text-red-600 bg-slate-100 hover:bg-red-50 p-2 rounded-lg transition-colors"><X className="w-6 h-6" /></button>
              </div>
              <div className="p-6">
-                <SettingsTab 
-                  settings={settings} 
-                  updateSettings={updateSettings} 
-                  members={members} 
-                  handleAddMember={handleAddMember} 
-                  handleUpdateMember={handleUpdateMember} 
-                  handleDeleteMember={handleDeleteMember} 
-                  handleResetData={handleResetData}
-                  userUid={user?.uid} // Passed so settings can generate share link
-                />
+                <SettingsTab settings={settings} updateSettings={updateSettings} members={members} handleAddMember={handleAddMember} handleUpdateMember={handleUpdateMember} handleDeleteMember={handleDeleteMember} handleResetData={handleResetData} userUid={user?.uid} />
              </div>
            </div>
         </div>
       )}
 
-      {/* WELCOME ONBOARDING MODAL */}
       {showWelcomeModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border-4 border-emerald-600 relative flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden animate-fade-in">
              <div className="bg-gradient-to-r from-green-800 to-emerald-700 text-white p-4 sm:p-5 flex justify-between items-center shrink-0 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_20px,#fff_20px,#fff_40px)] pointer-events-none transform -skew-x-12 scale-150"></div>
-                <h2 className="text-lg sm:text-2xl font-black flex items-center gap-3 relative z-10">
-                  <img src="/logos/world-cup.svg" className="w-6 h-6 sm:w-8 sm:h-8" alt="" onError={(e) => e.target.style.display='none'} />
-                  World Cup Sweepstakes
-                </h2>
-                <button onClick={handleCloseWelcome} className="text-emerald-200 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-lg transition-colors relative z-10">
-                   <X className="w-5 h-5 sm:w-6 sm:h-6" />
-                </button>
+                <h2 className="text-lg sm:text-2xl font-black flex items-center gap-3 relative z-10"><img src="/logos/world-cup.svg" className="w-6 h-6 sm:w-8 sm:h-8" alt="" onError={(e) => e.target.style.display='none'} /> World Cup Sweepstakes</h2>
+                <button onClick={handleCloseWelcome} className="text-emerald-200 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-lg transition-colors relative z-10"><X className="w-5 h-5 sm:w-6 sm:h-6" /></button>
              </div>
              <div className="p-4 sm:p-5 space-y-3 text-slate-700 overflow-y-auto">
-                <p className="text-base sm:text-lg font-medium leading-relaxed">
-                  Welcome to a place to help to keep track of your World Cup Sweepstakes with your Friends, Family, Colleagues, or complete strangers!
-                </p>
+                <p className="text-base sm:text-lg font-medium leading-relaxed">Welcome to a place to help to keep track of your World Cup Sweepstakes with your Friends, Family, Colleagues, or complete strangers!</p>
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 mt-2 space-y-2 sm:space-y-3">
                    <h3 className="font-black text-slate-800 uppercase tracking-wider text-xs sm:text-sm border-b border-slate-200 pb-2">How It Works:</h3>
                    <ul className="space-y-2 text-xs sm:text-sm">
@@ -712,7 +596,6 @@ export default function App() {
            </div>
         </div>
       )}
-
     </div>
   );
 }
