@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Loader2, Share2, CheckCircle, Settings, Info, X } from 'lucide-react';
+import { Loader2, Settings, X, Trophy, Plus, Globe } from 'lucide-react';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'; 
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 
@@ -20,25 +20,36 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('standings');
-  
-  const urlParams = new URLSearchParams(window.location.search);
-  const hostIdParam = urlParams.get('host');
-  const isViewer = !!hostIdParam;
-  const [copySuccess, setCopySuccess] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   
+  // --- MULTI-LEAGUE STATE ---
+  const [joinedLeagues, setJoinedLeagues] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('wcJoinedLeagues')) || []; }
+    catch { return []; }
+  });
+  const [activeLeagueId, setActiveLeagueId] = useState(() => {
+    return localStorage.getItem('wcActiveLeague') || null;
+  });
+
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [pendingJoinCode, setPendingJoinCode] = useState('');
+  const [pendingJoinName, setPendingJoinName] = useState('');
+
+  // Is Viewer calculation based on Active League vs Your UID
+  const isViewer = user ? activeLeagueId !== user.uid : true;
+
+  // --- WELCOME MODAL STATE ---
   const [showWelcomeModal, setShowWelcomeModal] = useState(() => {
     return localStorage.getItem('hideWorldCupWelcome') !== 'true';
   });
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const handleCloseWelcome = () => {
-    if (dontShowAgain) {
-      localStorage.setItem('hideWorldCupWelcome', 'true');
-    }
+    if (dontShowAgain) localStorage.setItem('hideWorldCupWelcome', 'true');
     setShowWelcomeModal(false);
   };
   
+  // --- SWEEPSTAKES DATA STATE ---
   const [members, setMembers] = useState([]);
   const [assignments, setAssignments] = useState({});
   const [eliminatedTeams, setEliminatedTeams] = useState({});
@@ -49,38 +60,52 @@ export default function App() {
     return localStorage.getItem('worldCupTimezone') || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/London';
   });
 
+  // --- AUTH & URL INTERCEPTION ---
   useEffect(() => {
     const initAuth = async () => {
-      try {
-        await signInAnonymously(auth);
-      } catch (err) {
-        console.error("Auth error details:", err);
-      }
+      try { await signInAnonymously(auth); } 
+      catch (err) { console.error("Auth error details:", err); }
     };
     initAuth();
     
-    const unsubscribe = onAuthStateChanged(auth, setUser);
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (u) {
+        // Intercept sharing links
+        const urlParams = new URLSearchParams(window.location.search);
+        const hostParam = urlParams.get('host');
+        
+        if (hostParam && hostParam !== u.uid) {
+          const existing = joinedLeagues.find(l => l.id === hostParam);
+          if (!existing) {
+            setPendingJoinCode(hostParam);
+            setShowJoinModal(true);
+          } else {
+            setActiveLeagueId(hostParam);
+            localStorage.setItem('wcActiveLeague', hostParam);
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+        } else if (!activeLeagueId) {
+          setActiveLeagueId(u.uid);
+          localStorage.setItem('wcActiveLeague', u.uid);
+        }
+      }
+    });
     
-    const emergencyTimeout = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
+    const emergencyTimeout = setTimeout(() => setLoading(false), 2000);
+    return () => { unsubscribe(); clearTimeout(emergencyTimeout); };
+  }, [activeLeagueId, joinedLeagues]);
 
-    return () => {
-      unsubscribe();
-      clearTimeout(emergencyTimeout);
-    };
-  }, []);
-
+  // --- FIRESTORE SYNC ---
   useEffect(() => {
-    if (!user) return;
+    if (!user || !activeLeagueId) return;
     
-    const targetUid = isViewer ? hostIdParam : user.uid;
-    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sweepstakes', targetUid);
+    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sweepstakes', activeLeagueId);
     
+    setLoading(true); // Show loader briefly when switching leagues
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        
         setMembers(data.members || INITIAL_MEMBERS);
         setAssignments(data.assignments || {});
         setEliminatedTeams(data.eliminatedTeams || {});
@@ -96,7 +121,7 @@ export default function App() {
                  scoreA: (savedMatch.scoreA !== undefined && savedMatch.scoreA !== '') ? savedMatch.scoreA : '0',
                  scoreB: (savedMatch.scoreB !== undefined && savedMatch.scoreB !== '') ? savedMatch.scoreB : '0',
                  isPlayed: savedMatch.isPlayed || false,
-                 isAET: savedMatch.isAET || false, // <-- NEW: Ingest the AET status
+                 isAET: savedMatch.isAET || false,
                  penWinner: savedMatch.penWinner || null,
                  penScoreA: savedMatch.penScoreA || '',
                  penScoreB: savedMatch.penScoreB || '',
@@ -110,7 +135,6 @@ export default function App() {
         } else {
           setMatches(generateAllMatches());
         }
-
       } else {
         setMembers(INITIAL_MEMBERS);
         setAssignments({});
@@ -118,7 +142,8 @@ export default function App() {
         setMatches(generateAllMatches());
         setSettings({ woodenSpoon: true, kidAwards: true, kidAwardsType: 'all' });
         
-        if (!isViewer) {
+        // Only initialize default data if it's YOUR hosted league
+        if (activeLeagueId === user.uid) {
           setDoc(docRef, {
             members: INITIAL_MEMBERS,
             assignments: {},
@@ -135,9 +160,10 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [user, isViewer, hostIdParam]);
+  }, [user, activeLeagueId]);
 
   const saveState = async (key, value) => {
+    // SECURITY: Only save if you are the host!
     if (!user || isViewer) return; 
     try {
       const safeValue = JSON.parse(JSON.stringify(value));
@@ -148,23 +174,35 @@ export default function App() {
     }
   };
 
-  const handleCopyLink = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('host', user.uid);
-    const linkToCopy = url.toString();
+  // --- LEAGUE MANAGEMENT FUNCTIONS ---
+  const handleSwitchLeague = (id) => {
+    setActiveLeagueId(id);
+    localStorage.setItem('wcActiveLeague', id);
+  };
+
+  const handleJoinSubmit = () => {
+    if (!pendingJoinCode.trim() || !pendingJoinName.trim()) return;
     
-    const textArea = document.createElement("textarea");
-    textArea.value = linkToCopy;
-    document.body.appendChild(textArea);
-    textArea.select();
-    try {
-      document.execCommand('copy');
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy', err);
+    // Auto-extract ID if they pasted the full URL instead of just the code
+    let finalCode = pendingJoinCode.trim();
+    if (finalCode.includes('?host=')) {
+      try {
+        finalCode = new URL(finalCode).searchParams.get('host') || finalCode;
+      } catch(e) {}
     }
-    document.body.removeChild(textArea);
+
+    const currentLeagues = [...joinedLeagues];
+    if (!currentLeagues.find(l => l.id === finalCode)) {
+      const newLeagues = [...currentLeagues, { id: finalCode, name: pendingJoinName.trim() }];
+      localStorage.setItem('wcJoinedLeagues', JSON.stringify(newLeagues));
+      setJoinedLeagues(newLeagues);
+    }
+    
+    handleSwitchLeague(finalCode);
+    setPendingJoinCode('');
+    setPendingJoinName('');
+    setShowJoinModal(false);
+    window.history.replaceState({}, '', window.location.pathname);
   };
 
   const handleResetData = () => {
@@ -194,8 +232,7 @@ export default function App() {
     return calculateStats(matches, eliminatedTeams, settings, members, assignments);
   }, [members, assignments, matches, eliminatedTeams, settings]);
 
-
-  // --- CENTRAL AUTOMATION ENGINE ---
+  // --- CENTRAL AUTOMATION ENGINE (Knockout Routing) ---
   useEffect(() => {
     if (isViewer || matches.length === 0 || Object.keys(teamStats).length === 0) return;
 
@@ -261,7 +298,7 @@ export default function App() {
            if (!isNaN(scoreA) && !isNaN(scoreB)) {
              if (scoreA > scoreB) winnerId = m.teamA;
              else if (scoreB > scoreA) winnerId = m.teamB;
-             else if (m.isAET) { // <-- NEW: Only calculate pens if AET is checked
+             else if (m.isAET) { 
                const pA = parseInt(m.penScoreA);
                const pB = parseInt(m.penScoreB);
                if (!isNaN(pA) && !isNaN(pB)) {
@@ -294,7 +331,7 @@ export default function App() {
          if (!isNaN(scoreA) && !isNaN(scoreB)) {
            if (scoreA > scoreB) loserId = m.teamB;
            else if (scoreB > scoreA) loserId = m.teamA;
-           else if (m.isAET) { // <-- NEW: Only calculate pens if AET is checked
+           else if (m.isAET) {
              const pA = parseInt(m.penScoreA);
              const pB = parseInt(m.penScoreB);
              if (!isNaN(pA) && !isNaN(pB)) {
@@ -340,7 +377,6 @@ export default function App() {
     setMatches(nextMatches);
     saveState('matches', nextMatches);
   };
-
 
   const handleMatchUpdate = (matchId, field, value) => {
     setMatches(prev => {
@@ -426,45 +462,59 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 font-sans pb-20 selection:bg-green-200 relative">
       
-      {/* HEADER */}
-      <header className="bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 text-white pt-12 pb-8 px-6 shadow-xl relative overflow-hidden">
+      {/* HEADER WITH LEAGUE SWITCHER */}
+      <header className="bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 text-white pt-10 pb-8 px-6 shadow-xl relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_40px,#fff_40px,#fff_80px)] pointer-events-none transform -skew-x-12 scale-150"></div>
         
         <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase drop-shadow-md flex items-center gap-4">
-                 <img src="/logos/world-cup.svg" className="w-12 h-12 object-contain" alt="World Cup Logo" onError={(e) => e.target.style.display='none'} />
-                 World Cup 2026
-              </h1>
-              {isViewer && (
-                <span className="bg-amber-500 text-amber-950 text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
-                  Viewer Mode
-                </span>
-              )}
+          <div className="flex-1 w-full">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase drop-shadow-md flex items-center gap-3 mb-2">
+               <img src="/logos/world-cup.svg" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" alt="World Cup Logo" onError={(e) => e.target.style.display='none'} />
+               World Cup 2026
+            </h1>
+            
+            {/* THE NEW LEAGUE SWITCHER */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-4 w-full sm:max-w-xl bg-white/10 p-2 sm:p-2.5 rounded-xl border border-white/20 backdrop-blur-sm shadow-sm">
+               <span className="text-xs font-bold text-green-200 uppercase tracking-widest pl-2 hidden sm:block">Active League:</span>
+               
+               <div className="flex w-full gap-2 items-center">
+                 <div className="relative flex-1">
+                   <select 
+                     value={activeLeagueId || ''} 
+                     onChange={e => handleSwitchLeague(e.target.value)}
+                     className="w-full bg-white/90 text-slate-900 font-black text-sm sm:text-base py-2.5 pl-9 pr-4 rounded-lg appearance-none cursor-pointer border-0 focus:ring-2 focus:ring-emerald-400 shadow-inner"
+                   >
+                     {user && <option value={user.uid}>👑 My Hosted Sweepstakes</option>}
+                     {joinedLeagues.map(l => (
+                       <option key={l.id} value={l.id}>👁️ {l.name}</option>
+                     ))}
+                   </select>
+                   <Trophy className="w-4 h-4 text-emerald-700 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                 </div>
+                 
+                 <button 
+                   onClick={() => setShowJoinModal(true)}
+                   className="bg-emerald-500 hover:bg-emerald-400 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-emerald-400 flex items-center gap-1 shrink-0"
+                   title="Join another league"
+                 >
+                   <Plus className="w-5 h-5 sm:hidden" />
+                   <span className="hidden sm:block font-black text-sm uppercase tracking-wider px-2">+ Join</span>
+                 </button>
+               </div>
             </div>
-            <p className="text-green-200 font-bold uppercase tracking-widest text-sm ml-2 opacity-90">Official Family Sweepstakes Dashboard</p>
+
           </div>
           
-          <div className="flex flex-col items-stretch gap-3 w-full md:w-auto mt-4 md:mt-0">
+          {/* Settings Button (Share link moved inside!) */}
+          <div className="flex flex-col items-stretch gap-3 w-full md:w-auto mt-2 md:mt-0">
              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 {!isViewer && user && (
                   <button 
                     onClick={() => setShowSettingsModal(true)}
-                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-lg transition-all backdrop-blur-sm group font-bold shadow-sm"
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-green-800 rounded-xl transition-all shadow-md hover:shadow-lg font-black uppercase tracking-wider hover:-translate-y-0.5 border-b-4 border-green-200"
                   >
-                    <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-                    Settings
-                  </button>
-                )}
-                
-                {!isViewer && user && (
-                  <button 
-                    onClick={handleCopyLink}
-                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-lg transition-all backdrop-blur-sm group shadow-sm"
-                  >
-                    {copySuccess ? <CheckCircle className="w-5 h-5 text-green-400" /> : <Share2 className="w-5 h-5 group-hover:scale-110 transition-transform" />}
-                    {copySuccess ? 'Link Copied!' : 'Share Viewer Link'}
+                    <Settings className="w-5 h-5" />
+                    Admin Settings
                   </button>
                 )}
              </div>
@@ -499,11 +549,7 @@ export default function App() {
         )}
         
         {activeTab === 'bracket' && (
-          <BracketTab 
-            matches={matches} 
-            members={members} 
-            assignments={assignments}
-          />
+          <BracketTab matches={matches} members={members} assignments={assignments} />
         )}
 
         {activeTab === 'matches' && (
@@ -532,6 +578,51 @@ export default function App() {
         )}
       </main>
 
+      {/* JOIN LEAGUE MODAL */}
+      {showJoinModal && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md border-4 border-emerald-600 relative">
+            <button onClick={() => setShowJoinModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 bg-slate-100 p-1.5 rounded-lg transition-colors">
+               <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-6 border-b-2 border-emerald-50 pb-4">
+               <Globe className="w-8 h-8 text-emerald-600 bg-emerald-100 p-1.5 rounded-lg" />
+               <h2 className="text-xl font-black text-emerald-800 uppercase tracking-widest">Join a League</h2>
+            </div>
+            
+            <div className="space-y-4">
+               <div>
+                 <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1">League Invite Code (or URL)</label>
+                 <input 
+                   type="text" 
+                   placeholder="e.g. paste the link here"
+                   value={pendingJoinCode}
+                   onChange={e => setPendingJoinCode(e.target.value)}
+                   className="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-800 focus:border-emerald-500 focus:ring-0 outline-none"
+                 />
+               </div>
+               <div>
+                 <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1">Nickname for this League</label>
+                 <input 
+                   type="text" 
+                   placeholder="e.g. The Office Pool"
+                   value={pendingJoinName}
+                   onChange={e => setPendingJoinName(e.target.value)}
+                   className="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-800 focus:border-emerald-500 focus:ring-0 outline-none"
+                 />
+               </div>
+               <button 
+                 onClick={handleJoinSubmit}
+                 disabled={!pendingJoinCode.trim() || !pendingJoinName.trim()}
+                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-md uppercase tracking-widest mt-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5"
+               >
+                 Add to My Leagues
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SETTINGS MODAL */}
       {showSettingsModal && !isViewer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
@@ -553,6 +644,7 @@ export default function App() {
                   handleUpdateMember={handleUpdateMember} 
                   handleDeleteMember={handleDeleteMember} 
                   handleResetData={handleResetData}
+                  userUid={user?.uid}
                 />
              </div>
            </div>
@@ -563,8 +655,6 @@ export default function App() {
       {showWelcomeModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border-4 border-emerald-600 relative flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden animate-fade-in">
-             
-             {/* Modal Header */}
              <div className="bg-gradient-to-r from-green-800 to-emerald-700 text-white p-4 sm:p-5 flex justify-between items-center shrink-0 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_20px,#fff_20px,#fff_40px)] pointer-events-none transform -skew-x-12 scale-150"></div>
                 <h2 className="text-lg sm:text-2xl font-black flex items-center gap-3 relative z-10">
@@ -575,54 +665,25 @@ export default function App() {
                    <X className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
              </div>
-
-             {/* Modal Body */}
              <div className="p-4 sm:p-5 space-y-3 text-slate-700 overflow-y-auto">
                 <p className="text-base sm:text-lg font-medium leading-relaxed">
                   Welcome to a place to help to keep track of your World Cup Sweepstakes with your Friends, Family, Colleagues, or complete strangers!
                 </p>
-                <p className="text-base sm:text-lg font-medium leading-relaxed">
-                  Head over to the settings tab where you can add all of the members.  
-                </p>
-                <p className="text-base sm:text-lg font-medium leading-relaxed">
-                  Once you have set it up you can create a sharing link that allows everyone to view everything but not make any changes. 
-                </p>
-                
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 mt-2 space-y-2 sm:space-y-3">
                    <h3 className="font-black text-slate-800 uppercase tracking-wider text-xs sm:text-sm border-b border-slate-200 pb-2">How It Works:</h3>
                    <ul className="space-y-2 text-xs sm:text-sm">
                      <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Teams:</strong> Once you have drawn the teams for your sweepstakes make sure to update the Teams section.</span></li>
                      <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>Live Scoring:</strong> You earn points every time your teams win, draw, score goals, or keep a clean sheet. Make sure to check the settings tab to customise your scoring.</span></li>
-                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Bracket:</strong> As matches finish, the Knockout Bracket automatically populates and routes the winners. However if you notice a mistake feel free to select the correct teams yourself.</span></li>
-                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Prizes:</strong> You can track the overall champion, the best kids' squad, and even the dreaded Wooden Spoon!</span></li>
+                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Bracket:</strong> As matches finish, the Knockout Bracket automatically populates and routes the winners.</span></li>
                    </ul>
                 </div>
-                
-                <p className="text-center font-black text-emerald-700 text-base sm:text-lg pt-2 pb-2">
-                  May the best manager win!
-                </p>
              </div>
-
-             {/* Modal Footer */}
              <div className="bg-slate-50 p-4 border-t border-slate-200 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <label className="flex items-center gap-2 cursor-pointer group">
-                  <input 
-                    type="checkbox" 
-                    checked={dontShowAgain}
-                    onChange={(e) => setDontShowAgain(e.target.checked)}
-                    className="w-5 h-5 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer" 
-                  />
-                  <span className="text-sm font-bold text-slate-500 group-hover:text-slate-800 transition-colors select-none">
-                    Don't show this again
-                  </span>
+                  <input type="checkbox" checked={dontShowAgain} onChange={(e) => setDontShowAgain(e.target.checked)} className="w-5 h-5 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer" />
+                  <span className="text-sm font-bold text-slate-500 group-hover:text-slate-800 transition-colors select-none">Don't show this again</span>
                 </label>
-                
-                <button 
-                  onClick={handleCloseWelcome}
-                  className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-3 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 uppercase tracking-wider"
-                >
-                  Let's Go!
-                </button>
+                <button onClick={handleCloseWelcome} className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-3 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 uppercase tracking-wider">Let's Go!</button>
              </div>
            </div>
         </div>

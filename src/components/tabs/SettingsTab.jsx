@@ -1,8 +1,29 @@
-import React from 'react';
-import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock, AlertTriangle, RotateCcw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock, AlertTriangle, RotateCcw, Share2, CheckCircle, Copy } from 'lucide-react';
 import { KNOCKOUT_STAGES, DEFAULT_SCORING } from '../../config/data.js';
 
-export const SettingsTab = ({ settings, updateSettings, members, handleAddMember, handleUpdateMember, handleDeleteMember, handleResetData }) => {
+export const SettingsTab = ({ settings, updateSettings, members, handleAddMember, handleUpdateMember, handleDeleteMember, handleResetData, userUid }) => {
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const handleCopyLink = () => {
+    if (!userUid) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('host', userUid);
+    const linkToCopy = url.toString();
+    
+    const textArea = document.createElement("textarea");
+    textArea.value = linkToCopy;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy', err);
+    }
+    document.body.removeChild(textArea);
+  };
 
   const handleScoringUpdate = (stageGroup, stage, field, value) => {
     const numVal = parseInt(value) || 0;
@@ -30,8 +51,83 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
   const activeScoring = settings.scoring || DEFAULT_SCORING;
 
   return (
-    <div className="space-y-8 animate-fade-in max-w-4xl mx-auto">
+    <div className="space-y-8 animate-fade-in max-w-4xl mx-auto pb-8">
       
+      {/* SHARE LEAGUE BANNER */}
+      <div className="bg-gradient-to-br from-indigo-50 to-blue-100 rounded-xl shadow-md border-2 border-blue-200 p-5 sm:p-6 relative overflow-hidden">
+        <div className="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4">
+          <Share2 className="w-32 h-32 text-blue-600" />
+        </div>
+        <h2 className="text-xl font-black text-blue-900 mb-2 flex items-center gap-2 uppercase tracking-wide relative z-10">
+          <Share2 className="w-6 h-6 text-blue-600" /> Share Your League
+        </h2>
+        <p className="text-blue-800/80 font-medium mb-6 relative z-10 max-w-2xl">
+          Invite your friends, family, or colleagues to join your sweepstakes! When they use this link, they will be added as <strong>Viewers</strong>. They can track the live standings and brackets, but they cannot edit scores or rules.
+        </p>
+        
+        <button 
+          onClick={handleCopyLink}
+          className="relative z-10 flex items-center justify-center gap-3 w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-lg transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 group"
+        >
+          {copySuccess ? <CheckCircle className="w-6 h-6 text-green-300" /> : <Copy className="w-6 h-6 group-hover:scale-110 transition-transform" />}
+          {copySuccess ? 'Link Copied to Clipboard!' : 'Copy Invite Link'}
+        </button>
+      </div>
+
+      {/* MEMBERS MANAGEMENT SECTION */}
+      <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6 overflow-hidden">
+        <div className="flex items-center justify-between mb-6 border-b-2 border-emerald-50 pb-4">
+          <h2 className="text-xl font-black text-emerald-800 flex items-center gap-2 uppercase tracking-wide">
+            <Users className="w-6 h-6 text-slate-500" /> Sweepstakes Managers
+          </h2>
+          <span className="bg-slate-200 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-md">{members.length} Total</span>
+        </div>
+        
+        <div className="space-y-4 bg-slate-50/50 p-2 sm:p-0 rounded-xl">
+          {members.map((member, idx) => (
+            <div key={member.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm transition-all hover:border-emerald-300">
+              <div className="hidden sm:block font-black text-slate-400 text-lg w-6">{idx + 1}.</div>
+              <div className="flex-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block ml-1 sm:hidden">Manager Name</label>
+                <input 
+                  type="text" 
+                  value={member.name} 
+                  onChange={(e) => handleUpdateMember(member.id, 'name', e.target.value)}
+                  className="w-full font-black text-slate-800 text-lg bg-slate-50 sm:bg-transparent border-2 border-slate-100 sm:border-transparent rounded-lg px-3 py-2 sm:px-2 focus:ring-0 focus:border-emerald-500 focus:bg-white sm:focus:bg-slate-50 transition-colors"
+                  placeholder="e.g. Dad"
+                />
+              </div>
+              <div className="flex items-center justify-between sm:justify-start gap-4 sm:pt-0 border-t sm:border-t-0 border-slate-100 pt-3 mt-1 sm:mt-0">
+                <label className="flex items-center gap-2 cursor-pointer bg-emerald-50/50 hover:bg-emerald-50 px-4 py-2.5 sm:px-3 sm:py-2 rounded-lg border border-emerald-100 sm:border-slate-200 sm:hover:border-emerald-300 transition-colors">
+                  <input 
+                    type="checkbox" 
+                    checked={member.isKid} 
+                    onChange={(e) => handleUpdateMember(member.id, 'isKid', e.target.checked)}
+                    className="w-5 h-5 sm:w-4 sm:h-4 text-emerald-600 rounded border-emerald-300 sm:border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <span className="font-bold text-emerald-800 sm:text-slate-700 sm:uppercase sm:text-xs sm:tracking-wider text-sm">Kid/Junior</span>
+                </label>
+                <button 
+                  onClick={() => handleDeleteMember(member.id)}
+                  disabled={members.length <= 1}
+                  className="text-red-400 hover:text-white bg-white hover:bg-red-500 border border-slate-200 hover:border-red-500 p-2.5 sm:p-2 rounded-lg transition-all disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-red-400 disabled:hover:border-slate-200 shadow-sm sm:shadow-none"
+                  title="Remove Manager"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          ))}
+
+          <button 
+            onClick={handleAddMember}
+            className="w-full mt-4 py-4 border-2 border-dashed border-emerald-300 rounded-xl text-emerald-600 font-black flex items-center justify-center gap-2 hover:bg-emerald-50 hover:border-emerald-400 transition-colors"
+          >
+            <PlusCircle className="w-5 h-5" /> Add New Manager
+          </button>
+        </div>
+      </div>
+
       {/* SCORING & RULES SECTION */}
       <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6">
         <h2 className="text-xl font-black text-emerald-800 mb-6 flex items-center gap-2 uppercase tracking-wide border-b-2 border-emerald-50 pb-4">
@@ -40,7 +136,6 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
         
         <div className="space-y-6">
 
-          {/* Custom Scoring Configuration */}
           <div className="flex flex-col gap-4 bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">
              <div>
                <label className="font-black text-slate-800 flex items-center gap-2 text-lg">
@@ -49,7 +144,6 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
                <p className="text-sm text-slate-500 font-medium mt-1">Define exactly how many points your family members receive based on their team's performance.</p>
              </div>
 
-             {/* Group Stage Scoring */}
              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
                <h4 className="font-black text-emerald-700 mb-3 uppercase tracking-widest text-xs border-b border-slate-100 pb-2">Group Stage</h4>
                <div className="flex flex-wrap gap-3">
@@ -60,7 +154,6 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
                </div>
              </div>
 
-             {/* Knockout Stage Scoring */}
              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
                <h4 className="font-black text-emerald-700 mb-3 uppercase tracking-widest text-xs border-b border-slate-100 pb-2">Knockout Stages</h4>
                <div className="space-y-3">
@@ -127,87 +220,17 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
               {settings.kidAwards !== false && (
                 <div className="ml-2 pl-4 border-l-4 border-emerald-200 space-y-3">
                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="kidAwardsType" 
-                      checked={settings.kidAwardsType === 'top3'}
-                      onChange={() => updateSettings({ kidAwardsType: 'top3' })}
-                      className="text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
-                    />
+                    <input type="radio" name="kidAwardsType" checked={settings.kidAwardsType === 'top3'} onChange={() => updateSettings({ kidAwardsType: 'top3' })} className="text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer" />
                     Top 3 Only
                   </label>
                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="kidAwardsType" 
-                      checked={settings.kidAwardsType === 'all'}
-                      onChange={() => updateSettings({ kidAwardsType: 'all' })}
-                      className="text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
-                    />
+                    <input type="radio" name="kidAwardsType" checked={settings.kidAwardsType === 'all'} onChange={() => updateSettings({ kidAwardsType: 'all' })} className="text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer" />
                     Show All Kids
                   </label>
                 </div>
               )}
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* MEMBERS MANAGEMENT SECTION (Mobile-Friendly Layout) */}
-      <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6 overflow-hidden">
-        <div className="flex items-center justify-between mb-6 border-b-2 border-emerald-50 pb-4">
-          <h2 className="text-xl font-black text-emerald-800 flex items-center gap-2 uppercase tracking-wide">
-            <Users className="w-6 h-6 text-slate-500" /> Sweepstakes Managers
-          </h2>
-          <span className="bg-slate-200 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-md">{members.length} Total</span>
-        </div>
-        
-        <div className="space-y-4 bg-slate-50/50 p-2 sm:p-0 rounded-xl">
-          {members.map((member, idx) => (
-            <div key={member.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm transition-all hover:border-emerald-300">
-              
-              <div className="hidden sm:block font-black text-slate-400 text-lg w-6">{idx + 1}.</div>
-              
-              <div className="flex-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block ml-1 sm:hidden">Manager Name</label>
-                <input 
-                  type="text" 
-                  value={member.name} 
-                  onChange={(e) => handleUpdateMember(member.id, 'name', e.target.value)}
-                  className="w-full font-black text-slate-800 text-lg bg-slate-50 sm:bg-transparent border-2 border-slate-100 sm:border-transparent rounded-lg px-3 py-2 sm:px-2 focus:ring-0 focus:border-emerald-500 focus:bg-white sm:focus:bg-slate-50 transition-colors"
-                  placeholder="e.g. Dad"
-                />
-              </div>
-              
-              <div className="flex items-center justify-between sm:justify-start gap-4 sm:pt-0 border-t sm:border-t-0 border-slate-100 pt-3 mt-1 sm:mt-0">
-                <label className="flex items-center gap-2 cursor-pointer bg-emerald-50/50 hover:bg-emerald-50 px-4 py-2.5 sm:px-3 sm:py-2 rounded-lg border border-emerald-100 sm:border-slate-200 sm:hover:border-emerald-300 transition-colors">
-                  <input 
-                    type="checkbox" 
-                    checked={member.isKid} 
-                    onChange={(e) => handleUpdateMember(member.id, 'isKid', e.target.checked)}
-                    className="w-5 h-5 sm:w-4 sm:h-4 text-emerald-600 rounded border-emerald-300 sm:border-slate-300 focus:ring-emerald-500 cursor-pointer"
-                  />
-                  <span className="font-bold text-emerald-800 sm:text-slate-700 sm:uppercase sm:text-xs sm:tracking-wider text-sm">Kid/Junior</span>
-                </label>
-                
-                <button 
-                  onClick={() => handleDeleteMember(member.id)}
-                  disabled={members.length <= 1}
-                  className="text-red-400 hover:text-white bg-white hover:bg-red-500 border border-slate-200 hover:border-red-500 p-2.5 sm:p-2 rounded-lg transition-all disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-red-400 disabled:hover:border-slate-200 shadow-sm sm:shadow-none"
-                  title="Remove Manager"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          ))}
-
-          <button 
-            onClick={handleAddMember}
-            className="w-full mt-4 py-4 border-2 border-dashed border-emerald-300 rounded-xl text-emerald-600 font-black flex items-center justify-center gap-2 hover:bg-emerald-50 hover:border-emerald-400 transition-colors"
-          >
-            <PlusCircle className="w-5 h-5" /> Add New Manager
-          </button>
         </div>
       </div>
 
