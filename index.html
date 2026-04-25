@@ -17,32 +17,38 @@
       gtag('config', 'G-5B5K2VB1VE');
     </script>
 
+    <!-- PWA & Mobile Icons -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#059669" />
+    <link rel="apple-touch-icon" href="/logos/world-cup.svg">
+
     <!-- Primary Meta Tags -->
     <meta name="title" content="2026 World Cup Sweepstakes" />
     <meta name="description" content="Follow the live standings, bracket, and matches for your World Cup sweepstakes!" />
 
     <!-- Open Graph / Facebook / iMessage / WhatsApp -->
-    <meta property="og:site_name" content="World Cup 2026 Sweepstakes" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://world-cup-sweepstakes.vercel.app/" />
+    <meta property="og:site_name" content="World Cup 2026 Sweepstakes" />
     <meta property="og:title" content="2026 World Cup Sweepstakes" />
     <meta property="og:description" content="Follow the live standings, bracket, and matches for your World Cup sweepstakes!" />
     
-    <!-- Cache-busted image URLs & Secure URL for strict scrapers -->
-    <meta property="og:image" content="https://world-cup-sweepstakes.vercel.app/og-image.png?v=1" />
-    <meta property="og:image:secure_url" content="https://world-cup-sweepstakes.vercel.app/og-image.png?v=1" />
+    <!-- Bumped to v=2 to clear the "Bad Response" cache in Facebook/WhatsApp -->
+    <meta property="og:image" content="https://world-cup-sweepstakes.vercel.app/og-image.png?v=2" />
+    <meta property="og:image:secure_url" content="https://world-cup-sweepstakes.vercel.app/og-image.png?v=2" />
     
-    <!-- Extra WhatsApp safeguards -->
+    <!-- Image Metadata for robust WhatsApp previews -->
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="World Cup Sweepstakes Bracket showing current standings" />
 
-    <!-- Twitter / X (Also used as a fallback by some messaging apps) -->
+    <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://world-cup-sweepstakes.vercel.app/" />
     <meta name="twitter:title" content="2026 World Cup Sweepstakes" />
     <meta name="twitter:description" content="Follow the live standings, bracket, and matches for your World Cup sweepstakes!" />
-    <meta name="twitter:image" content="https://world-cup-sweepstakes.vercel.app/og-image.png?v=1" />
+    <meta name="twitter:image" content="https://world-cup-sweepstakes.vercel.app/og-image.png?v=2" />
   </head>
   <body>
     <div id="root"></div>
