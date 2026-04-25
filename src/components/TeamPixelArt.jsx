@@ -6,7 +6,7 @@ export const TeamPixelArt = ({ teamId, className }) => {
 
   return (
     <img 
-      src={`/pixelart/${teamId}.png`} 
+      src={`/art/${teamId}.png`} 
       alt={`${teamId} Art`} 
       className={className}
       style={{
