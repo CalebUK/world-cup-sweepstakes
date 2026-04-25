@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Loader2, Settings, X, Trophy, Plus, Globe } from 'lucide-react';
+import { Loader2, Settings, X, Trophy, Plus, Globe, Trash2 } from 'lucide-react';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'; 
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 
@@ -183,7 +183,6 @@ export default function App() {
   const handleJoinSubmit = () => {
     if (!pendingJoinCode.trim() || !pendingJoinName.trim()) return;
     
-    // Auto-extract ID if they pasted the full URL instead of just the code
     let finalCode = pendingJoinCode.trim();
     if (finalCode.includes('?host=')) {
       try {
@@ -203,6 +202,22 @@ export default function App() {
     setPendingJoinName('');
     setShowJoinModal(false);
     window.history.replaceState({}, '', window.location.pathname);
+  };
+
+  const handleLeaveLeague = () => {
+    if (!activeLeagueId || activeLeagueId === user?.uid) return;
+    
+    if (window.confirm("Are you sure you want to remove this league from your list? You can always rejoin later with the invite link.")) {
+      const newLeagues = joinedLeagues.filter(l => l.id !== activeLeagueId);
+      setJoinedLeagues(newLeagues);
+      localStorage.setItem('wcJoinedLeagues', JSON.stringify(newLeagues));
+      
+      // Automatically switch back to their own hosted league
+      if (user) {
+        handleSwitchLeague(user.uid);
+      }
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   };
 
   const handleResetData = () => {
@@ -473,7 +488,6 @@ export default function App() {
                World Cup 2026
             </h1>
             
-            {/* THE NEW LEAGUE SWITCHER */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-4 w-full sm:max-w-xl bg-white/10 p-2 sm:p-2.5 rounded-xl border border-white/20 backdrop-blur-sm shadow-sm">
                <span className="text-xs font-bold text-green-200 uppercase tracking-widest pl-2 hidden sm:block">Active League:</span>
                
@@ -492,6 +506,17 @@ export default function App() {
                    <Trophy className="w-4 h-4 text-emerald-700 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                  </div>
                  
+                 {/* NEW: LEAVE LEAGUE BUTTON (Only shows if viewing a joined league) */}
+                 {user && activeLeagueId !== user.uid && (
+                   <button 
+                     onClick={handleLeaveLeague}
+                     className="bg-red-500/90 hover:bg-red-500 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-red-400 flex items-center justify-center shrink-0"
+                     title="Remove this league"
+                   >
+                     <Trash2 className="w-5 h-5" />
+                   </button>
+                 )}
+
                  <button 
                    onClick={() => setShowJoinModal(true)}
                    className="bg-emerald-500 hover:bg-emerald-400 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-emerald-400 flex items-center gap-1 shrink-0"
@@ -505,7 +530,6 @@ export default function App() {
 
           </div>
           
-          {/* Settings Button (Share link moved inside!) */}
           <div className="flex flex-col items-stretch gap-3 w-full md:w-auto mt-2 md:mt-0">
              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 {!isViewer && user && (
@@ -644,7 +668,7 @@ export default function App() {
                   handleUpdateMember={handleUpdateMember} 
                   handleDeleteMember={handleDeleteMember} 
                   handleResetData={handleResetData}
-                  userUid={user?.uid}
+                  userUid={user?.uid} // Passed so settings can generate share link
                 />
              </div>
            </div>
