@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Info, Filter, ArrowUpDown, ShieldAlert } from 'lucide-react';
+import { Info, Filter, ArrowUpDown, ShieldAlert, ShieldX } from 'lucide-react';
 import { TEAMS_DATA } from '../../config/data.js';
 import { TEAM_ODDS } from '../../config/odds.js';
 import { TeamLogo } from '../TeamLogo.jsx';
@@ -102,99 +102,95 @@ export const TeamsTab = ({
             onChange={(e) => handleSortChange(e.target.value)}
             className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer"
           >
-            <option value="Group">Group (A-Z)</option>
+            <option value="Group">Group</option>
             <option value="Rank">FIFA Ranking (High to Low)</option>
             <option value="Odds">Tournament Odds</option>
           </select>
         </div>
       </div>
 
-      {/* Teams Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {/* Teams Grid - Set to responsive columns */}
+      <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {displayedTeams.map(team => {
           const isEliminated = eliminatedTeams[team.id];
           const oddsStr = TEAM_ODDS[team.id];
           
           return (
-            <div key={team.id} className={`group relative bg-white rounded-2xl border-2 transition-all shadow-md flex flex-col overflow-hidden ${
-              isEliminated ? 'border-red-200 opacity-80 grayscale' : 'border-slate-200 hover:border-emerald-400 hover:shadow-xl hover:-translate-y-1.5'
+            <div key={team.id} className={`group relative aspect-square rounded-2xl border-2 transition-all shadow-md flex flex-col overflow-hidden ${
+              isEliminated ? 'border-red-200 opacity-80 grayscale' : 'border-slate-200 hover:border-emerald-400 hover:shadow-xl hover:-translate-y-1'
             }`}>
               
-              {/* TOP HALF: The Art Gallery! */}
-              <div className="relative w-full aspect-square bg-slate-100 overflow-hidden border-b border-slate-200">
-                
-                {/* Full visibility pixel art filling the square */}
-                <TeamPixelArt teamId={team.id} className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105" />
-
-                {isEliminated && (
-                  <div className="absolute top-3 right-3 text-[10px] font-black uppercase bg-red-600 text-white px-2.5 py-1 rounded shadow-md tracking-widest z-20">
-                    Eliminated
-                  </div>
-                )}
-                
-                {/* Frosted Glass Information Panel */}
-                <div className="absolute bottom-0 left-0 right-0 bg-slate-900/60 backdrop-blur-md border-t border-white/10 p-3 sm:p-4 flex flex-col gap-2 z-10 transition-colors group-hover:bg-slate-900/70">
-                  
-                  {/* Row 1: Full Width Team Name */}
-                  <div className="font-black text-white text-xl leading-tight drop-shadow-md w-full">
-                    {team.name}
-                  </div>
-
-                  {/* Row 2: Stats & Logo */}
-                  <div className="flex items-center flex-wrap gap-2 pt-1 border-t border-white/10">
-                    <TeamLogo teamId={team.id} className="w-8 h-8 shrink-0 drop-shadow-lg" />
-                    
-                    <span className="text-[9px] font-black uppercase tracking-wider bg-white/20 text-white px-2 py-1 rounded border border-white/20 shadow-sm">
-                      Grp {team.group}
-                    </span>
-                    
-                    <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-500/80 text-white px-2 py-1 rounded border border-emerald-400/50 shadow-sm">
-                      Rank {team.rank}
-                    </span>
-                    
-                    {/* The Odds in its own little pill box */}
-                    <span className="text-[9px] font-black uppercase tracking-wider bg-purple-500/80 text-white px-2 py-1 rounded border border-purple-400/50 shadow-sm ml-auto">
-                      {oddsStr || 'N/A'}
-                    </span>
-                  </div>
-
-                </div>
+              {/* THE ARTWORK BACKGROUND (Covers the entire square block) */}
+              <div className="absolute inset-0 z-0">
+                <TeamPixelArt teamId={team.id} className="w-full h-full object-cover object-center opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
+                {/* Subtle gradient so white text pops over light pixel art */}
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-900/10 via-transparent to-slate-900/60"></div>
               </div>
 
-              {/* BOTTOM HALF: Crisp, White Controls */}
-              <div className="p-4 sm:p-5 flex-1 flex flex-col justify-end gap-3 bg-white relative z-10">
-                <div className="space-y-3">
+              {isEliminated && (
+                <div className="absolute top-0 left-0 right-0 bg-red-600 text-white text-center py-1 text-[10px] font-black uppercase tracking-widest z-20 shadow-md">
+                  Eliminated
+                </div>
+              )}
+              
+              {/* TOP/MIDDLE: Centered Logo and Name */}
+              <div className="relative z-10 flex flex-col items-center justify-center pt-6 sm:pt-8 flex-1 px-2">
+                <TeamLogo teamId={team.id} className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 drop-shadow-xl mb-2" />
+                <span className="font-black text-white text-xl sm:text-2xl text-center leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                  {team.name}
+                </span>
+              </div>
+
+              {/* BOTTOM: Stats and Controls */}
+              <div className="relative z-10 flex flex-col gap-2 p-3 sm:p-4 mt-auto">
+                
+                {/* Single Row: Group, Rank, Odds */}
+                <div className="flex items-center justify-center gap-1.5 w-full flex-wrap">
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-slate-800 px-2 py-1 rounded shadow-sm">
+                    Group {team.group}
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-emerald-800 px-2 py-1 rounded shadow-sm">
+                    Rank {team.rank}
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-purple-800 px-2 py-1 rounded shadow-sm">
+                    Odds {oddsStr || 'N/A'}
+                  </span>
+                </div>
+
+                {/* Single Line Controls: Manager Dropdown & Eliminate Button */}
+                <div className="flex items-center gap-2 mt-1 w-full">
                   {isViewer ? (
-                    <div className="w-full text-center py-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-black text-emerald-800">
+                    <div className="flex-1 text-center py-2 bg-white/95 backdrop-blur-md border border-white/50 rounded-lg font-black text-sm text-emerald-800 shadow-sm truncate px-2">
                       {assignments[team.id] ? members.find(m => m.id === assignments[team.id])?.name : 'Unassigned'}
                     </div>
                   ) : (
-                    <select 
-                      value={assignments[team.id] || ''} 
-                      onChange={(e) => handleAssign(team.id, e.target.value)}
-                      className="w-full p-3 border-2 border-emerald-200 rounded-xl text-sm font-black text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 bg-white cursor-pointer shadow-sm transition-all"
-                    >
-                      <option value="">-- Assign Manager --</option>
-                      {members.map(m => (
-                        <option key={m.id} value={m.id}>{m.name}</option>
-                      ))}
-                    </select>
-                  )}
+                    <>
+                      <select 
+                        value={assignments[team.id] || ''} 
+                        onChange={(e) => handleAssign(team.id, e.target.value)}
+                        className="flex-1 py-2 px-2 border-0 rounded-lg text-xs sm:text-sm font-black text-slate-800 focus:ring-2 focus:ring-emerald-500 bg-white/95 backdrop-blur-md cursor-pointer shadow-sm min-w-0"
+                      >
+                        <option value="">-- Assign --</option>
+                        {members.map(m => (
+                          <option key={m.id} value={m.id}>{m.name}</option>
+                        ))}
+                      </select>
 
-                  {!isViewer && (
-                    <button
-                      onClick={() => toggleEliminated(team.id)}
-                      className={`w-full py-2.5 flex items-center justify-center gap-2 rounded-xl font-bold text-sm transition-all border-2 ${
-                        isEliminated 
-                          ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' 
-                          : 'bg-white text-slate-400 border-slate-200 hover:border-red-300 hover:bg-red-50 hover:text-red-500'
-                      }`}
-                    >
-                      <ShieldAlert className="w-4 h-4" />
-                      {isEliminated ? 'Restore Team' : 'Mark Eliminated'}
-                    </button>
+                      <button
+                        onClick={() => toggleEliminated(team.id)}
+                        title={isEliminated ? "Restore Team" : "Mark Eliminated"}
+                        className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-lg font-bold transition-all shadow-sm backdrop-blur-md ${
+                          isEliminated 
+                            ? 'bg-red-500/90 text-white hover:bg-red-600' 
+                            : 'bg-white/90 text-slate-400 hover:text-red-500 hover:bg-white'
+                        }`}
+                      >
+                        {isEliminated ? <ShieldAlert className="w-5 h-5" /> : <ShieldX className="w-5 h-5" />}
+                      </button>
+                    </>
                   )}
                 </div>
+
               </div>
 
             </div>
