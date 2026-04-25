@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Loader2, Settings, X, Trophy, Plus, Globe, Trash2, CheckCircle } from 'lucide-react';
+import { Loader2, Settings, X, Trophy, Plus, Globe, Trash2, CheckCircle, LogOut } from 'lucide-react';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'; 
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 
@@ -30,12 +30,12 @@ export default function App() {
     try { return localStorage.getItem('wcActiveLeague') || null; } catch { return null; }
   });
   
-  // NEW: State for your own custom league name!
   const [myLeagueName, setMyLeagueName] = useState(() => {
     try { return localStorage.getItem('wcMyLeagueName') || 'My Hosted Sweepstakes'; } catch { return 'My Hosted Sweepstakes'; }
   });
 
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false); // NEW MODAL STATE
   const [pendingJoinCode, setPendingJoinCode] = useState('');
   const [pendingJoinName, setPendingJoinName] = useState('');
 
@@ -117,7 +117,6 @@ export default function App() {
         setEliminatedTeams(data.eliminatedTeams || {});
         setSettings(data.settings || { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'My Hosted Sweepstakes' });
         
-        // NEW: If you are looking at your own league, save the custom name to local storage for the dropdown!
         if (activeLeagueId === user.uid) {
           const customName = data.settings?.leagueName || 'My Hosted Sweepstakes';
           setMyLeagueName(customName);
@@ -214,42 +213,41 @@ export default function App() {
     window.history.replaceState({}, '', window.location.pathname);
   };
 
-  const handleLeaveLeague = () => {
+  // REVISED LEAVE LEAGUE LOGIC
+  const confirmLeaveLeague = () => {
     if (!activeLeagueId || activeLeagueId === user?.uid) return;
     
-    if (window.confirm("Are you sure you want to remove this league from your list? You can always rejoin later with the invite link.")) {
-      const newLeagues = joinedLeagues.filter(l => l.id !== activeLeagueId);
-      setJoinedLeagues(newLeagues);
-      try { localStorage.setItem('wcJoinedLeagues', JSON.stringify(newLeagues)); } catch (e) {}
-      
-      if (user) handleSwitchLeague(user.uid);
-      window.history.replaceState({}, '', window.location.pathname);
-    }
+    const newLeagues = joinedLeagues.filter(l => l.id !== activeLeagueId);
+    setJoinedLeagues(newLeagues);
+    try { localStorage.setItem('wcJoinedLeagues', JSON.stringify(newLeagues)); } catch (e) {}
+    
+    if (user) handleSwitchLeague(user.uid);
+    window.history.replaceState({}, '', window.location.pathname);
+    setShowLeaveModal(false);
   };
 
   const handleResetData = () => {
     if (isViewer) return;
-    if (window.confirm("🚨 WARNING: Are you sure you want to reset the entire tournament? This will erase all match scores, team assignments, and custom rules!")) {
-      const resetMatches = generateAllMatches();
-      const defaultSettings = { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'My Hosted Sweepstakes' };
-      
-      setMembers(INITIAL_MEMBERS);
-      setAssignments({});
-      setEliminatedTeams({});
-      setMatches(resetMatches);
-      setSettings(defaultSettings);
+    const resetMatches = generateAllMatches();
+    const defaultSettings = { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'My Hosted Sweepstakes' };
+    
+    setMembers(INITIAL_MEMBERS);
+    setAssignments({});
+    setEliminatedTeams({});
+    setMatches(resetMatches);
+    setSettings(defaultSettings);
 
-      saveState('members', INITIAL_MEMBERS);
-      saveState('assignments', {});
-      saveState('eliminatedTeams', {});
-      saveState('matches', resetMatches);
-      saveState('settings', defaultSettings);
-      
-      setShowSettingsModal(false);
-      setActiveTab('standings');
-    }
+    saveState('members', INITIAL_MEMBERS);
+    saveState('assignments', {});
+    saveState('eliminatedTeams', {});
+    saveState('matches', resetMatches);
+    saveState('settings', defaultSettings);
+    
+    setShowSettingsModal(false);
+    setActiveTab('standings');
   };
 
+  // --- REVISED AWARDS LOGIC INTERCEPTER ---
   const { teamStats, memberStats, awards } = useMemo(() => {
     const stats = calculateStats(matches, eliminatedTeams, settings, members, assignments);
     if (stats.awards?.overall) {
@@ -257,10 +255,11 @@ export default function App() {
       const second = stats.awards.overall['2nd']?.id;
       const third = stats.awards.overall['3rd']?.id;
       if (third && (third === first || third === second)) {
-        const sortedMembers = Object.values(stats.memberStats).sort((a, b) => b.points - a.points);
+        // FIXED: Using .pts instead of .points, and passing the full object!
+        const sortedMembers = [...stats.memberStats].sort((a, b) => b.pts - a.pts);
         const eligibleThird = sortedMembers.find(m => m.id !== first && m.id !== second);
         if (eligibleThird) {
-          stats.awards.overall['3rd'] = { id: eligibleThird.id, reason: '3rd Most Points' };
+          stats.awards.overall['3rd'] = eligibleThird;
         } else {
           delete stats.awards.overall['3rd'];
         }
@@ -494,7 +493,6 @@ export default function App() {
                      onChange={e => handleSwitchLeague(e.target.value)}
                      className="w-full bg-white/90 text-slate-900 font-black text-sm sm:text-base py-2.5 pl-9 pr-4 rounded-lg appearance-none cursor-pointer border-0 focus:ring-2 focus:ring-emerald-400 shadow-inner"
                    >
-                     {/* Displays your custom league name! */}
                      {user && <option value={user.uid}>👑 {myLeagueName}</option>}
                      {joinedLeagues.map(l => (
                        <option key={l.id} value={l.id}>👁️ {l.name}</option>
@@ -503,7 +501,7 @@ export default function App() {
                    <Trophy className="w-4 h-4 text-emerald-700 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                  </div>
                  {user && activeLeagueId !== user.uid && (
-                   <button onClick={handleLeaveLeague} className="bg-red-500/90 hover:bg-red-500 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-red-400 flex items-center justify-center shrink-0" title="Remove this league">
+                   <button onClick={() => setShowLeaveModal(true)} className="bg-red-500/90 hover:bg-red-500 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-red-400 flex items-center justify-center shrink-0" title="Remove this league">
                      <Trash2 className="w-5 h-5" />
                    </button>
                  )}
@@ -544,9 +542,29 @@ export default function App() {
         {activeTab === 'groups' && <GroupsTab teamStats={teamStats} matches={matches} settings={settings} />}
         {activeTab === 'bracket' && <BracketTab matches={matches} members={members} assignments={assignments} />}
         {activeTab === 'matches' && <MatchesTab matches={matches} localTimezone={localTimezone} setLocalTimezone={setLocalTimezone} isViewer={isViewer} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} handleRandomizeGroups={handleRandomizeGroups} />}
-        {/* REMOVED UNUSED getOwnerName PROP HERE */}
         {activeTab === 'teams' && <TeamsTab eliminatedTeams={eliminatedTeams} isViewer={isViewer} assignments={assignments} members={members} handleAssign={handleAssign} toggleEliminated={toggleEliminated} />}
       </main>
+
+      {/* NEW: LEAVE LEAGUE CONFIRMATION MODAL */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm border-4 border-red-600">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                <LogOut className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-wide">Leave League?</h3>
+                <p className="text-sm text-slate-500 mt-2 font-medium">Are you sure you want to remove this league from your list? You can always rejoin later with the invite link.</p>
+              </div>
+              <div className="flex w-full gap-3 mt-4">
+                <button onClick={() => setShowLeaveModal(false)} className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Cancel</button>
+                <button onClick={confirmLeaveLeague} className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-colors shadow-md">Leave League</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showJoinModal && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 animate-fade-in">

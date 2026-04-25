@@ -4,29 +4,27 @@ import { KNOCKOUT_STAGES, DEFAULT_SCORING } from '../../config/data.js';
 
 export const SettingsTab = ({ settings, updateSettings, members, handleAddMember, handleUpdateMember, handleDeleteMember, handleResetData, userUid }) => {
   const [copySuccess, setCopySuccess] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false); // NEW MODAL STATE
 
-  const handleCopyLink = async () => {
+  const handleCopyLink = () => {
     if (!userUid) return;
     const url = new URL(window.location.href);
     url.searchParams.set('host', userUid);
     const linkToCopy = url.toString();
     
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(linkToCopy);
-      } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = linkToCopy;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      }
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy', err);
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(linkToCopy)
+        .then(() => {
+          setCopySuccess(true);
+          setTimeout(() => setCopySuccess(false), 2000);
+        })
+        .catch(() => { /* silent fail if blocked */ });
     }
+  };
+
+  const confirmReset = () => {
+    handleResetData();
+    setShowResetConfirm(false);
   };
 
   const handleScoringUpdate = (stageGroup, stage, field, value) => {
@@ -55,7 +53,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
   const activeScoring = settings.scoring || DEFAULT_SCORING;
 
   return (
-    <div className="space-y-8 animate-fade-in max-w-4xl mx-auto pb-8">
+    <div className="space-y-8 animate-fade-in max-w-4xl mx-auto pb-8 relative">
       
       {/* SHARE LEAGUE BANNER */}
       <div className="bg-gradient-to-br from-indigo-50 to-blue-100 rounded-xl shadow-md border-2 border-blue-200 p-5 sm:p-6 relative overflow-hidden">
@@ -78,7 +76,6 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
         </button>
       </div>
 
-      {/* NEW: LEAGUE IDENTITY SECTION */}
       <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6 overflow-hidden">
         <h2 className="text-xl font-black text-emerald-800 mb-4 flex items-center gap-2 uppercase tracking-wide border-b-2 border-emerald-50 pb-4">
           <Trophy className="w-6 h-6 text-slate-500" /> League Identity
@@ -264,12 +261,33 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
           Need to start over? This will permanently erase all match scores, restore default rules, and completely remove all team squad allocations.
         </p>
         <button 
-          onClick={handleResetData}
+          onClick={() => setShowResetConfirm(true)}
           className="bg-red-600 hover:bg-red-700 text-white font-black px-6 py-3 rounded-xl shadow-sm hover:shadow-md transition-all flex items-center gap-2 w-full sm:w-auto justify-center"
         >
           <RotateCcw className="w-5 h-5" /> Reset All Tournament Data
         </button>
       </div>
+
+      {/* NEW: RESET CONFIRMATION MODAL */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm border-4 border-red-600">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-wide">Reset All Data?</h3>
+                <p className="text-sm text-slate-500 mt-2 font-medium">🚨 WARNING: This will permanently erase all match scores, team assignments, and custom rules! You cannot undo this.</p>
+              </div>
+              <div className="flex flex-col w-full gap-3 mt-4">
+                <button onClick={confirmReset} className="w-full py-3 px-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-colors shadow-md">Yes, Reset Everything</button>
+                <button onClick={() => setShowResetConfirm(false)} className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
