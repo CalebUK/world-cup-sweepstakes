@@ -109,7 +109,7 @@ export const TeamsTab = ({
         </div>
       </div>
 
-      {/* Teams Grid - Set to responsive columns */}
+      {/* Teams Grid - Strict responsive columns */}
       <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {displayedTeams.map(team => {
           const isEliminated = eliminatedTeams[team.id];
@@ -120,11 +120,11 @@ export const TeamsTab = ({
               isEliminated ? 'border-red-200 opacity-80 grayscale' : 'border-slate-200 hover:border-emerald-400 hover:shadow-xl hover:-translate-y-1'
             }`}>
               
-              {/* THE ARTWORK BACKGROUND (Covers the entire square block) */}
-              <div className="absolute inset-0 z-0">
-                <TeamPixelArt teamId={team.id} className="w-full h-full object-cover object-center opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
-                {/* Subtle gradient so white text pops over light pixel art */}
-                <div className="absolute inset-0 bg-gradient-to-b from-slate-900/10 via-transparent to-slate-900/60"></div>
+              {/* THE ARTWORK BACKGROUND (Faded texture covering the whole square) */}
+              <div className="absolute inset-0 z-0 bg-slate-800">
+                <TeamPixelArt teamId={team.id} className="w-full h-full object-cover object-center opacity-25 group-hover:opacity-40 transition-opacity duration-300 mix-blend-luminosity" />
+                {/* Gradient to darken the bottom so white UI components pop perfectly */}
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-900/10 via-slate-900/40 to-slate-900/95"></div>
               </div>
 
               {isEliminated && (
@@ -133,34 +133,38 @@ export const TeamsTab = ({
                 </div>
               )}
               
-              {/* TOP/MIDDLE: Centered Logo and Name */}
+              {/* TOP/MIDDLE: Centered Logo in a White Circle, and Team Name */}
               <div className="relative z-10 flex flex-col items-center justify-center pt-6 sm:pt-8 flex-1 px-2">
-                <TeamLogo teamId={team.id} className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 drop-shadow-xl mb-2" />
-                <span className="font-black text-white text-xl sm:text-2xl text-center leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                {/* The White Circle to make the logo pop! */}
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-full p-2.5 flex items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.5)] mb-2 sm:mb-3 shrink-0">
+                  <TeamLogo teamId={team.id} className="w-full h-full object-contain" />
+                </div>
+                
+                <span className="font-black text-white text-xl sm:text-2xl text-center leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] px-1">
                   {team.name}
                 </span>
               </div>
 
               {/* BOTTOM: Stats and Controls */}
-              <div className="relative z-10 flex flex-col gap-2 p-3 sm:p-4 mt-auto">
+              <div className="relative z-10 flex flex-col gap-2 p-2 sm:p-3 mt-auto w-full">
                 
-                {/* Single Row: Group, Rank, Odds */}
-                <div className="flex items-center justify-center gap-1.5 w-full flex-wrap">
-                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-slate-800 px-2 py-1 rounded shadow-sm">
+                {/* Single Row: Group, Rank, Odds (FORCED ON ONE LINE) */}
+                <div className="flex items-center justify-center gap-1 sm:gap-1.5 w-full flex-nowrap px-1">
+                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-slate-800 px-1.5 py-1 rounded shadow-sm whitespace-nowrap">
                     Group {team.group}
                   </span>
-                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-emerald-800 px-2 py-1 rounded shadow-sm">
+                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-emerald-800 px-1.5 py-1 rounded shadow-sm whitespace-nowrap">
                     Rank {team.rank}
                   </span>
-                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-purple-800 px-2 py-1 rounded shadow-sm">
+                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-purple-800 px-1.5 py-1 rounded shadow-sm whitespace-nowrap truncate">
                     Odds {oddsStr || 'N/A'}
                   </span>
                 </div>
 
                 {/* Single Line Controls: Manager Dropdown & Eliminate Button */}
-                <div className="flex items-center gap-2 mt-1 w-full">
+                <div className="flex items-center gap-1.5 sm:gap-2 w-full pb-1">
                   {isViewer ? (
-                    <div className="flex-1 text-center py-2 bg-white/95 backdrop-blur-md border border-white/50 rounded-lg font-black text-sm text-emerald-800 shadow-sm truncate px-2">
+                    <div className="flex-1 text-center py-2 bg-white/95 backdrop-blur-md border border-white/50 rounded-lg font-black text-[11px] sm:text-xs text-emerald-800 shadow-sm truncate px-2">
                       {assignments[team.id] ? members.find(m => m.id === assignments[team.id])?.name : 'Unassigned'}
                     </div>
                   ) : (
@@ -168,7 +172,7 @@ export const TeamsTab = ({
                       <select 
                         value={assignments[team.id] || ''} 
                         onChange={(e) => handleAssign(team.id, e.target.value)}
-                        className="flex-1 py-2 px-2 border-0 rounded-lg text-xs sm:text-sm font-black text-slate-800 focus:ring-2 focus:ring-emerald-500 bg-white/95 backdrop-blur-md cursor-pointer shadow-sm min-w-0"
+                        className="flex-1 py-2 px-2 border-0 rounded-lg text-[11px] sm:text-xs font-black text-slate-800 focus:ring-2 focus:ring-emerald-500 bg-white/95 backdrop-blur-md cursor-pointer shadow-sm min-w-0"
                       >
                         <option value="">-- Assign --</option>
                         {members.map(m => (
@@ -179,13 +183,13 @@ export const TeamsTab = ({
                       <button
                         onClick={() => toggleEliminated(team.id)}
                         title={isEliminated ? "Restore Team" : "Mark Eliminated"}
-                        className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-lg font-bold transition-all shadow-sm backdrop-blur-md ${
+                        className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-lg font-bold transition-all shadow-sm backdrop-blur-md ${
                           isEliminated 
                             ? 'bg-red-500/90 text-white hover:bg-red-600' 
                             : 'bg-white/90 text-slate-400 hover:text-red-500 hover:bg-white'
                         }`}
                       >
-                        {isEliminated ? <ShieldAlert className="w-5 h-5" /> : <ShieldX className="w-5 h-5" />}
+                        {isEliminated ? <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5" /> : <ShieldX className="w-4 h-4 sm:w-5 sm:h-5" />}
                       </button>
                     </>
                   )}
