@@ -1,5 +1,5 @@
 import React from 'react';
-import { Medal, Frown, Award, Table, Trophy, Info } from 'lucide-react';
+import { Medal, Award, Table, Trophy, Info } from 'lucide-react';
 import { TeamLogo } from '../TeamLogo.jsx';
 import { TEAM_ODDS } from '../../config/odds.js';
 
@@ -13,11 +13,11 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
         {icon}
         <span className="font-bold text-slate-500 uppercase text-sm tracking-wider">{rank}</span>
       </div>
-      <div className="font-black text-slate-800 text-xl">
+      <div className="font-black text-slate-800 text-xl flex-1 text-right sm:text-left pl-2">
         {member ? (
-          <div className="flex items-center gap-3">
-            <span>{member.name}</span>
-            <span className="text-sm font-bold bg-green-100 text-green-800 px-2 py-0.5 rounded border border-green-200">
+          <div className="flex items-center justify-end sm:justify-start gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+            <span className="truncate max-w-[120px] sm:max-w-none">{member.name}</span>
+            <span className="text-xs sm:text-sm font-bold bg-green-100 text-green-800 px-2 py-0.5 rounded border border-green-200 shrink-0">
               {member.pts} pts
             </span>
           </div>
@@ -29,30 +29,34 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
   return (
     <div className="space-y-8 animate-fade-in">
       <div className={`grid grid-cols-1 ${settings.kidAwards ? 'md:grid-cols-2' : ''} gap-6`}>
-        <div className="bg-white rounded-xl shadow-md border-2 border-green-100 overflow-hidden">
-          <div className="bg-green-800 text-white p-4 font-bold flex items-center gap-2 uppercase tracking-wide">
+        <div className="bg-white rounded-xl shadow-md border-2 border-green-100 overflow-hidden flex flex-col">
+          <div className="bg-green-800 text-white p-4 font-bold flex items-center gap-2 uppercase tracking-wide shrink-0">
             <Trophy className="w-5 h-5 text-yellow-400" /> Overall Awards
           </div>
-          <div className="p-4 space-y-4">
+          <div className="p-4 space-y-4 flex-1 flex flex-col justify-center">
             <AwardRow 
               rank="1st" 
               member={awards.overall['1st']} 
-              icon={<img src="/logos/world_cup_trophy.svg" alt="Trophy" className="w-8 h-8 drop-shadow-md" />} 
+              icon={<img src="/logos/world_cup_trophy.svg" alt="Trophy" className="w-8 h-8 drop-shadow-md shrink-0" />} 
             />
-            <AwardRow rank="2nd" member={awards.overall['2nd']} icon={<Medal className="text-slate-400 w-6 h-6"/>} />
-            <AwardRow rank="3rd" member={awards.overall['3rd']} icon={<Medal className="text-amber-600 w-6 h-6"/>} />
+            <AwardRow rank="2nd" member={awards.overall['2nd']} icon={<Medal className="text-slate-400 w-6 h-6 shrink-0"/>} />
+            <AwardRow rank="3rd" member={awards.overall['3rd']} icon={<Medal className="text-amber-600 w-6 h-6 shrink-0"/>} />
             {settings.woodenSpoon && (
-              <AwardRow rank="Wooden Spoon" member={awards.overall['Spoon']} icon={<Frown className="text-amber-800 w-6 h-6"/>} />
+              <AwardRow 
+                rank="Wooden Spoon" 
+                member={awards.overall['Spoon']} 
+                icon={<img src="/standings/woodenspoon.svg" alt="Wooden Spoon" className="w-6 h-6 drop-shadow-sm shrink-0" />} 
+              />
             )}
           </div>
         </div>
 
         {settings.kidAwards && (
-          <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 overflow-hidden">
-            <div className="bg-emerald-600 text-white p-4 font-bold flex items-center gap-2 uppercase tracking-wide">
+          <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 overflow-hidden flex flex-col">
+            <div className="bg-emerald-600 text-white p-4 font-bold flex items-center gap-2 uppercase tracking-wide shrink-0">
               <Award className="w-5 h-5 text-emerald-200" /> Kids Awards
             </div>
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-4 flex-1 flex flex-col justify-center">
               {kidsToShow.length > 0 ? kidsToShow.map((kid, idx) => {
                 let iconColor = "text-slate-400";
                 if (idx === 0) iconColor = "text-yellow-500";
@@ -64,7 +68,7 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
                     key={kid.id} 
                     rank={`${idx + 1}${idx === 0 ? 'st' : idx === 1 ? 'nd' : idx === 2 ? 'rd' : 'th'} Place`} 
                     member={kid} 
-                    icon={idx === 0 ? <img src="/logos/world_cup_trophy.svg" alt="Trophy" className="w-7 h-7 drop-shadow-sm" /> : <Medal className={`${iconColor} w-6 h-6`}/>} 
+                    icon={idx === 0 ? <img src="/logos/world_cup_trophy.svg" alt="Trophy" className="w-7 h-7 drop-shadow-sm shrink-0" /> : <Medal className={`${iconColor} w-6 h-6 shrink-0`}/>} 
                   />
                 );
               }) : (
@@ -125,7 +129,7 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
                     <td className="p-4">
                       <div className="font-bold text-slate-800 flex items-center gap-2 text-lg">
                         {member.name}
-                        {isLastPlace && <span title="Wooden Spoon" className="text-xl">🥄</span>}
+                        {isLastPlace && <img src="/standings/woodenspoon.svg" alt="Wooden Spoon" title="Wooden Spoon" className="w-6 h-6 drop-shadow-sm shrink-0" />}
                       </div>
                       {member.isKid && <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full mt-1 inline-block font-semibold">Kid</span>}
                     </td>

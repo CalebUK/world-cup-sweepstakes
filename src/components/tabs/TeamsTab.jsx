@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Info, Filter, ArrowUpDown, ShieldAlert, ShieldX } from 'lucide-react';
+import { Info, Filter, ArrowUpDown, ShieldAlert, ShieldX, AlertTriangle } from 'lucide-react';
 import { TEAMS_DATA } from '../../config/data.js';
 import { TEAM_ODDS } from '../../config/odds.js';
 import { TeamLogo } from '../TeamLogo.jsx';
@@ -12,6 +12,8 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
   const [sortBy, setSortBy] = useState(() => {
     try { return localStorage.getItem('worldCupTeamsSort') || 'Group'; } catch { return 'Group'; }
   });
+
+  const [teamToRestore, setTeamToRestore] = useState(null);
 
   const handleFilterChange = (val) => {
     setManagerFilter(val);
@@ -53,7 +55,7 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
   });
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in relative">
       {!isViewer && (
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm flex items-start gap-3">
           <Info className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
@@ -107,12 +109,13 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
                 </div>
               )}
               
-              <div className="relative z-10 flex flex-col items-center justify-center pt-5 sm:pt-8 flex-1 px-2">
+              {/* FIXED IPHONE BOSNIA WRAP: Added w-full and min-w-0 to guarantee strictly 1 line */}
+              <div className="relative z-10 flex flex-col items-center justify-center pt-5 sm:pt-8 flex-1 px-2 overflow-hidden w-full min-w-0">
                 <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-full p-2 flex items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.5)] mb-2 sm:mb-3 shrink-0">
                   <TeamLogo teamId={team.id} className="w-full h-full object-contain" />
                 </div>
                 
-                <span className="font-black text-white text-base sm:text-2xl text-center leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] px-1 w-full line-clamp-2">
+                <span className={`font-black text-white text-center leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] px-1 block w-full truncate ${team.name.length > 15 ? 'text-[11px] sm:text-xl' : 'text-base sm:text-2xl'}`}>
                   {team.name}
                 </span>
               </div>
@@ -141,7 +144,8 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
                         <option value="">-- Assign --</option>
                         {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                       </select>
-                      <button onClick={() => toggleEliminated(team.id)} title={isEliminated ? "Restore Team" : "Mark Eliminated"} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-lg font-bold transition-all shadow-sm backdrop-blur-md ${isEliminated ? 'bg-red-500/90 text-white hover:bg-red-600' : 'bg-white/90 text-slate-400 hover:text-red-500 hover:bg-white'}`}>
+                      
+                      <button onClick={() => isEliminated ? setTeamToRestore(team.id) : toggleEliminated(team.id)} title={isEliminated ? "Restore Team" : "Mark Eliminated"} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-lg font-bold transition-all shadow-sm backdrop-blur-md ${isEliminated ? 'bg-red-500/90 text-white hover:bg-red-600' : 'bg-white/90 text-slate-400 hover:text-red-500 hover:bg-white'}`}>
                         {isEliminated ? <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5" /> : <ShieldX className="w-4 h-4 sm:w-5 sm:h-5" />}
                       </button>
                     </>
@@ -153,6 +157,27 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
         })}
         {displayedTeams.length === 0 && <div className="col-span-full py-12 text-center text-slate-400 font-bold text-lg">No teams found for this filter.</div>}
       </div>
+
+      {teamToRestore && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm border-4 border-amber-500">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-wide">Restore Team?</h3>
+                <p className="text-sm text-slate-500 mt-2 font-medium">Warning: This team has been eliminated from the World Cup. Restoring them will allow you to change their assignment, but you will need to manually re-eliminate them afterwards.</p>
+              </div>
+              <div className="flex w-full gap-3 mt-4">
+                <button onClick={() => setTeamToRestore(null)} className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Cancel</button>
+                <button onClick={() => { toggleEliminated(teamToRestore); setTeamToRestore(null); }} className="flex-1 py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors shadow-md">Restore</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

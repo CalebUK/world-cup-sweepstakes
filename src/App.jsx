@@ -22,7 +22,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('standings');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   
-  // --- SAFELY WRAPPED LOCAL STORAGE STATE ---
   const [joinedLeagues, setJoinedLeagues] = useState(() => {
     try { return JSON.parse(localStorage.getItem('wcJoinedLeagues')) || []; } catch { return []; }
   });
@@ -35,7 +34,7 @@ export default function App() {
   });
 
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const [showLeaveModal, setShowLeaveModal] = useState(false); // NEW MODAL STATE
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [pendingJoinCode, setPendingJoinCode] = useState('');
   const [pendingJoinName, setPendingJoinName] = useState('');
 
@@ -67,7 +66,6 @@ export default function App() {
     }
   });
 
-  // --- AUTH & URL INTERCEPTION ---
   useEffect(() => {
     const initAuth = async () => {
       try { await signInAnonymously(auth); } 
@@ -102,7 +100,6 @@ export default function App() {
     return () => { unsubscribe(); clearTimeout(emergencyTimeout); };
   }, [activeLeagueId, joinedLeagues]);
 
-  // --- FIRESTORE SYNC ---
   useEffect(() => {
     if (!user || !activeLeagueId) return;
     
@@ -213,7 +210,6 @@ export default function App() {
     window.history.replaceState({}, '', window.location.pathname);
   };
 
-  // REVISED LEAVE LEAGUE LOGIC
   const confirmLeaveLeague = () => {
     if (!activeLeagueId || activeLeagueId === user?.uid) return;
     
@@ -247,7 +243,6 @@ export default function App() {
     setActiveTab('standings');
   };
 
-  // --- REVISED AWARDS LOGIC INTERCEPTER ---
   const { teamStats, memberStats, awards } = useMemo(() => {
     const stats = calculateStats(matches, eliminatedTeams, settings, members, assignments);
     if (stats.awards?.overall) {
@@ -255,7 +250,6 @@ export default function App() {
       const second = stats.awards.overall['2nd']?.id;
       const third = stats.awards.overall['3rd']?.id;
       if (third && (third === first || third === second)) {
-        // FIXED: Using .pts instead of .points, and passing the full object!
         const sortedMembers = [...stats.memberStats].sort((a, b) => b.pts - a.pts);
         const eligibleThird = sortedMembers.find(m => m.id !== first && m.id !== second);
         if (eligibleThird) {
@@ -453,13 +447,6 @@ export default function App() {
     saveState('settings', next);
   };
 
-  const getOwnerName = (teamId) => {
-    const ownerId = assignments[teamId];
-    if (!ownerId) return 'Unassigned';
-    const member = members.find(m => m.id === ownerId);
-    return member ? member.name : 'Unassigned';
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center text-green-100">
@@ -545,7 +532,6 @@ export default function App() {
         {activeTab === 'teams' && <TeamsTab eliminatedTeams={eliminatedTeams} isViewer={isViewer} assignments={assignments} members={members} handleAssign={handleAssign} toggleEliminated={toggleEliminated} />}
       </main>
 
-      {/* NEW: LEAVE LEAGUE CONFIRMATION MODAL */}
       {showLeaveModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm border-4 border-red-600">
@@ -607,6 +593,7 @@ export default function App() {
         </div>
       )}
 
+      {/* UPDATED WELCOME MODAL TEXT */}
       {showWelcomeModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border-4 border-emerald-600 relative flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden animate-fade-in">
@@ -620,9 +607,10 @@ export default function App() {
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 mt-2 space-y-2 sm:space-y-3">
                    <h3 className="font-black text-slate-800 uppercase tracking-wider text-xs sm:text-sm border-b border-slate-200 pb-2">How It Works:</h3>
                    <ul className="space-y-2 text-xs sm:text-sm">
-                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Teams:</strong> Once you have drawn the teams for your sweepstakes make sure to update the Teams section.</span></li>
+                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Participants:</strong> Head over to the Admin Settings to add all sweepstakes participants.</span></li>
+                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Teams:</strong> Once all teams have been drawn head to the Teams tab to assign everyone.</span></li>
                      <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>Live Scoring:</strong> You earn points every time your teams win, draw, score goals, or keep a clean sheet. Make sure to check the settings tab to customise your scoring.</span></li>
-                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Bracket:</strong> As matches finish, the Knockout Bracket automatically populates and routes the winners.</span></li>
+                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>Matches:</strong> As matches finish, the Knockout Bracket automatically populates and routes the winners.</span></li>
                    </ul>
                 </div>
              </div>
