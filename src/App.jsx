@@ -447,6 +447,14 @@ export default function App() {
     saveState('settings', next);
   };
 
+  // FIXED: Restored the getOwnerName function that was accidentally deleted!
+  const getOwnerName = (teamId) => {
+    const ownerId = assignments[teamId];
+    if (!ownerId) return 'Unassigned';
+    const member = members.find(m => m.id === ownerId);
+    return member ? member.name : 'Unassigned';
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center text-green-100">
@@ -593,7 +601,6 @@ export default function App() {
         </div>
       )}
 
-      {/* UPDATED WELCOME MODAL TEXT */}
       {showWelcomeModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border-4 border-emerald-600 relative flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden animate-fade-in">
