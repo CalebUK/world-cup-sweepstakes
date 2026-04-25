@@ -55,6 +55,10 @@ export default function App() {
   const [members, setMembers] = useState([]);
   const [assignments, setAssignments] = useState({});
   const [eliminatedTeams, setEliminatedTeams] = useState({});
+  
+  // NEW: State to track which teams have been manually forced to stay active
+  const [manualRestores, setManualRestores] = useState({});
+  
   const [matches, setMatches] = useState([]);
   const [settings, setSettings] = useState({});
 
@@ -112,6 +116,7 @@ export default function App() {
         setMembers(data.members || INITIAL_MEMBERS);
         setAssignments(data.assignments || {});
         setEliminatedTeams(data.eliminatedTeams || {});
+        setManualRestores(data.manualRestores || {}); // Load manual restores
         setSettings(data.settings || { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'My Hosted Sweepstakes' });
         
         if (activeLeagueId === user.uid) {
@@ -148,6 +153,7 @@ export default function App() {
         setMembers(INITIAL_MEMBERS);
         setAssignments({});
         setEliminatedTeams({});
+        setManualRestores({});
         setMatches(generateAllMatches());
         setSettings({ woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'My Hosted Sweepstakes' });
         
@@ -156,6 +162,7 @@ export default function App() {
             members: INITIAL_MEMBERS,
             assignments: {},
             eliminatedTeams: {},
+            manualRestores: {},
             matches: generateAllMatches(),
             settings: { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'My Hosted Sweepstakes' }
           });
@@ -230,12 +237,14 @@ export default function App() {
     setMembers(INITIAL_MEMBERS);
     setAssignments({});
     setEliminatedTeams({});
+    setManualRestores({});
     setMatches(resetMatches);
     setSettings(defaultSettings);
 
     saveState('members', INITIAL_MEMBERS);
     saveState('assignments', {});
     saveState('eliminatedTeams', {});
+    saveState('manualRestores', {});
     saveState('matches', resetMatches);
     saveState('settings', defaultSettings);
     
@@ -262,6 +271,7 @@ export default function App() {
     return stats;
   }, [members, assignments, matches, eliminatedTeams, settings]);
 
+  // AUTO-ELIMINATION ENGINE
   useEffect(() => {
     if (isViewer || matches.length === 0 || Object.keys(teamStats).length === 0) return;
 
@@ -284,7 +294,8 @@ export default function App() {
           
         if (sortedGTeams.length === 4) {
           const fourthPlaceId = sortedGTeams[3].id;
-          if (!nextEliminations[fourthPlaceId]) {
+          // FIXED: Auto-engine now respects manual restores!
+          if (!nextEliminations[fourthPlaceId] && !manualRestores[fourthPlaceId]) {
             nextEliminations[fourthPlaceId] = true;
             newlyEliminated = true;
           }
@@ -295,7 +306,7 @@ export default function App() {
     if (groupMatchesPlayed === 72) {
        const thirdsList = getThirdPlaceStandings(teamStats, nextMatches, settings);
        thirdsList.slice(8).forEach(t => {
-          if (!nextEliminations[t.id]) {
+          if (!nextEliminations[t.id] && !manualRestores[t.id]) {
              nextEliminations[t.id] = true;
              newlyEliminated = true;
           }
@@ -368,7 +379,7 @@ export default function App() {
              }
            }
          }
-         if (loserId && !nextEliminations[loserId]) {
+         if (loserId && !nextEliminations[loserId] && !manualRestores[loserId]) {
             nextEliminations[loserId] = true;
             newlyEliminated = true;
          }
@@ -383,7 +394,7 @@ export default function App() {
       setMatches(nextMatches);
       saveState('matches', nextMatches);
     }
-  }, [matches, teamStats, eliminatedTeams, isViewer, user, settings]);
+  }, [matches, teamStats, eliminatedTeams, isViewer, user, settings, manualRestores]);
 
   const handleRandomizeGroups = () => {
     if (isViewer) return;
@@ -409,10 +420,16 @@ export default function App() {
     saveState('assignments', next);
   };
 
+  // FIXED: Now writes an override flag when manually clicking restore!
   const toggleEliminated = (teamId) => {
-    const next = { ...eliminatedTeams, [teamId]: !eliminatedTeams[teamId] };
-    setEliminatedTeams(next);
-    saveState('eliminatedTeams', next);
+    const isCurrentlyEliminated = !!eliminatedTeams[teamId];
+    const nextElims = { ...eliminatedTeams, [teamId]: !isCurrentlyEliminated };
+    const nextRestores = { ...manualRestores, [teamId]: isCurrentlyEliminated };
+
+    setEliminatedTeams(nextElims);
+    setManualRestores(nextRestores);
+    saveState('eliminatedTeams', nextElims);
+    saveState('manualRestores', nextRestores);
   };
 
   const handleAddMember = () => {
@@ -518,11 +535,12 @@ export default function App() {
         </div>
       </header>
 
+      {/* FIXED IPHONE TABS: Replaced forced flex-row with a smooth, scrollbar-hidden swipable row! */}
       <div className="max-w-6xl mx-auto px-2 sm:px-4 -mt-5 relative z-20">
-        <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/50 p-1.5 sm:p-2 flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-2">
+        <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/50 p-1.5 sm:p-2 flex overflow-x-auto gap-1.5 sm:gap-2 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
           {['standings', 'groups', 'bracket', 'matches', 'teams'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} 
-              className={`flex-1 py-2.5 sm:py-3 px-1 sm:px-4 rounded-lg font-black text-[9px] min-[375px]:text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 whitespace-nowrap overflow-hidden text-ellipsis ${
+              className={`shrink-0 flex-1 min-w-[85px] sm:min-w-0 py-2.5 sm:py-3 px-2 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 snap-start ${
                 activeTab === tab ? 'bg-green-600 text-white shadow-md sm:scale-[1.02]' : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700'
               }`}>
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
