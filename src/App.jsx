@@ -29,6 +29,11 @@ export default function App() {
   const [activeLeagueId, setActiveLeagueId] = useState(() => {
     try { return localStorage.getItem('wcActiveLeague') || null; } catch { return null; }
   });
+  
+  // NEW: State for your own custom league name!
+  const [myLeagueName, setMyLeagueName] = useState(() => {
+    try { return localStorage.getItem('wcMyLeagueName') || 'My Hosted Sweepstakes'; } catch { return 'My Hosted Sweepstakes'; }
+  });
 
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [pendingJoinCode, setPendingJoinCode] = useState('');
@@ -93,7 +98,7 @@ export default function App() {
       }
     });
     
-    const emergencyTimeout = setTimeout(() => setLoading(false), 2000);
+    const emergencyTimeout = setTimeout(() => setLoading(false), 5000);
     return () => { unsubscribe(); clearTimeout(emergencyTimeout); };
   }, [activeLeagueId, joinedLeagues]);
 
@@ -110,8 +115,15 @@ export default function App() {
         setMembers(data.members || INITIAL_MEMBERS);
         setAssignments(data.assignments || {});
         setEliminatedTeams(data.eliminatedTeams || {});
-        setSettings(data.settings || { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all' });
+        setSettings(data.settings || { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'My Hosted Sweepstakes' });
         
+        // NEW: If you are looking at your own league, save the custom name to local storage for the dropdown!
+        if (activeLeagueId === user.uid) {
+          const customName = data.settings?.leagueName || 'My Hosted Sweepstakes';
+          setMyLeagueName(customName);
+          try { localStorage.setItem('wcMyLeagueName', customName); } catch (e) {}
+        }
+
         if (data.matches) {
           const freshMatches = generateAllMatches();
           const mergedMatches = freshMatches.map(freshMatch => {
@@ -141,7 +153,7 @@ export default function App() {
         setAssignments({});
         setEliminatedTeams({});
         setMatches(generateAllMatches());
-        setSettings({ woodenSpoon: true, kidAwards: true, kidAwardsType: 'all' });
+        setSettings({ woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'My Hosted Sweepstakes' });
         
         if (activeLeagueId === user.uid) {
           setDoc(docRef, {
@@ -149,7 +161,7 @@ export default function App() {
             assignments: {},
             eliminatedTeams: {},
             matches: generateAllMatches(),
-            settings: { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all' }
+            settings: { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'My Hosted Sweepstakes' }
           });
         }
       }
@@ -219,7 +231,7 @@ export default function App() {
     if (isViewer) return;
     if (window.confirm("🚨 WARNING: Are you sure you want to reset the entire tournament? This will erase all match scores, team assignments, and custom rules!")) {
       const resetMatches = generateAllMatches();
-      const defaultSettings = { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all' };
+      const defaultSettings = { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'My Hosted Sweepstakes' };
       
       setMembers(INITIAL_MEMBERS);
       setAssignments({});
@@ -239,7 +251,22 @@ export default function App() {
   };
 
   const { teamStats, memberStats, awards } = useMemo(() => {
-    return calculateStats(matches, eliminatedTeams, settings, members, assignments);
+    const stats = calculateStats(matches, eliminatedTeams, settings, members, assignments);
+    if (stats.awards?.overall) {
+      const first = stats.awards.overall['1st']?.id;
+      const second = stats.awards.overall['2nd']?.id;
+      const third = stats.awards.overall['3rd']?.id;
+      if (third && (third === first || third === second)) {
+        const sortedMembers = Object.values(stats.memberStats).sort((a, b) => b.points - a.points);
+        const eligibleThird = sortedMembers.find(m => m.id !== first && m.id !== second);
+        if (eligibleThird) {
+          stats.awards.overall['3rd'] = { id: eligibleThird.id, reason: '3rd Most Points' };
+        } else {
+          delete stats.awards.overall['3rd'];
+        }
+      }
+    }
+    return stats;
   }, [members, assignments, matches, eliminatedTeams, settings]);
 
   useEffect(() => {
@@ -378,68 +405,53 @@ export default function App() {
   };
 
   const handleMatchUpdate = (matchId, field, value) => {
-    setMatches(prev => {
-      const next = prev.map(m => m.id === matchId ? { ...m, [field]: value } : m);
-      saveState('matches', next);
-      return next;
-    });
+    const next = matches.map(m => m.id === matchId ? { ...m, [field]: value } : m);
+    setMatches(next);
+    saveState('matches', next);
   };
 
   const handleAssign = (teamId, memberId) => {
-    setAssignments(prev => {
-      const next = { ...prev, [teamId]: memberId };
-      saveState('assignments', next);
-      return next;
-    });
+    const next = { ...assignments, [teamId]: memberId };
+    setAssignments(next);
+    saveState('assignments', next);
   };
 
   const toggleEliminated = (teamId) => {
-    setEliminatedTeams(prev => {
-      const next = { ...prev, [teamId]: !prev[teamId] };
-      saveState('eliminatedTeams', next);
-      return next;
-    });
+    const next = { ...eliminatedTeams, [teamId]: !eliminatedTeams[teamId] };
+    setEliminatedTeams(next);
+    saveState('eliminatedTeams', next);
   };
 
   const handleAddMember = () => {
-    setMembers(prev => {
-      const next = [...prev, { id: `m${Date.now()}`, name: 'New Member', isKid: false }];
-      saveState('members', next);
-      return next;
-    });
+    const next = [...members, { id: `m${Date.now()}`, name: 'New Member', isKid: false }];
+    setMembers(next);
+    saveState('members', next);
   };
 
   const handleUpdateMember = (id, field, value) => {
-    setMembers(prev => {
-      const next = prev.map(m => m.id === id ? { ...m, [field]: value } : m);
-      saveState('members', next);
-      return next;
-    });
+    const next = members.map(m => m.id === id ? { ...m, [field]: value } : m);
+    setMembers(next);
+    saveState('members', next);
   };
 
   const handleDeleteMember = (id) => {
     if (members.length <= 1) return;
-    setMembers(prev => {
-      const next = prev.filter(m => m.id !== id);
-      saveState('members', next);
-      return next;
+    const nextMembers = members.filter(m => m.id !== id);
+    setMembers(nextMembers);
+    saveState('members', nextMembers);
+    
+    const nextAssignments = { ...assignments };
+    Object.keys(nextAssignments).forEach(teamId => {
+      if (nextAssignments[teamId] === id) delete nextAssignments[teamId];
     });
-    setAssignments(prev => {
-      const next = { ...prev };
-      Object.keys(next).forEach(teamId => {
-        if (next[teamId] === id) delete next[teamId];
-      });
-      saveState('assignments', next);
-      return next;
-    });
+    setAssignments(nextAssignments);
+    saveState('assignments', nextAssignments);
   };
 
   const updateSettings = (updates) => {
-    setSettings(prev => {
-      const next = { ...prev, ...updates };
-      saveState('settings', next);
-      return next;
-    });
+    const next = { ...settings, ...updates };
+    setSettings(next);
+    saveState('settings', next);
   };
 
   const getOwnerName = (teamId) => {
@@ -464,9 +476,14 @@ export default function App() {
         <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_40px,#fff_40px,#fff_80px)] pointer-events-none transform -skew-x-12 scale-150"></div>
         <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex-1 w-full">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase drop-shadow-md flex items-center gap-3 mb-2">
-               <img src="/logos/world-cup.svg" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" alt="World Cup Logo" onError={(e) => e.target.style.display='none'} />
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase drop-shadow-md flex items-center gap-3 mb-2 flex-wrap">
+               <img src="/logos/world-cup.svg" className="w-10 h-10 sm:w-12 sm:h-12 object-contain shrink-0" alt="World Cup Logo" onError={(e) => e.target.style.display='none'} />
                World Cup 2026
+               {isViewer && (
+                 <span className="bg-amber-500 text-amber-950 text-[10px] sm:text-xs font-black px-2 sm:px-3 py-1 rounded-full uppercase tracking-widest shadow-md shrink-0">
+                   Viewer
+                 </span>
+               )}
             </h1>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-4 w-full sm:max-w-xl bg-white/10 p-2 sm:p-2.5 rounded-xl border border-white/20 backdrop-blur-sm shadow-sm">
                <span className="text-xs font-bold text-green-200 uppercase tracking-widest pl-2 hidden sm:block">Active League:</span>
@@ -477,7 +494,8 @@ export default function App() {
                      onChange={e => handleSwitchLeague(e.target.value)}
                      className="w-full bg-white/90 text-slate-900 font-black text-sm sm:text-base py-2.5 pl-9 pr-4 rounded-lg appearance-none cursor-pointer border-0 focus:ring-2 focus:ring-emerald-400 shadow-inner"
                    >
-                     {user && <option value={user.uid}>👑 My Hosted Sweepstakes</option>}
+                     {/* Displays your custom league name! */}
+                     {user && <option value={user.uid}>👑 {myLeagueName}</option>}
                      {joinedLeagues.map(l => (
                        <option key={l.id} value={l.id}>👁️ {l.name}</option>
                      ))}
@@ -508,11 +526,14 @@ export default function App() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 -mt-5 relative z-20">
-        <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/50 p-2 flex flex-wrap gap-2">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 -mt-5 relative z-20">
+        <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/50 p-1.5 sm:p-2 flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-2">
           {['standings', 'groups', 'bracket', 'matches', 'teams'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 min-w-[60px] sm:min-w-[80px] py-3 px-1 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 ${activeTab === tab ? 'bg-green-600 text-white shadow-md scale-[1.02]' : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700'}`}>
-              {tab}
+            <button key={tab} onClick={() => setActiveTab(tab)} 
+              className={`flex-1 py-2.5 sm:py-3 px-1 sm:px-4 rounded-lg font-black text-[9px] min-[375px]:text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 whitespace-nowrap overflow-hidden text-ellipsis ${
+                activeTab === tab ? 'bg-green-600 text-white shadow-md sm:scale-[1.02]' : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700'
+              }`}>
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
@@ -523,7 +544,8 @@ export default function App() {
         {activeTab === 'groups' && <GroupsTab teamStats={teamStats} matches={matches} settings={settings} />}
         {activeTab === 'bracket' && <BracketTab matches={matches} members={members} assignments={assignments} />}
         {activeTab === 'matches' && <MatchesTab matches={matches} localTimezone={localTimezone} setLocalTimezone={setLocalTimezone} isViewer={isViewer} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} handleRandomizeGroups={handleRandomizeGroups} />}
-        {activeTab === 'teams' && <TeamsTab eliminatedTeams={eliminatedTeams} isViewer={isViewer} getOwnerName={getOwnerName} assignments={assignments} members={members} handleAssign={handleAssign} toggleEliminated={toggleEliminated} />}
+        {/* REMOVED UNUSED getOwnerName PROP HERE */}
+        {activeTab === 'teams' && <TeamsTab eliminatedTeams={eliminatedTeams} isViewer={isViewer} assignments={assignments} members={members} handleAssign={handleAssign} toggleEliminated={toggleEliminated} />}
       </main>
 
       {showJoinModal && (

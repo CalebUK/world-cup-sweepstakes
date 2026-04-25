@@ -1,28 +1,32 @@
 import React, { useState } from 'react';
-import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock, AlertTriangle, RotateCcw, Share2, CheckCircle, Copy } from 'lucide-react';
+import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock, AlertTriangle, RotateCcw, Share2, CheckCircle, Copy, Trophy } from 'lucide-react';
 import { KNOCKOUT_STAGES, DEFAULT_SCORING } from '../../config/data.js';
 
 export const SettingsTab = ({ settings, updateSettings, members, handleAddMember, handleUpdateMember, handleDeleteMember, handleResetData, userUid }) => {
   const [copySuccess, setCopySuccess] = useState(false);
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     if (!userUid) return;
     const url = new URL(window.location.href);
     url.searchParams.set('host', userUid);
     const linkToCopy = url.toString();
     
-    const textArea = document.createElement("textarea");
-    textArea.value = linkToCopy;
-    document.body.appendChild(textArea);
-    textArea.select();
     try {
-      document.execCommand('copy');
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(linkToCopy);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = linkToCopy;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
       console.error('Failed to copy', err);
     }
-    document.body.removeChild(textArea);
   };
 
   const handleScoringUpdate = (stageGroup, stage, field, value) => {
@@ -72,6 +76,23 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
           {copySuccess ? <CheckCircle className="w-6 h-6 text-green-300" /> : <Copy className="w-6 h-6 group-hover:scale-110 transition-transform" />}
           {copySuccess ? 'Link Copied to Clipboard!' : 'Copy Invite Link'}
         </button>
+      </div>
+
+      {/* NEW: LEAGUE IDENTITY SECTION */}
+      <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6 overflow-hidden">
+        <h2 className="text-xl font-black text-emerald-800 mb-4 flex items-center gap-2 uppercase tracking-wide border-b-2 border-emerald-50 pb-4">
+          <Trophy className="w-6 h-6 text-slate-500" /> League Identity
+        </h2>
+        <div className="flex flex-col gap-2">
+            <label className="text-sm font-bold text-slate-500 uppercase tracking-wider">League Name</label>
+            <input
+                type="text"
+                value={settings.leagueName || ''}
+                onChange={(e) => updateSettings({ leagueName: e.target.value })}
+                placeholder="e.g. Knoxville Family Sweepstakes"
+                className="w-full font-black text-slate-800 text-lg bg-slate-50 border-2 border-slate-200 rounded-lg px-4 py-3 focus:ring-0 focus:border-emerald-500 focus:bg-white transition-colors"
+            />
+        </div>
       </div>
 
       {/* MEMBERS MANAGEMENT SECTION */}

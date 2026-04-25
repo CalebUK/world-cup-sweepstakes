@@ -1,5 +1,5 @@
 // Update these whenever you want and push to Vercel!
-export const ODDS_LAST_UPDATED = "11th June 2026";
+export const ODDS_LAST_UPDATED = "23rd April 2026";
 
 // If a team isn't listed here, it will gracefully default to "N/A"
 export const TEAM_ODDS = {

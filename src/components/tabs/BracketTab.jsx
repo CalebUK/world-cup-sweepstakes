@@ -13,12 +13,12 @@ const VISUAL_ORDER = {
 
 export const BracketTab = ({ matches, members, assignments }) => {
   const [highlightMember, setHighlightMember] = useState(() => {
-    return localStorage.getItem('worldCupBracketHighlight') || '';
+    try { return localStorage.getItem('worldCupBracketHighlight') || ''; } catch { return ''; }
   });
 
   const handleHighlightChange = (val) => {
     setHighlightMember(val);
-    localStorage.setItem('worldCupBracketHighlight', val);
+    try { localStorage.setItem('worldCupBracketHighlight', val); } catch (e) {}
   };
 
   const koMatches = matches.filter(m => m.stage !== 'Group');
@@ -46,7 +46,6 @@ export const BracketTab = ({ matches, members, assignments }) => {
           )}
         </div>
 
-        {/* SCORE + PENALTIES */}
         <div className="flex items-center gap-1 shrink-0">
           {(penScore !== undefined && penScore !== '') && (
             <span className="text-[8px] font-black text-amber-600 bg-amber-50 px-1 py-0.5 rounded border border-amber-200">
@@ -63,8 +62,6 @@ export const BracketTab = ({ matches, members, assignments }) => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      
-      {/* Bracket Controls */}
       <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <h2 className="text-xl font-black text-emerald-800 flex items-center gap-2 uppercase tracking-wide">
           <Trophy className="w-6 h-6 text-yellow-500" /> Tournament Bracket
@@ -89,7 +86,6 @@ export const BracketTab = ({ matches, members, assignments }) => {
       <div className="bg-slate-900 rounded-xl shadow-xl border-2 border-slate-800 overflow-hidden relative">
         <div className="p-3 sm:p-5 overflow-x-auto">
           <div className="flex gap-3 sm:gap-5 min-w-[850px] min-h-[800px]">
-            
             {KNOCKOUT_STAGES.map((stage) => {
               const orderedIds = VISUAL_ORDER[stage.id] || [];
               const stageMatches = orderedIds.map(id => koMatches.find(m => m.id === id)).filter(Boolean);
@@ -98,7 +94,6 @@ export const BracketTab = ({ matches, members, assignments }) => {
 
               return (
                 <div key={stage.id} className="flex flex-col flex-1 min-w-[160px]">
-                  
                   <div className="text-center mb-3 shrink-0 h-6">
                     <span className="bg-slate-800 text-slate-300 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-slate-700 shadow-sm">
                       {stage.name}
@@ -113,7 +108,7 @@ export const BracketTab = ({ matches, members, assignments }) => {
                         const sB = parseInt(m.scoreB);
                         if (sA > sB) winnerId = m.teamA;
                         else if (sB > sA) winnerId = m.teamB;
-                        else if (m.isAET) { // ONLY CALCULATE PENALTIES IF AET IS TICKED!
+                        else if (m.isAET) { 
                           const pA = parseInt(m.penScoreA);
                           const pB = parseInt(m.penScoreB);
                           if (!isNaN(pA) && !isNaN(pB)) {
@@ -133,7 +128,6 @@ export const BracketTab = ({ matches, members, assignments }) => {
                             <div className={`bg-white rounded-md overflow-hidden border shadow-sm transition-all ${
                               isHighlighted ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.5)] scale-[1.02] z-10 relative' : 'border-slate-200 hover:border-emerald-200'
                             }`}>
-                              {/* Only pass penScore if AET was actually checked! */}
                               <BracketTeam teamId={m.teamA} label={m.labelA} score={m.scoreA} penScore={m.isAET ? m.penScoreA : undefined} isWinner={winnerId === m.teamA} />
                               <BracketTeam teamId={m.teamB} label={m.labelB} score={m.scoreB} penScore={m.isAET ? m.penScoreB : undefined} isWinner={winnerId === m.teamB} />
                             </div>
@@ -145,11 +139,9 @@ export const BracketTab = ({ matches, members, assignments }) => {
                 </div>
               );
             })}
-
           </div>
         </div>
       </div>
-
     </div>
   );
 };
