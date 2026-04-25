@@ -120,11 +120,11 @@ export const TeamsTab = ({
               isEliminated ? 'border-red-200 opacity-80 grayscale' : 'border-slate-200 hover:border-emerald-400 hover:shadow-xl hover:-translate-y-1'
             }`}>
               
-              {/* THE ARTWORK BACKGROUND (Faded texture covering the whole square) */}
-              <div className="absolute inset-0 z-0 bg-slate-800">
-                <TeamPixelArt teamId={team.id} className="w-full h-full object-cover object-center opacity-25 group-hover:opacity-40 transition-opacity duration-300 mix-blend-luminosity" />
-                {/* Gradient to darken the bottom so white UI components pop perfectly */}
-                <div className="absolute inset-0 bg-gradient-to-b from-slate-900/10 via-slate-900/40 to-slate-900/95"></div>
+              {/* THE ARTWORK BACKGROUND (Restored original colors with a glossy fade at the bottom) */}
+              <div className="absolute inset-0 z-0 bg-slate-100">
+                <TeamPixelArt teamId={team.id} className="w-full h-full object-cover object-center opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
+                {/* Gradient to darken ONLY the bottom so white UI components pop perfectly, leaving top art untouched */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/40 to-transparent"></div>
               </div>
 
               {isEliminated && (
