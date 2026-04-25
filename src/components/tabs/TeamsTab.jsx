@@ -109,7 +109,6 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
                 </div>
               )}
               
-              {/* FIXED IPHONE BOSNIA WRAP: Added w-full and min-w-0 to guarantee strictly 1 line */}
               <div className="relative z-10 flex flex-col items-center justify-center pt-5 sm:pt-8 flex-1 px-2 overflow-hidden w-full min-w-0">
                 <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-full p-2 flex items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.5)] mb-2 sm:mb-3 shrink-0">
                   <TeamLogo teamId={team.id} className="w-full h-full object-contain" />
@@ -140,7 +139,12 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
                     </div>
                   ) : (
                     <>
-                      <select value={assignments[team.id] || ''} onChange={(e) => handleAssign(team.id, e.target.value)} className="flex-1 py-2 px-2 border-0 rounded-lg text-[11px] sm:text-xs font-black text-slate-800 focus:ring-2 focus:ring-emerald-500 bg-white/95 backdrop-blur-md cursor-pointer shadow-sm min-w-0">
+                      <select 
+                        value={assignments[team.id] || ''} 
+                        onChange={(e) => handleAssign(team.id, e.target.value)} 
+                        disabled={isEliminated}
+                        className={`flex-1 py-2 px-2 border-0 rounded-lg text-[11px] sm:text-xs font-black text-slate-800 focus:ring-2 focus:ring-emerald-500 bg-white/95 backdrop-blur-md shadow-sm min-w-0 ${isEliminated ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      >
                         <option value="">-- Assign --</option>
                         {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                       </select>

@@ -7,11 +7,11 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
   const kidsToShow = settings.kidAwardsType === 'top3' ? (awards.kids?.list || []).slice(0, 3) : (awards.kids?.list || []);
   const showGF = (settings.scoring?.bonus?.perGoal || 0) > 0;
   
-  const AwardRow = ({ rank, member, icon }) => (
+  const AwardRow = ({ rank, member, icon, hideRankText }) => (
     <div className="flex items-center justify-between p-3 bg-white rounded-lg border-2 border-slate-100 shadow-sm hover:border-green-200 transition-colors">
       <div className="flex items-center gap-3">
         {icon}
-        <span className="font-bold text-slate-500 uppercase text-sm tracking-wider">{rank}</span>
+        {!hideRankText && <span className="font-bold text-slate-500 uppercase text-sm tracking-wider">{rank}</span>}
       </div>
       <div className="font-black text-slate-800 text-xl flex-1 text-right sm:text-left pl-2">
         {member ? (
@@ -46,6 +46,7 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
                 rank="Wooden Spoon" 
                 member={awards.overall['Spoon']} 
                 icon={<img src="/standings/woodenspoon.svg" alt="Wooden Spoon" className="w-6 h-6 drop-shadow-sm shrink-0" />} 
+                hideRankText={true}
               />
             )}
           </div>

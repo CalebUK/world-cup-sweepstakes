@@ -447,7 +447,6 @@ export default function App() {
     saveState('settings', next);
   };
 
-  // FIXED: Restored the getOwnerName function that was accidentally deleted!
   const getOwnerName = (teamId) => {
     const ownerId = assignments[teamId];
     if (!ownerId) return 'Unassigned';
@@ -617,7 +616,7 @@ export default function App() {
                      <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Participants:</strong> Head over to the Admin Settings to add all sweepstakes participants.</span></li>
                      <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Teams:</strong> Once all teams have been drawn head to the Teams tab to assign everyone.</span></li>
                      <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>Live Scoring:</strong> You earn points every time your teams win, draw, score goals, or keep a clean sheet. Make sure to check the settings tab to customise your scoring.</span></li>
-                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>Matches:</strong> As matches finish, the Knockout Bracket automatically populates and routes the winners.</span></li>
+                     <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>Matches:</strong> As matches finish the groups and knockout tabs will automatically update and populate the routes for the winners.</span></li>
                    </ul>
                 </div>
              </div>
