@@ -7,6 +7,7 @@ import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { auth, db, appId } from './config/firebase.js';
 import { TEAMS_DATA, DEFAULT_SCORING, generateAllMatches } from './config/data.js';
 import { calculateStats, getR32Mappings, sortGroupTeams, getThirdPlaceStandings } from './utils/tournamentLogic.js';
+import { useEspnSync } from './hooks/useEspnSync.js';
 
 // --- 6 DEFAULT USERS ---
 const DEFAULT_6_USERS = [
@@ -203,67 +204,6 @@ export default function App() {
     return () => unsubscribe();
   }, [user, activeLeagueId, isOwner]);
 
-  // --- ESPN AUTO-SYNC ENGINE ---
-  useEffect(() => {
-    if (isViewer || !settings.autoSync) return;
-    let isMounted = true;
-
-    const fetchESPN = async () => {
-      try {
-        const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard');
-        if (!response.ok) return;
-        
-        const data = await response.json();
-        const espnEvents = data.events || [];
-        if (espnEvents.length === 0) return;
-
-        setMatches(prevMatches => {
-          let hasChanges = false;
-          const nextMatches = prevMatches.map(m => {
-            if (m.isPlayed) return m; // Preserve finished games
-
-            const tA = TEAMS_DATA.find(t => t.id === m.teamA)?.name;
-            const tB = TEAMS_DATA.find(t => t.id === m.teamB)?.name;
-            if (!tA || !tB) return m;
-
-            const event = espnEvents.find(e => {
-              const compNames = e.competitions[0]?.competitors.map(c => c.team.name) || [];
-              return compNames.includes(tA) && compNames.includes(tB);
-            });
-
-            if (event) {
-              const compA = event.competitions[0].competitors.find(c => c.team.name === tA);
-              const compB = event.competitions[0].competitors.find(c => c.team.name === tB);
-              const isFinished = event.status.type.completed;
-
-              if (compA && compB && (m.scoreA !== compA.score || m.scoreB !== compB.score || m.isPlayed !== isFinished)) {
-                hasChanges = true;
-                return { ...m, scoreA: compA.score, scoreB: compB.score, isPlayed: isFinished };
-              }
-            }
-            return m;
-          });
-
-          if (hasChanges && isMounted) {
-            saveState('matches', nextMatches);
-            return nextMatches;
-          }
-          return prevMatches;
-        });
-      } catch (err) {
-        console.warn("ESPN sync skipped:", err);
-      }
-    };
-
-    fetchESPN(); 
-    const intervalId = setInterval(fetchESPN, 300000); // 5 minutes
-    return () => {
-      isMounted = false;
-      clearInterval(intervalId);
-    };
-  }, [isViewer, settings.autoSync]);
-
-
   const saveState = async (key, value) => {
     if (!user || isViewer) return; 
     try {
@@ -273,6 +213,9 @@ export default function App() {
       console.error("Error saving to cloud:", err);
     }
   };
+
+  // --- ESPN AUTO-SYNC ENGINE ---
+  useEspnSync(isViewer, settings, setMatches, saveState);
 
   const handleCreateLeague = async () => {
     if (!user) return;
@@ -336,6 +279,19 @@ export default function App() {
     saveState('matches', resetMatches);
     saveState('settings', defaultSettings);
     setShowSettingsModal(false);
+  };
+
+  // NEW: TRUE NUCLEAR RESET
+  // Wipes Local Storage AND logs out of Firebase's hidden session
+  const handleHardReset = async () => {
+    try {
+      localStorage.clear();
+      await auth.signOut(); // This is the crucial missing piece!
+    } catch (e) {
+      console.error("Failed to sign out fully:", e);
+    }
+    // Reload the page cleanly to get a brand new anonymous ID
+    window.location.href = window.location.origin + window.location.pathname;
   };
 
   const { teamStats, memberStats, awards } = useMemo(() => {
@@ -585,7 +541,7 @@ export default function App() {
                  )}
                  <button onClick={() => setShowJoinModal(true)} className="bg-emerald-500 hover:bg-emerald-400 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-emerald-400 flex items-center gap-1 shrink-0" title="Manage Leagues">
                    <Plus className="w-5 h-5 sm:hidden" />
-                   <span className="hidden sm:block font-black text-sm uppercase tracking-wider px-2">Leagues</span>
+                   <span className="hidden sm:block font-black text-sm uppercase tracking-wider px-2">+ Join</span>
                  </button>
                </div>
             </div>
@@ -688,7 +644,17 @@ export default function App() {
                 <button onClick={() => setShowSettingsModal(false)} className="text-slate-400 hover:text-red-600 bg-slate-100 hover:bg-red-50 p-2 rounded-lg transition-colors"><X className="w-6 h-6" /></button>
              </div>
              <div className="p-6">
-                <SettingsTab settings={settings} updateSettings={updateSettings} members={members} handleAddMember={handleAddMember} handleUpdateMember={handleUpdateMember} handleDeleteMember={handleDeleteMember} handleResetData={handleResetData} userUid={activeLeagueId} />
+                <SettingsTab 
+                  settings={settings} 
+                  updateSettings={updateSettings} 
+                  members={members} 
+                  handleAddMember={handleAddMember} 
+                  handleUpdateMember={handleUpdateMember} 
+                  handleDeleteMember={handleDeleteMember} 
+                  handleResetData={handleResetData} 
+                  handleHardReset={handleHardReset}
+                  userUid={activeLeagueId} 
+                />
              </div>
            </div>
         </div>

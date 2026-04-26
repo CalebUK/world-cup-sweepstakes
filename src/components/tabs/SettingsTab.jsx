@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock, AlertTriangle, RotateCcw, Share2, CheckCircle, Copy, Trophy, ShieldAlert } from 'lucide-react';
 import { KNOCKOUT_STAGES, DEFAULT_SCORING } from '../../config/data.js';
 
-export const SettingsTab = ({ settings, updateSettings, members, handleAddMember, handleUpdateMember, handleDeleteMember, handleResetData, userUid }) => {
+export const SettingsTab = ({ settings, updateSettings, members, handleAddMember, handleUpdateMember, handleDeleteMember, handleResetData, handleHardReset, userUid }) => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showHardResetConfirm, setShowHardResetConfirm] = useState(false);
@@ -29,8 +29,9 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
   };
 
   const confirmHardReset = () => {
-    localStorage.clear();
-    window.location.href = window.location.origin + window.location.pathname;
+    if (handleHardReset) {
+      handleHardReset();
+    }
   };
 
   const handleScoringUpdate = (stageGroup, stage, field, value) => {
