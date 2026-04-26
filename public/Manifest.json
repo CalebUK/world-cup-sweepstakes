@@ -1,28 +1,16 @@
 {
-  "name": "World Cup 2026 Sweepstakes",
   "short_name": "WC Sweepstakes",
-  "description": "Family World Cup 2026 Sweepstakes Manager",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#f1f5f9",
-  "theme_color": "#059669",
+  "name": "2026 World Cup Sweepstakes",
   "icons": [
     {
       "src": "/logos/world-cup.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml"
-    },
-    {
-      "src": "/logos/world-cup.svg",
+      "type": "image/svg+xml",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "purpose": "any maskable"
     }
-  ]
-}
-```
-
-Then, add these two lines inside the `<head>` tag of your **`index.html`** file (right below your Google Analytics tag):
-```html
-<link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#059669" />
-<link rel="apple-touch-icon" href="/logos/world-cup.svg">
+  ],
+  "start_url": "/",
+  "background_color": "#f8fafc",
+  "display": "standalone",
+  "theme_color": "#059669",
+  "description": "Follow the live standings, bracket, and matches for our World Cup sweepstakes."
