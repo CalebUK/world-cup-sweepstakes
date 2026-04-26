@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock, AlertTriangle, RotateCcw, Share2, CheckCircle, Copy, Trophy } from 'lucide-react';
+import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock, AlertTriangle, RotateCcw, Share2, CheckCircle, Copy, Trophy, ShieldAlert } from 'lucide-react';
 import { KNOCKOUT_STAGES, DEFAULT_SCORING } from '../../config/data.js';
 
 export const SettingsTab = ({ settings, updateSettings, members, handleAddMember, handleUpdateMember, handleDeleteMember, handleResetData, userUid }) => {
   const [copySuccess, setCopySuccess] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false); // NEW MODAL STATE
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showHardResetConfirm, setShowHardResetConfirm] = useState(false);
 
   const handleCopyLink = () => {
     if (!userUid) return;
@@ -25,6 +26,11 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
   const confirmReset = () => {
     handleResetData();
     setShowResetConfirm(false);
+  };
+
+  const confirmHardReset = () => {
+    localStorage.clear();
+    window.location.href = window.location.origin + window.location.pathname;
   };
 
   const handleScoringUpdate = (stageGroup, stage, field, value) => {
@@ -123,7 +129,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
                     onChange={(e) => handleUpdateMember(member.id, 'isKid', e.target.checked)}
                     className="w-5 h-5 sm:w-4 sm:h-4 text-emerald-600 rounded border-emerald-300 sm:border-slate-300 focus:ring-emerald-500 cursor-pointer"
                   />
-                  <span className="font-bold text-emerald-800 sm:text-slate-700 sm:uppercase sm:text-xs sm:tracking-wider text-sm">Kid/Junior</span>
+                  <span className="font-bold text-emerald-800 sm:text-slate-700 sm:uppercase sm:text-xs sm:tracking-wider text-sm">Kid</span>
                 </label>
                 <button 
                   onClick={() => handleDeleteMember(member.id)}
@@ -205,7 +211,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
               <label htmlFor="autoSync" className="font-black text-slate-800 cursor-pointer text-lg flex items-center gap-2">
                 <Clock className="w-5 h-5 text-emerald-600" /> Auto-Sync ESPN Scores
               </label>
-              <p className="text-sm text-slate-500 font-medium mt-1">Automatically checks for live goals in the background every 5 minutes while this page is open.</p>
+              <p className="text-sm text-slate-500 font-medium mt-1">Automatically checks for live scores in the background every 5 minutes while this page is open.</p>
             </div>
           </div>
 
@@ -257,18 +263,36 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
         <h2 className="text-xl font-black text-red-800 flex items-center gap-2 uppercase tracking-wide border-b-2 border-red-100 pb-4 mb-4">
           <AlertTriangle className="w-6 h-6" /> Danger Zone
         </h2>
-        <p className="text-sm text-red-700 font-medium mb-5">
-          Need to start over? This will permanently erase all match scores, restore default rules, and completely remove all team squad allocations.
-        </p>
-        <button 
-          onClick={() => setShowResetConfirm(true)}
-          className="bg-red-600 hover:bg-red-700 text-white font-black px-6 py-3 rounded-xl shadow-sm hover:shadow-md transition-all flex items-center gap-2 w-full sm:w-auto justify-center"
-        >
-          <RotateCcw className="w-5 h-5" /> Reset All Tournament Data
-        </button>
+        
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-lg border border-red-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 className="font-black text-red-800 text-sm uppercase tracking-wide">Reset League Data</h3>
+              <p className="text-xs text-red-600 font-medium mt-1">Erase all scores and allocations in this league, but keep your managers.</p>
+            </div>
+            <button 
+              onClick={() => setShowResetConfirm(true)}
+              className="bg-red-600 hover:bg-red-700 text-white font-black px-6 py-3 rounded-xl shadow-sm hover:shadow-md transition-all flex items-center gap-2 w-full sm:w-auto justify-center shrink-0"
+            >
+              <RotateCcw className="w-5 h-5" /> Reset Data
+            </button>
+          </div>
+
+          <div className="bg-slate-900 p-4 rounded-lg border border-red-900 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 className="font-black text-red-500 text-sm uppercase tracking-wide flex items-center gap-2"><ShieldAlert className="w-4 h-4" /> Nuclear App Reset</h3>
+              <p className="text-xs text-slate-400 font-medium mt-1">Is your app glitching? This will completely clear your browser's memory and un-join all leagues.</p>
+            </div>
+            <button 
+              onClick={() => setShowHardResetConfirm(true)}
+              className="bg-red-900 hover:bg-red-800 border border-red-700 text-white font-black px-6 py-3 rounded-xl shadow-sm hover:shadow-md transition-all flex items-center gap-2 w-full sm:w-auto justify-center shrink-0"
+            >
+              Force Reset App
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* NEW: RESET CONFIRMATION MODAL */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm border-4 border-red-600">
@@ -278,11 +302,31 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
               </div>
               <div>
                 <h3 className="text-xl font-black text-slate-900 uppercase tracking-wide">Reset All Data?</h3>
-                <p className="text-sm text-slate-500 mt-2 font-medium">🚨 WARNING: This will permanently erase all match scores, team assignments, and custom rules! You cannot undo this.</p>
+                <p className="text-sm text-slate-500 mt-2 font-medium">🚨 WARNING: This will permanently erase all match scores, team assignments, and custom rules for this league! You cannot undo this.</p>
               </div>
               <div className="flex flex-col w-full gap-3 mt-4">
                 <button onClick={confirmReset} className="w-full py-3 px-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-colors shadow-md">Yes, Reset Everything</button>
                 <button onClick={() => setShowResetConfirm(false)} className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showHardResetConfirm && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md animate-fade-in">
+          <div className="bg-slate-900 rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm border-4 border-red-600 text-white">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-red-900/50 text-red-500 rounded-full flex items-center justify-center border border-red-500">
+                <ShieldAlert className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-red-500 uppercase tracking-wide">Nuclear Reset?</h3>
+                <p className="text-sm text-slate-300 mt-2 font-medium">This will wipe your browser's local storage and force a hard refresh. You will need to rejoin your active leagues using their invite links.</p>
+              </div>
+              <div className="flex flex-col w-full gap-3 mt-4">
+                <button onClick={confirmHardReset} className="w-full py-3 px-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-colors shadow-md border border-red-500">Nuclear Clear & Reload</button>
+                <button onClick={() => setShowHardResetConfirm(false)} className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-colors border border-slate-600">Cancel</button>
               </div>
             </div>
           </div>

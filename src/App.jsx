@@ -5,8 +5,18 @@ import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 
 // --- CONFIGURATION ---
 import { auth, db, appId } from './config/firebase.js';
-import { TEAMS_DATA, INITIAL_MEMBERS, DEFAULT_SCORING, generateAllMatches } from './config/data.js';
+import { TEAMS_DATA, DEFAULT_SCORING, generateAllMatches } from './config/data.js';
 import { calculateStats, getR32Mappings, sortGroupTeams, getThirdPlaceStandings } from './utils/tournamentLogic.js';
+
+// --- 6 DEFAULT USERS ---
+const DEFAULT_6_USERS = [
+  { id: 'm1', name: 'User 1', isKid: false },
+  { id: 'm2', name: 'User 2', isKid: false },
+  { id: 'm3', name: 'User 3', isKid: false },
+  { id: 'm4', name: 'User 4', isKid: false },
+  { id: 'm5', name: 'User 5', isKid: true },
+  { id: 'm6', name: 'User 6', isKid: true }
+];
 
 // --- COMPONENTS & TABS ---
 import { StandingsTab } from './components/tabs/StandingsTab.jsx';
@@ -22,13 +32,16 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('standings');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   
-  // --- LEAGUE STATE ---
-  const [hostedLeagues, setHostedLeagues] = useState([]); // Array of {id, name}
+  const [hostedLeagues, setHostedLeagues] = useState([]);
   const [joinedLeagues, setJoinedLeagues] = useState(() => {
     try { return JSON.parse(localStorage.getItem('wcJoinedLeagues')) || []; } catch { return []; }
   });
   const [activeLeagueId, setActiveLeagueId] = useState(() => {
     try { return localStorage.getItem('wcActiveLeague') || null; } catch { return null; }
+  });
+  
+  const [myLeagueName, setMyLeagueName] = useState(() => {
+    try { return localStorage.getItem('wcMyLeagueName') || 'My Hosted Sweepstakes'; } catch { return 'My Hosted Sweepstakes'; }
   });
 
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -36,7 +49,6 @@ export default function App() {
   const [pendingJoinCode, setPendingJoinCode] = useState('');
   const [pendingJoinName, setPendingJoinName] = useState('');
 
-  // Check if user is owner of the active league
   const isOwner = useMemo(() => {
     if (!user) return false;
     return hostedLeagues.some(l => l.id === activeLeagueId) || activeLeagueId === user.uid;
@@ -71,7 +83,6 @@ export default function App() {
     }
   });
 
-  // --- AUTH & MULTI-LEAGUE REGISTRY ---
   useEffect(() => {
     const initAuth = async () => {
       try { await signInAnonymously(auth); } 
@@ -82,7 +93,6 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
-        // Fetch the list of leagues this user owns
         const registryRef = doc(db, 'artifacts', appId, 'users', u.uid, 'metadata', 'leagues');
         const regSnap = await getDoc(registryRef);
         let ownedList = [];
@@ -90,7 +100,6 @@ export default function App() {
         if (regSnap.exists()) {
           ownedList = regSnap.data().list || [];
         } else {
-          // Legacy support: Initialize with the user's UID league
           ownedList = [{ id: u.uid, name: 'My First Sweepstakes' }];
           await setDoc(registryRef, { list: ownedList });
         }
@@ -122,29 +131,27 @@ export default function App() {
     return () => { unsubscribe(); clearTimeout(emergencyTimeout); };
   }, [activeLeagueId, joinedLeagues]);
 
-  // --- FIRESTORE SYNC ---
   useEffect(() => {
     if (!user || !activeLeagueId) return;
     
     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sweepstakes', activeLeagueId);
     
+    setLoading(true); 
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setMembers(data.members || INITIAL_MEMBERS);
+        setMembers(data.members || DEFAULT_6_USERS);
         setAssignments(data.assignments || {});
         setEliminatedTeams(data.eliminatedTeams || {});
         setManualRestores(data.manualRestores || {});
         setSettings(data.settings || { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'My Hosted Sweepstakes' });
         
-        // Update the name in our hosted list if it changed
         if (isOwner) {
           setHostedLeagues(prev => {
             const index = prev.findIndex(l => l.id === activeLeagueId);
             if (index !== -1 && prev[index].name !== (data.settings?.leagueName || 'My Hosted Sweepstakes')) {
               const newList = [...prev];
               newList[index] = { ...newList[index], name: data.settings.leagueName };
-              // Sync to registry
               setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'metadata', 'leagues'), { list: newList });
               return newList;
             }
@@ -177,9 +184,8 @@ export default function App() {
           setMatches(generateAllMatches());
         }
       } else if (isOwner) {
-        // Initialize new league data
         const initialData = {
-          members: INITIAL_MEMBERS,
+          members: DEFAULT_6_USERS,
           assignments: {},
           eliminatedTeams: {},
           manualRestores: {},
@@ -196,6 +202,67 @@ export default function App() {
 
     return () => unsubscribe();
   }, [user, activeLeagueId, isOwner]);
+
+  // --- ESPN AUTO-SYNC ENGINE ---
+  useEffect(() => {
+    if (isViewer || !settings.autoSync) return;
+    let isMounted = true;
+
+    const fetchESPN = async () => {
+      try {
+        const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard');
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        const espnEvents = data.events || [];
+        if (espnEvents.length === 0) return;
+
+        setMatches(prevMatches => {
+          let hasChanges = false;
+          const nextMatches = prevMatches.map(m => {
+            if (m.isPlayed) return m; // Preserve finished games
+
+            const tA = TEAMS_DATA.find(t => t.id === m.teamA)?.name;
+            const tB = TEAMS_DATA.find(t => t.id === m.teamB)?.name;
+            if (!tA || !tB) return m;
+
+            const event = espnEvents.find(e => {
+              const compNames = e.competitions[0]?.competitors.map(c => c.team.name) || [];
+              return compNames.includes(tA) && compNames.includes(tB);
+            });
+
+            if (event) {
+              const compA = event.competitions[0].competitors.find(c => c.team.name === tA);
+              const compB = event.competitions[0].competitors.find(c => c.team.name === tB);
+              const isFinished = event.status.type.completed;
+
+              if (compA && compB && (m.scoreA !== compA.score || m.scoreB !== compB.score || m.isPlayed !== isFinished)) {
+                hasChanges = true;
+                return { ...m, scoreA: compA.score, scoreB: compB.score, isPlayed: isFinished };
+              }
+            }
+            return m;
+          });
+
+          if (hasChanges && isMounted) {
+            saveState('matches', nextMatches);
+            return nextMatches;
+          }
+          return prevMatches;
+        });
+      } catch (err) {
+        console.warn("ESPN sync skipped:", err);
+      }
+    };
+
+    fetchESPN(); 
+    const intervalId = setInterval(fetchESPN, 300000); // 5 minutes
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [isViewer, settings.autoSync]);
+
 
   const saveState = async (key, value) => {
     if (!user || isViewer) return; 
@@ -256,13 +323,13 @@ export default function App() {
     if (isViewer) return;
     const resetMatches = generateAllMatches();
     const defaultSettings = { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: settings.leagueName || 'My Sweepstakes' };
-    setMembers(INITIAL_MEMBERS);
+    setMembers(DEFAULT_6_USERS);
     setAssignments({});
     setEliminatedTeams({});
     setManualRestores({});
     setMatches(resetMatches);
     setSettings(defaultSettings);
-    saveState('members', INITIAL_MEMBERS);
+    saveState('members', DEFAULT_6_USERS);
     saveState('assignments', {});
     saveState('eliminatedTeams', {});
     saveState('manualRestores', {});
@@ -426,7 +493,7 @@ export default function App() {
   };
 
   const handleAddMember = () => {
-    const next = [...members, { id: `m${Date.now()}`, name: 'New Member', isKid: false }];
+    const next = [...members, { id: `m${Date.now()}`, name: `User ${members.length + 1}`, isKid: false }];
     setMembers(next);
     saveState('members', next);
   };
@@ -479,9 +546,13 @@ export default function App() {
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase drop-shadow-md flex items-center gap-3 mb-2 flex-wrap">
                <img src="/logos/world-cup.svg" className="w-10 h-10 sm:w-12 sm:h-12 object-contain shrink-0" alt="World Cup Logo" onError={(e) => e.target.style.display='none'} />
                World Cup 2026
-               {isViewer && (
+               {isViewer ? (
                  <span className="bg-amber-500 text-amber-950 text-[10px] sm:text-xs font-black px-2 sm:px-3 py-1 rounded-full uppercase tracking-widest shadow-md shrink-0">
                    Viewer
+                 </span>
+               ) : (
+                 <span className="bg-indigo-500 text-indigo-50 text-[10px] sm:text-xs font-black px-2 sm:px-3 py-1 rounded-full uppercase tracking-widest shadow-md shrink-0">
+                   Commish
                  </span>
                )}
             </h1>
@@ -496,7 +567,7 @@ export default function App() {
                    >
                      {hostedLeagues.length > 0 && <optgroup label="👑 My Hosted Leagues">
                        {hostedLeagues.map(l => (
-                         <option key={l.id} value={l.id}>{l.name}</option>
+                         <option key={l.id} value={l.id}>{l.name} {activeLeagueId === l.id && '(Commish)'}</option>
                        ))}
                      </optgroup>}
                      {joinedLeagues.length > 0 && <optgroup label="👁️ Joined Leagues">
