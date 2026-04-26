@@ -65,6 +65,15 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
         </div>
       )}
 
+      {/* 🟢 RESTORED INFORMATION BOX */}
+      <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 sm:p-5 flex items-start sm:items-center gap-3 sm:gap-4 shadow-sm">
+        <Info className="w-5 h-5 sm:w-6 sm:h-6 text-sky-500 shrink-0 mt-0.5 sm:mt-0" />
+        <div>
+           <h4 className="text-sm font-black text-sky-800 uppercase tracking-wide">Tournament Data</h4>
+           <p className="text-xs sm:text-sm font-medium text-sky-700 mt-0.5">FIFA Rankings and Betting Odds were last updated on <strong className="font-black">April 1st, 2026</strong>. Values will remain locked for the duration of the tournament.</p>
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border-2 border-emerald-100 p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="flex items-center gap-2 w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
           <Filter className="w-4 h-4 text-slate-400 shrink-0" />
