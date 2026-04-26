@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { TEAMS_DATA } from '../config/data.js';
 
-export const useEspnSync = (isViewer, settings, setMatches, saveState) => {
-  // We use a ref to hold the latest saveState function to prevent infinite re-renders
+export const useEspnSync = (isSuperAdmin, settings, setMatches, saveState) => {
   const saveStateRef = useRef(saveState);
   
   useEffect(() => {
@@ -10,14 +9,12 @@ export const useEspnSync = (isViewer, settings, setMatches, saveState) => {
   }, [saveState]);
 
   useEffect(() => {
-    if (isViewer || !settings.autoSync) return;
+    // SECURITY GATE: Only the Super Admin's browser is allowed to poll ESPN and write to the Global DB
+    if (!isSuperAdmin || !settings.autoSync) return;
     let isMounted = true;
 
     const fetchESPN = async () => {
       try {
-        // 🚨 HOW TO TEST LIVE 🚨
-        // To test this today, swap the URL below to a live league like the Premier League:
-        // 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard'
         const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard');
         
         if (!response.ok) return;
@@ -29,7 +26,7 @@ export const useEspnSync = (isViewer, settings, setMatches, saveState) => {
         setMatches(prevMatches => {
           let hasChanges = false;
           const nextMatches = prevMatches.map(m => {
-            if (m.isPlayed) return m; // Preserve finished games so we don't accidentally reopen them
+            if (m.isPlayed) return m;
 
             const tA = TEAMS_DATA.find(t => t.id === m.teamA)?.name;
             const tB = TEAMS_DATA.find(t => t.id === m.teamB)?.name;
@@ -54,7 +51,6 @@ export const useEspnSync = (isViewer, settings, setMatches, saveState) => {
           });
 
           if (hasChanges && isMounted) {
-             // Save the new scores to Firebase immediately
             saveStateRef.current('matches', nextMatches);
             return nextMatches;
           }
@@ -65,15 +61,12 @@ export const useEspnSync = (isViewer, settings, setMatches, saveState) => {
       }
     };
 
-    // Run it immediately on load
     fetchESPN(); 
-    
-    // Then run it every 5 minutes
     const intervalId = setInterval(fetchESPN, 300000); 
     
     return () => {
       isMounted = false;
       clearInterval(intervalId);
     };
-  }, [isViewer, settings.autoSync, setMatches]);
+  }, [isSuperAdmin, settings.autoSync, setMatches]);
 };

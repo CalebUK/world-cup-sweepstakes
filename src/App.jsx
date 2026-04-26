@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Loader2, Settings, X, Trophy, Plus, Globe, Trash2, CheckCircle, LogOut, LayoutGrid, User, Mail } from 'lucide-react';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'; 
+import { Loader2, Settings, X, Trophy, Plus, Globe, Trash2, CheckCircle, LogOut, LayoutGrid, User, Mail, ShieldCheck } from 'lucide-react';
+// IMPORTING AUTH PROVIDERS
+import { 
+  onAuthStateChanged, signInAnonymously, GoogleAuthProvider, OAuthProvider, 
+  signInWithPopup, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink 
+} from 'firebase/auth'; 
 import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 
 // --- CONFIGURATION ---
@@ -8,6 +12,10 @@ import { auth, db, appId } from './config/firebase.js';
 import { TEAMS_DATA, DEFAULT_SCORING, generateAllMatches } from './config/data.js';
 import { calculateStats, getR32Mappings, sortGroupTeams, getThirdPlaceStandings } from './utils/tournamentLogic.js';
 import { useEspnSync } from './hooks/useEspnSync.js';
+
+// 🚨 ADMIN SETUP 🚨
+// Paste your UID from the Account Modal here to become the Global Match Admin!
+const SUPER_ADMIN_UID = "PASTE_YOUR_UID_HERE";
 
 // --- 6 DEFAULT USERS ---
 const DEFAULT_6_USERS = [
@@ -51,12 +59,17 @@ export default function App() {
   const [pendingJoinCode, setPendingJoinCode] = useState('');
   const [pendingJoinName, setPendingJoinName] = useState('');
 
+  // Auth Modal States
+  const [authEmail, setAuthEmail] = useState('');
+  const [authMessage, setAuthMessage] = useState(null);
+
   const isOwner = useMemo(() => {
     if (!user) return false;
     return hostedLeagues.some(l => l.id === activeLeagueId) || activeLeagueId === user.uid;
   }, [user, hostedLeagues, activeLeagueId]);
 
   const isViewer = !isOwner;
+  const isSuperAdmin = user?.uid === SUPER_ADMIN_UID;
 
   const [showWelcomeModal, setShowWelcomeModal] = useState(() => {
     try { return localStorage.getItem('hideWorldCupWelcome') !== 'true'; } catch { return true; }
@@ -87,8 +100,19 @@ export default function App() {
 
   useEffect(() => {
     const initAuth = async () => {
-      try { await signInAnonymously(auth); } 
-      catch (err) { console.error("Auth error details:", err); }
+      // Magic Link Interceptor
+      if (isSignInWithEmailLink(auth, window.location.href)) {
+        let email = window.localStorage.getItem('emailForSignIn');
+        if (email) {
+          try {
+            await signInWithEmailLink(auth, email, window.location.href);
+            window.localStorage.removeItem('emailForSignIn');
+          } catch (err) {
+            console.error("Magic link error:", err);
+          }
+        }
+      }
+      try { await signInAnonymously(auth); } catch (err) { console.error(err); }
     };
     initAuth();
     
@@ -133,13 +157,16 @@ export default function App() {
     return () => { unsubscribe(); clearTimeout(emergencyTimeout); };
   }, [activeLeagueId, joinedLeagues]);
 
+  // --- DUAL-SYNC ENGINE (League Data + Global Matches) ---
   useEffect(() => {
     if (!user || !activeLeagueId) return;
-    
-    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sweepstakes', activeLeagueId);
-    
     setLoading(true); 
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+
+    const leagueRef = doc(db, 'artifacts', appId, 'public', 'data', 'sweepstakes', activeLeagueId);
+    const globalMatchesRef = doc(db, 'artifacts', appId, 'public', 'data', 'globalMatches', 'worldCup2026');
+    
+    // 1. Sync Local League Details
+    const unsubLeague = onSnapshot(leagueRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setMembers(data.members || DEFAULT_6_USERS);
@@ -160,63 +187,91 @@ export default function App() {
             return prev;
           });
         }
-
-        if (data.matches) {
-          const freshMatches = generateAllMatches();
-          const mergedMatches = freshMatches.map(freshMatch => {
-             const savedMatch = data.matches.find(m => m.id === freshMatch.id);
-             if (savedMatch) {
-               return {
-                 ...freshMatch, 
-                 scoreA: (savedMatch.scoreA !== undefined && savedMatch.scoreA !== '') ? savedMatch.scoreA : '0',
-                 scoreB: (savedMatch.scoreB !== undefined && savedMatch.scoreB !== '') ? savedMatch.scoreB : '0',
-                 isPlayed: savedMatch.isPlayed || false,
-                 isAET: savedMatch.isAET || false,
-                 penWinner: savedMatch.penWinner || null,
-                 penScoreA: savedMatch.penScoreA || '',
-                 penScoreB: savedMatch.penScoreB || '',
-                 teamA: freshMatch.teamA !== '' ? freshMatch.teamA : (savedMatch.teamA || ''),
-                 teamB: freshMatch.teamB !== '' ? freshMatch.teamB : (savedMatch.teamB || '')
-               };
-             }
-             return freshMatch;
-          });
-          setMatches(mergedMatches);
-        } else {
-          setMatches(generateAllMatches());
-        }
       } else if (isOwner) {
-        const initialData = {
+        setDoc(leagueRef, {
           members: DEFAULT_6_USERS,
           assignments: {},
           eliminatedTeams: {},
           manualRestores: {},
-          matches: generateAllMatches(),
           settings: { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'New Sweepstakes' }
-        };
-        setDoc(docRef, initialData);
+        });
       }
-      setLoading(false);
-    }, (error) => {
-      console.error("Firestore sync error:", error);
+    });
+
+    // 2. Sync Global Match Scores
+    const unsubGlobal = onSnapshot(globalMatchesRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setMatches(docSnap.data().matches || generateAllMatches());
+      } else if (user.uid === SUPER_ADMIN_UID) {
+        setDoc(globalMatchesRef, { matches: generateAllMatches() });
+      } else {
+        setMatches(generateAllMatches()); // Fallback for non-admins until admin initializes
+      }
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => { unsubLeague(); unsubGlobal(); };
   }, [user, activeLeagueId, isOwner]);
 
   const saveState = async (key, value) => {
-    if (!user || isViewer) return; 
+    if (!user) return; 
     try {
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sweepstakes', activeLeagueId);
-      await setDoc(docRef, { [key]: JSON.parse(JSON.stringify(value)) }, { merge: true });
+      const safeValue = JSON.parse(JSON.stringify(value));
+      if (key === 'matches') {
+        // SECURITY: Only super admin writes to the global matches doc
+        if (!isSuperAdmin) return;
+        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'globalMatches', 'worldCup2026');
+        await setDoc(ref, { matches: safeValue }, { merge: true });
+      } else {
+        // SECURITY: Only league owners write to the local league doc
+        if (isViewer) return; 
+        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'sweepstakes', activeLeagueId);
+        await setDoc(ref, { [key]: safeValue }, { merge: true });
+      }
     } catch (err) {
       console.error("Error saving to cloud:", err);
     }
   };
 
   // --- ESPN AUTO-SYNC ENGINE ---
-  useEspnSync(isViewer, settings, setMatches, saveState);
+  useEspnSync(isSuperAdmin, settings, setMatches, saveState);
+
+  // --- AUTHENTICATION HANDLERS ---
+  const handleSocialLogin = async (providerName) => {
+    try {
+      setAuthMessage({ type: 'info', text: 'Connecting to ' + providerName + '...' });
+      let provider;
+      if (providerName === 'google') provider = new GoogleAuthProvider();
+      if (providerName === 'microsoft') provider = new OAuthProvider('microsoft.com');
+      if (providerName === 'yahoo') provider = new OAuthProvider('yahoo.com');
+
+      await signInWithPopup(auth, provider);
+      setAuthMessage({ type: 'success', text: 'Successfully linked account!' });
+      setTimeout(() => {
+        setShowAccountModal(false);
+        setAuthMessage(null);
+      }, 1500);
+    } catch (error) {
+      console.error(error);
+      setAuthMessage({ type: 'error', text: error.message });
+    }
+  };
+
+  const handleMagicLink = async () => {
+    if (!authEmail) return;
+    try {
+      setAuthMessage({ type: 'info', text: 'Sending secure link...' });
+      const actionCodeSettings = {
+        url: window.location.origin + window.location.pathname,
+        handleCodeInApp: true,
+      };
+      await sendSignInLinkToEmail(auth, authEmail, actionCodeSettings);
+      window.localStorage.setItem('emailForSignIn', authEmail);
+      setAuthMessage({ type: 'success', text: 'Success! Check your email inbox.' });
+    } catch (error) {
+      setAuthMessage({ type: 'error', text: error.message });
+    }
+  };
 
   const handleCreateLeague = async () => {
     if (!user) return;
@@ -265,20 +320,26 @@ export default function App() {
 
   const handleResetData = () => {
     if (isViewer) return;
-    const resetMatches = generateAllMatches();
     const defaultSettings = { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: settings.leagueName || 'My Sweepstakes' };
     setMembers(DEFAULT_6_USERS);
     setAssignments({});
     setEliminatedTeams({});
     setManualRestores({});
-    setMatches(resetMatches);
     setSettings(defaultSettings);
+    
     saveState('members', DEFAULT_6_USERS);
     saveState('assignments', {});
     saveState('eliminatedTeams', {});
     saveState('manualRestores', {});
-    saveState('matches', resetMatches);
     saveState('settings', defaultSettings);
+    
+    // Admins also reset the global matches when clicking reset
+    if (isSuperAdmin) {
+      const resetMatches = generateAllMatches();
+      setMatches(resetMatches);
+      saveState('matches', resetMatches);
+    }
+    
     setShowSettingsModal(false);
   };
 
@@ -309,13 +370,14 @@ export default function App() {
   }, [members, assignments, matches, eliminatedTeams, settings]);
 
   useEffect(() => {
-    if (isViewer || matches.length === 0 || Object.keys(teamStats).length === 0) return;
+    if (matches.length === 0 || Object.keys(teamStats).length === 0) return;
     let hasMatchesChanges = false;
     let newlyEliminated = false;
     const nextMatches = [...matches];
     const nextEliminations = { ...eliminatedTeams };
     const groupsList = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
     let groupMatchesPlayed = 0; 
+    
     groupsList.forEach(g => {
       const gMatches = nextMatches.filter(m => m.stage === 'Group' && TEAMS_DATA.find(t => t.id === m.teamA)?.group === g);
       const playedInGroup = gMatches.filter(m => m.isPlayed).length;
@@ -407,24 +469,26 @@ export default function App() {
          }
       }
     });
-    if (newlyEliminated) {
+
+    if (newlyEliminated && isOwner) {
       setEliminatedTeams(nextEliminations);
       saveState('eliminatedTeams', nextEliminations);
     }
-    if (hasMatchesChanges) {
+    if (hasMatchesChanges && isSuperAdmin) {
       setMatches(nextMatches);
       saveState('matches', nextMatches);
     }
-  }, [matches, teamStats, eliminatedTeams, isViewer, user, settings, manualRestores]);
+  }, [matches, teamStats, eliminatedTeams, isOwner, isSuperAdmin, user, settings, manualRestores]);
 
   const handleRandomizeGroups = () => {
-    if (isViewer) return;
+    if (!isSuperAdmin) return;
     const nextMatches = matches.map(m => (m.stage === 'Group' ? { ...m, scoreA: Math.floor(Math.random() * 4).toString(), scoreB: Math.floor(Math.random() * 4).toString(), isPlayed: true } : m));
     setMatches(nextMatches);
     saveState('matches', nextMatches);
   };
 
   const handleMatchUpdate = (matchId, field, value) => {
+    if (!isSuperAdmin) return;
     const next = matches.map(m => m.id === matchId ? { ...m, [field]: value } : m);
     setMatches(next);
     saveState('matches', next);
@@ -505,8 +569,8 @@ export default function App() {
                    Viewer
                  </span>
                ) : (
-                 <span className="bg-indigo-500 text-indigo-50 text-[10px] sm:text-xs font-black px-2 sm:px-3 py-1 rounded-full uppercase tracking-widest shadow-md shrink-0">
-                   Commish
+                 <span className="bg-indigo-500 text-indigo-50 text-[10px] sm:text-xs font-black px-2 sm:px-3 py-1 rounded-full uppercase tracking-widest shadow-md shrink-0 flex items-center gap-1">
+                   <ShieldCheck className="w-3 h-3" /> Commish
                  </span>
                )}
             </h1>
@@ -541,7 +605,8 @@ export default function App() {
                    <Plus className="w-5 h-5 sm:hidden" />
                    <span className="hidden sm:block font-black text-sm uppercase tracking-wider px-2">Leagues</span>
                  </button>
-                 {/* NEW ACCOUNT MODAL BUTTON */}
+                 
+                 {/* ACCOUNT MODAL BUTTON */}
                  <button onClick={() => setShowAccountModal(true)} className="bg-slate-700/90 hover:bg-slate-800 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-slate-600 flex items-center gap-1 shrink-0" title="My Account">
                    <User className="w-5 h-5 sm:hidden" />
                    <span className="hidden sm:block font-black text-sm uppercase tracking-wider px-2">Account</span>
@@ -578,9 +643,11 @@ export default function App() {
         {activeTab === 'standings' && <StandingsTab settings={settings} awards={awards} memberStats={memberStats} />}
         {activeTab === 'groups' && <GroupsTab teamStats={teamStats} matches={matches} settings={settings} />}
         {activeTab === 'bracket' && <BracketTab matches={matches} members={members} assignments={assignments} />}
-        {activeTab === 'matches' && <MatchesTab matches={matches} localTimezone={localTimezone} setLocalTimezone={setLocalTimezone} isViewer={isViewer} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} handleRandomizeGroups={handleRandomizeGroups} />}
+        {activeTab === 'matches' && <MatchesTab matches={matches} localTimezone={localTimezone} setLocalTimezone={setLocalTimezone} isViewer={!isSuperAdmin} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} handleRandomizeGroups={handleRandomizeGroups} />}
         {activeTab === 'teams' && <TeamsTab eliminatedTeams={eliminatedTeams} isViewer={isViewer} assignments={assignments} members={members} handleAssign={handleAssign} toggleEliminated={toggleEliminated} />}
       </main>
+
+      {/* --- ALL MODALS BELOW --- */}
 
       {showLeaveModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
@@ -698,7 +765,7 @@ export default function App() {
       {showAccountModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-md border-4 border-slate-200 relative">
-            <button onClick={() => setShowAccountModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
+            <button onClick={() => { setShowAccountModal(false); setAuthMessage(null); }} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
             
             <div className="flex flex-col items-center text-center space-y-3 mb-6">
               <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shadow-inner">
@@ -712,18 +779,29 @@ export default function App() {
               </div>
             </div>
 
+            {/* ERROR/SUCCESS MESSAGES */}
+            {authMessage && (
+              <div className={`mb-4 p-3 rounded-lg text-sm font-bold text-center ${
+                authMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
+                authMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
+                'bg-blue-50 text-blue-700 border border-blue-200'
+              }`}>
+                {authMessage.text}
+              </div>
+            )}
+
             <div className="space-y-6">
               {/* SOCIAL BUTTONS ROW */}
               <div className="space-y-3">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border-b border-slate-100 pb-2">Link Social Account</h4>
                 <div className="flex items-center gap-2">
-                  <button className="flex-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-black py-3 rounded-xl transition-colors text-sm shadow-sm">
+                  <button onClick={() => handleSocialLogin('google')} className="flex-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-black py-3 rounded-xl transition-colors text-sm shadow-sm">
                     Google
                   </button>
-                  <button className="flex-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-black py-3 rounded-xl transition-colors text-sm shadow-sm">
+                  <button onClick={() => handleSocialLogin('microsoft')} className="flex-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-black py-3 rounded-xl transition-colors text-sm shadow-sm">
                     Microsoft
                   </button>
-                  <button className="flex-1 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-black py-3 rounded-xl transition-colors text-sm shadow-sm">
+                  <button onClick={() => handleSocialLogin('yahoo')} className="flex-1 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-black py-3 rounded-xl transition-colors text-sm shadow-sm">
                     Yahoo
                   </button>
                 </div>
@@ -742,17 +820,27 @@ export default function App() {
                     <Mail className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input 
                       type="email" 
+                      value={authEmail}
+                      onChange={e => setAuthEmail(e.target.value)}
                       placeholder="Enter your email address" 
                       className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-800 focus:border-indigo-500 focus:ring-0 outline-none transition-colors"
                     />
                   </div>
-                  <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 rounded-xl shadow-md uppercase tracking-wider transition-all hover:-translate-y-0.5">
+                  <button onClick={handleMagicLink} disabled={!authEmail} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black py-3 rounded-xl shadow-md uppercase tracking-wider transition-all hover:-translate-y-0.5">
                     Send Link
                   </button>
                 </div>
                 <p className="text-[10px] text-slate-400 text-center font-medium leading-relaxed px-4">
                   We'll send a secure link to your inbox. Click it to instantly link your devices. No passwords required!
                 </p>
+              </div>
+
+              {/* SUPER ADMIN COPY UI */}
+              <div className="mt-8 pt-4 border-t border-slate-100 text-center">
+                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-1">Admin Developer Tool:</p>
+                <code className="text-xs text-slate-500 bg-slate-50 border border-slate-200 px-2 py-1 rounded selection:bg-indigo-200">
+                  UID: {user?.uid || 'Loading...'}
+                </code>
               </div>
             </div>
           </div>
