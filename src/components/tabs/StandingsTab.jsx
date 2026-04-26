@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trophy, Medal, Award, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trophy, Award, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 
 export const StandingsTab = ({ settings, awards, memberStats }) => {
   
@@ -19,74 +19,72 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
     return <span className="w-4 h-4 flex items-center justify-center">-</span>;
   };
 
-  const renderPodium = (podiumData, title) => {
-    if (!podiumData) return null;
+  const renderAwardsBox = (awardData, title, bgColor, borderColor, iconColor) => {
+    if (!awardData) return null;
 
-    const first = sortedStats.find(m => m.id === podiumData['1st']?.id);
-    const second = sortedStats.find(m => m.id === podiumData['2nd']?.id);
-    const third = sortedStats.find(m => m.id === podiumData['3rd']?.id);
+    const first = sortedStats.find(m => m.id === awardData['1st']?.id);
+    const second = sortedStats.find(m => m.id === awardData['2nd']?.id);
+    const third = sortedStats.find(m => m.id === awardData['3rd']?.id);
+
+    // Calculate Wooden Spoon dynamically based on the current group (Overall vs Kids)
+    let spoon = null;
+    if (settings?.woodenSpoon) {
+       const targetList = title.includes("Kids") ? kidsStats : sortedStats;
+       if (targetList.length > 0) {
+          const potentialSpoon = targetList[targetList.length - 1];
+          // Only show spoon if they have actually earned points
+          if (potentialSpoon.pts > 0) {
+             spoon = potentialSpoon;
+          }
+       }
+    }
 
     return (
-      <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-6 relative overflow-hidden mb-8">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-100 to-green-50 rounded-bl-full -z-10 opacity-50"></div>
-        <h2 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2 uppercase tracking-wide">
-          <Award className="w-6 h-6 text-emerald-600" /> {title}
+      <div className={`bg-white rounded-xl shadow-md border-2 ${borderColor} p-4 sm:p-6 relative overflow-hidden`}>
+        <h2 className={`text-lg font-black text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide`}>
+          <Award className={`w-5 h-5 ${iconColor}`} /> {title}
         </h2>
         
-        <div className="flex justify-center items-end gap-2 sm:gap-6 h-56 pt-8">
-          {/* 2nd Place */}
-          <div className="flex flex-col items-center w-1/3 animate-fade-in relative z-10" style={{ animationDelay: '200ms' }}>
-            {second ? (
-              <>
-                <img src="/standings/second.svg" alt="2nd Place" className="w-10 h-10 sm:w-12 sm:h-12 drop-shadow-md mb-2" onError={(e) => e.target.style.display='none'} />
-                <div className="font-black text-slate-700 text-sm sm:text-base text-center truncate w-full px-1 mb-1">{second.name}</div>
-                <div className="text-xs font-bold text-slate-500 mb-2">{second.pts} pts</div>
-                <div className="w-full bg-gradient-to-t from-slate-200 to-slate-100 h-28 rounded-t-lg border-2 border-b-0 border-slate-300 shadow-inner flex justify-center pt-2">
-                  <span className="font-black text-slate-400 text-2xl">2</span>
-                </div>
-              </>
-            ) : (
-              <div className="w-full bg-slate-50 h-28 rounded-t-lg border-2 border-b-0 border-slate-100 flex justify-center pt-2 opacity-50">
-                 <span className="font-black text-slate-300 text-2xl">2</span>
+        <div className="space-y-3">
+          {first && (
+            <div className={`flex items-center justify-between p-3 ${bgColor} rounded-lg border border-white/50 shadow-sm`}>
+              <div className="flex items-center gap-3">
+                <Trophy className="w-6 h-6 text-yellow-500 drop-shadow-sm" />
+                <span className="font-black text-slate-800 text-sm sm:text-base">{first.name}</span>
               </div>
-            )}
-          </div>
-
-          {/* 1st Place */}
-          <div className="flex flex-col items-center w-1/3 animate-fade-in relative z-20" style={{ animationDelay: '400ms' }}>
-            {first ? (
-              <>
-                <Trophy className="w-14 h-14 sm:w-16 sm:h-16 text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)] mb-2" />
-                <div className="font-black text-slate-900 text-base sm:text-lg text-center truncate w-full px-1 mb-1">{first.name}</div>
-                <div className="text-xs font-bold text-emerald-600 mb-2 bg-emerald-50 px-2 py-0.5 rounded-full">{first.pts} pts</div>
-                <div className="w-full bg-gradient-to-t from-yellow-400 via-yellow-200 to-yellow-100 h-36 rounded-t-lg border-2 border-b-0 border-yellow-400 shadow-[0_-5px_15px_rgba(250,204,21,0.2)] flex justify-center pt-2">
-                  <span className="font-black text-yellow-600 text-3xl">1</span>
-                </div>
-              </>
-            ) : (
-              <div className="w-full bg-slate-50 h-36 rounded-t-lg border-2 border-b-0 border-slate-100 flex justify-center pt-2 opacity-50">
-                 <span className="font-black text-slate-300 text-3xl">1</span>
+              <span className="font-bold text-emerald-700 bg-white px-2 py-1 rounded-md text-xs shadow-sm">{first.pts} pts</span>
+            </div>
+          )}
+          
+          {second && (
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <div className="flex items-center gap-3">
+                <img src="/standings/second.svg" alt="2nd" className="w-6 h-6 drop-shadow-sm" onError={(e) => e.target.style.display='none'} />
+                <span className="font-black text-slate-700 text-sm">{second.name}</span>
               </div>
-            )}
-          </div>
-
-          {/* 3rd Place */}
-          <div className="flex flex-col items-center w-1/3 animate-fade-in relative z-10" style={{ animationDelay: '600ms' }}>
-            {third ? (
-              <>
-                <img src="/standings/third.svg" alt="3rd Place" className="w-9 h-9 sm:w-10 sm:h-10 drop-shadow-md mb-2" onError={(e) => e.target.style.display='none'} />
-                <div className="font-black text-slate-700 text-xs sm:text-sm text-center truncate w-full px-1 mb-1">{third.name}</div>
-                <div className="text-xs font-bold text-slate-500 mb-2">{third.pts} pts</div>
-                <div className="w-full bg-gradient-to-t from-amber-700 via-amber-600 to-amber-500 h-20 rounded-t-lg border-2 border-b-0 border-amber-800 shadow-inner flex justify-center pt-1">
-                  <span className="font-black text-amber-900/50 text-2xl">3</span>
-                </div>
-              </>
-            ) : (
-              <div className="w-full bg-slate-50 h-20 rounded-t-lg border-2 border-b-0 border-slate-100 flex justify-center pt-1 opacity-50">
-                 <span className="font-black text-slate-300 text-2xl">3</span>
+              <span className="font-bold text-slate-500 text-xs">{second.pts} pts</span>
+            </div>
+          )}
+          
+          {third && (
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <div className="flex items-center gap-3">
+                <img src="/standings/third.svg" alt="3rd" className="w-6 h-6 drop-shadow-sm" onError={(e) => e.target.style.display='none'} />
+                <span className="font-black text-slate-700 text-sm">{third.name}</span>
               </div>
-            )}
-          </div>
+              <span className="font-bold text-slate-500 text-xs">{third.pts} pts</span>
+            </div>
+          )}
+          
+          {spoon && (
+            <div className="flex items-center justify-between p-3 bg-amber-50/50 rounded-lg border border-amber-100/50 mt-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xl drop-shadow-sm" title="Wooden Spoon">🥄</span>
+                <span className="font-black text-amber-900 text-sm">{spoon.name}</span>
+              </div>
+              <span className="font-bold text-amber-700/70 text-xs">{spoon.pts} pts</span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -95,12 +93,14 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
   return (
     <div className="space-y-8 animate-fade-in">
       
-      {/* PODIUMS */}
-      {renderPodium(awards?.overall, "Overall Standings")}
-      
-      {settings?.kidAwards && kidsStats.length > 0 && (
-         renderPodium(awards?.kids, "Kids Leaderboard")
-      )}
+      {/* SIDE-BY-SIDE AWARDS BOXES */}
+      <div className={`grid grid-cols-1 ${settings?.kidAwards && kidsStats.length > 0 ? 'md:grid-cols-2' : 'max-w-lg mx-auto'} gap-4 sm:gap-6 mb-8`}>
+        {renderAwardsBox(awards?.overall, "Overall Standings", "bg-yellow-50", "border-yellow-200", "text-yellow-500")}
+        
+        {settings?.kidAwards && kidsStats.length > 0 && (
+           renderAwardsBox(awards?.kids, "Kids Leaderboard", "bg-sky-50", "border-sky-200", "text-sky-500")
+        )}
+      </div>
 
       {/* FULL LEADERBOARD TABLE */}
       <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
