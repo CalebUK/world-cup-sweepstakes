@@ -15,7 +15,7 @@ import { useEspnSync } from './hooks/useEspnSync.js';
 
 // 🚨 ADMIN SETUP 🚨
 // Paste your UID from the Account Modal here to become the Global Match Admin!
-const SUPER_ADMIN_UID = "1u7dEIEfAcYvsovwF77Z6FHsBrT2";
+const SUPER_ADMIN_UID = "JtdBEQqOEfOLgF7L80BnDxuarGV2";
 
 // --- 6 DEFAULT USERS ---
 const DEFAULT_6_USERS = [
