@@ -96,23 +96,31 @@ export default function App() {
     }
   });
 
-  // --- 🔥 NEW, BULLETPROOF AUTHENTICATION ENGINE 🔥 ---
   useEffect(() => {
-    // 1. Intercept Magic Links immediately
-    if (isSignInWithEmailLink(auth, window.location.href)) {
-      let email = window.localStorage.getItem('emailForSignIn');
-      if (email) {
-        signInWithEmailLink(auth, email, window.location.href)
-          .then(() => { window.localStorage.removeItem('emailForSignIn'); })
-          .catch(console.error);
+    const initAuth = async () => {
+      if (isSignInWithEmailLink(auth, window.location.href)) {
+        let email = window.localStorage.getItem('emailForSignIn');
+        if (email) {
+          try {
+            await signInWithEmailLink(auth, email, window.location.href);
+            window.localStorage.removeItem('emailForSignIn');
+            setShowAccountModal(true);
+            setAuthMessage({ type: 'success', text: 'Successfully linked account!' });
+            setTimeout(() => setShowAccountModal(false), 2000);
+          } catch (err) {
+            console.error("Magic link error:", err);
+            setShowAccountModal(true);
+            setAuthMessage({ type: 'error', text: "Link expired or invalid." });
+          }
+        }
       }
-    }
-
-    // 2. Patiently wait for Firebase to figure out who is logged in
+      try { await signInAnonymously(auth); } catch (err) { console.error(err); }
+    };
+    initAuth();
+    
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
       if (u) {
-        // We have a user! (Either Anonymous or Google)
-        setUser(u);
         const registryRef = doc(db, 'artifacts', appId, 'users', u.uid, 'metadata', 'leagues');
         const regSnap = await getDoc(registryRef);
         let ownedList = [];
@@ -131,42 +139,26 @@ export default function App() {
         if (hostParam) {
           const isMine = ownedList.some(l => l.id === hostParam);
           const isJoined = joinedLeagues.some(l => l.id === hostParam);
+          
           if (!isMine && !isJoined) {
             setPendingJoinCode(hostParam);
             setShowJoinModal(true);
           } else {
             setActiveLeagueId(hostParam);
             try { localStorage.setItem('wcActiveLeague', hostParam); } catch (e) {}
+            window.history.replaceState({}, '', window.location.pathname);
           }
-          window.history.replaceState({}, '', window.location.pathname);
-        } else {
-          // Validate current LocalStorage League ID
-          let currentLocalId;
-          try { currentLocalId = localStorage.getItem('wcActiveLeague'); } catch(e) {}
-          
-          const isMine = ownedList.some(l => l.id === currentLocalId);
-          const isJoined = joinedLeagues.some(l => l.id === currentLocalId);
-
-          if (currentLocalId && (isMine || isJoined)) {
-             setActiveLeagueId(currentLocalId);
-          } else {
-             // If local storage has an orphaned ghost ID, force them to their actual owned league
-             setActiveLeagueId(ownedList[0].id);
-             try { localStorage.setItem('wcActiveLeague', ownedList[0].id); } catch (e) {}
-          }
+        } else if (!activeLeagueId) {
+          setActiveLeagueId(u.uid);
+          try { localStorage.setItem('wcActiveLeague', u.uid); } catch (e) {}
         }
-      } else {
-        // 🔥 CRITICAL FIX: Only create an anonymous user if Firebase explicitly says NO ONE is logged in
-        try { await signInAnonymously(auth); } catch (err) { console.error(err); }
       }
     });
     
     const emergencyTimeout = setTimeout(() => setLoading(false), 5000);
-    // Dependency array is strictly EMPTY so it only runs once per mount
     return () => { unsubscribe(); clearTimeout(emergencyTimeout); };
-  }, []); 
+  }, [activeLeagueId, joinedLeagues]);
 
-  // --- DUAL-SYNC ENGINE (League Data + Global Matches) ---
   useEffect(() => {
     if (!user || !activeLeagueId) return;
     setLoading(true); 
@@ -238,7 +230,6 @@ export default function App() {
     }
   };
 
-  // --- CUSTOM HOOKS (Background Logic) ---
   useEspnSync(isSuperAdmin, settings, setMatches, saveState);
   
   useTournamentEngine({
@@ -465,73 +456,75 @@ export default function App() {
     <div className="min-h-screen bg-slate-100 text-slate-900 font-sans pb-20 selection:bg-green-200 relative">
       <header className="bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 text-white pt-10 pb-8 px-6 shadow-xl relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_40px,#fff_40px,#fff_80px)] pointer-events-none transform -skew-x-12 scale-150"></div>
-        <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-4">
-          <div className="flex-1 w-full">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase drop-shadow-md flex items-center gap-3 mb-2 flex-wrap">
-               <img src="/logos/world-cup.svg" className="w-10 h-10 sm:w-12 sm:h-12 object-contain shrink-0" alt="World Cup Logo" onError={(e) => e.target.style.display='none'} />
-               World Cup 2026
-               {isViewer ? (
-                 <span className="bg-amber-500 text-amber-950 text-[10px] sm:text-xs font-black px-2 sm:px-3 py-1 rounded-full uppercase tracking-widest shadow-md shrink-0">
-                   Viewer
-                 </span>
-               ) : (
-                 <span className="bg-indigo-500 text-indigo-50 text-[10px] sm:text-xs font-black px-2 sm:px-3 py-1 rounded-full uppercase tracking-widest shadow-md shrink-0 flex items-center gap-1">
-                   <ShieldCheck className="w-3 h-3" /> Commish
-                 </span>
-               )}
-            </h1>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-4 w-full sm:max-w-xl bg-white/10 p-2 sm:p-2.5 rounded-xl border border-white/20 backdrop-blur-sm shadow-sm">
-               <span className="text-xs font-bold text-green-200 uppercase tracking-widest pl-2 hidden sm:block">Active League:</span>
-               <div className="flex w-full gap-2 items-center">
-                 <div className="relative flex-1">
-                   <select 
-                     value={activeLeagueId || ''} 
-                     onChange={e => handleSwitchLeague(e.target.value)}
-                     className="w-full bg-white/90 text-slate-900 font-black text-sm sm:text-base py-2.5 pl-9 pr-4 rounded-lg appearance-none cursor-pointer border-0 focus:ring-2 focus:ring-emerald-400 shadow-inner"
-                   >
-                     {hostedLeagues.length > 0 && <optgroup label="👑 My Hosted Leagues">
-                       {hostedLeagues.map(l => (
-                         <option key={l.id} value={l.id}>{l.name} {activeLeagueId === l.id && '(Commish)'}</option>
-                       ))}
-                     </optgroup>}
-                     {joinedLeagues.length > 0 && <optgroup label="👁️ Joined Leagues">
-                       {joinedLeagues.map(l => (
-                         <option key={l.id} value={l.id}>{l.name}</option>
-                       ))}
-                     </optgroup>}
-                   </select>
-                   <Trophy className="w-4 h-4 text-emerald-700 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                 </div>
-                 {isViewer && (
-                   <button onClick={() => setShowLeaveModal(true)} className="bg-red-500/90 hover:bg-red-500 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-red-400 flex items-center justify-center shrink-0" title="Remove this league">
-                     <Trash2 className="w-5 h-5" />
-                   </button>
-                 )}
-                 <button onClick={() => setShowJoinModal(true)} className="bg-emerald-500 hover:bg-emerald-400 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-emerald-400 flex items-center gap-1 shrink-0" title="Manage Leagues">
-                   <Plus className="w-5 h-5 sm:hidden" />
-                   <span className="hidden sm:block font-black text-sm uppercase tracking-wider px-2">Leagues</span>
-                 </button>
-                 
-                 <button onClick={() => setShowAccountModal(true)} className={`p-2.5 rounded-lg shadow-sm transition-colors border flex items-center gap-2 shrink-0 ${isAccountLinked ? 'bg-emerald-700/90 hover:bg-emerald-800 border-emerald-600' : 'bg-slate-700/90 hover:bg-slate-800 border-slate-600'}`} title="My Account">
-                   {isAccountLinked && user.photoURL ? (
-                     <img src={user.photoURL} alt="Profile" className="w-5 h-5 rounded-full border border-emerald-400" />
-                   ) : (
-                     <User className="w-5 h-5 text-white sm:hidden" />
-                   )}
-                   <span className="hidden sm:block text-white font-black text-sm uppercase tracking-wider pr-1">
-                     {isAccountLinked ? 'Linked' : 'Account'}
-                   </span>
-                 </button>
+        <div className="max-w-6xl mx-auto relative z-10 flex flex-col gap-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase drop-shadow-md flex items-center gap-3 flex-wrap">
+             <img src="/logos/world-cup.svg" className="w-10 h-10 sm:w-12 sm:h-12 object-contain shrink-0" alt="World Cup Logo" onError={(e) => e.target.style.display='none'} />
+             World Cup 2026
+             {isViewer ? (
+               <span className="bg-amber-500 text-amber-950 text-[10px] sm:text-xs font-black px-2 sm:px-3 py-1 rounded-full uppercase tracking-widest shadow-md shrink-0">
+                 Viewer
+               </span>
+             ) : (
+               <span className="bg-indigo-500 text-indigo-50 text-[10px] sm:text-xs font-black px-2 sm:px-3 py-1 rounded-full uppercase tracking-widest shadow-md shrink-0 flex items-center gap-1">
+                 <ShieldCheck className="w-3 h-3" /> Commish
+               </span>
+             )}
+          </h1>
+          
+          {/* FULL WIDTH COMMAND BAR */}
+          <div className="w-full bg-white/10 p-2 sm:p-2.5 rounded-xl border border-white/20 backdrop-blur-sm shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mt-2">
+             
+             {/* Left Side: League Selector */}
+             <div className="flex items-center w-full md:w-auto flex-1 min-w-[250px]">
+               <span className="text-xs font-bold text-green-200 uppercase tracking-widest pl-2 hidden lg:block shrink-0 mr-2">Active League:</span>
+               <div className="relative w-full">
+                 <select 
+                   value={activeLeagueId || ''} 
+                   onChange={e => handleSwitchLeague(e.target.value)}
+                   className="w-full bg-white/90 text-slate-900 font-black text-sm sm:text-base py-2.5 pl-9 pr-4 rounded-lg appearance-none cursor-pointer border-0 focus:ring-2 focus:ring-emerald-400 shadow-inner truncate"
+                 >
+                   {hostedLeagues.length > 0 && <optgroup label="👑 My Hosted Leagues">
+                     {hostedLeagues.map(l => (
+                       <option key={l.id} value={l.id}>{l.name} {activeLeagueId === l.id && '(Commish)'}</option>
+                     ))}
+                   </optgroup>}
+                   {joinedLeagues.length > 0 && <optgroup label="👁️ Joined Leagues">
+                     {joinedLeagues.map(l => (
+                       <option key={l.id} value={l.id}>{l.name}</option>
+                     ))}
+                   </optgroup>}
+                 </select>
+                 <Trophy className="w-4 h-4 text-emerald-700 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                </div>
-            </div>
-          </div>
-          <div className="flex flex-col items-stretch gap-3 w-full md:w-auto mt-2 md:mt-0">
-             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                {isOwner && (
-                  <button onClick={() => setShowSettingsModal(true)} className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-green-800 rounded-xl transition-all shadow-md hover:shadow-lg font-black uppercase tracking-wider hover:-translate-y-0.5 border-b-4 border-green-200">
-                    <Settings className="w-5 h-5" /> Admin Settings
-                  </button>
-                )}
+             </div>
+
+             {/* Right Side: Action Buttons */}
+             <div className="flex items-center gap-2 justify-between md:justify-end w-full md:w-auto overflow-x-auto pb-1 md:pb-0 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+               {isOwner && (
+                 <button onClick={() => setShowSettingsModal(true)} className="bg-white/90 hover:bg-white text-green-800 p-2.5 sm:px-4 rounded-lg shadow-sm transition-colors border border-green-200 flex items-center gap-2 shrink-0 snap-start">
+                   <Settings className="w-5 h-5" />
+                   <span className="hidden sm:block font-black text-sm uppercase tracking-wider">Admin</span>
+                 </button>
+               )}
+               {isViewer && (
+                 <button onClick={() => setShowLeaveModal(true)} className="bg-red-500/90 hover:bg-red-500 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-red-400 flex items-center justify-center shrink-0 snap-start" title="Remove this league">
+                   <Trash2 className="w-5 h-5" />
+                 </button>
+               )}
+               <button onClick={() => setShowJoinModal(true)} className="bg-emerald-500 hover:bg-emerald-400 text-white p-2.5 sm:px-4 rounded-lg shadow-sm transition-colors border border-emerald-400 flex items-center gap-2 shrink-0 snap-start">
+                 <Plus className="w-5 h-5 sm:hidden" />
+                 <span className="hidden sm:block font-black text-sm uppercase tracking-wider">Leagues</span>
+               </button>
+               <button onClick={() => setShowAccountModal(true)} className={`p-2.5 sm:px-4 rounded-lg shadow-sm transition-colors border flex items-center gap-2 shrink-0 snap-start ${isAccountLinked ? 'bg-emerald-700/90 hover:bg-emerald-800 border-emerald-600' : 'bg-slate-700/90 hover:bg-slate-800 border-slate-600'}`}>
+                 {isAccountLinked && user.photoURL ? (
+                   <img src={user.photoURL} alt="Profile" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border border-emerald-400 object-cover" />
+                 ) : (
+                   <User className="w-5 h-5 text-white sm:hidden" />
+                 )}
+                 <span className="hidden sm:block text-white font-black text-sm uppercase tracking-wider">
+                   {isAccountLinked ? 'Linked' : 'Account'}
+                 </span>
+               </button>
              </div>
           </div>
         </div>

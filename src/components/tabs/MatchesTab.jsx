@@ -245,10 +245,11 @@ export const MatchesTab = ({ matches, localTimezone, setLocalTimezone, isViewer,
             )}
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 w-full sm:w-auto">
               <Globe className="w-4 h-4 text-slate-400" />
+              {/* FIXED TIMEZONE WIDTH */}
               <select value={localTimezone} onChange={e => {
                   setLocalTimezone(e.target.value);
                   try { localStorage.setItem('worldCupTimezone', e.target.value); } catch(err){}
-                }} className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer w-full sm:max-w-[180px] truncate">
+                }} className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer w-full sm:max-w-[280px] md:max-w-[320px] truncate">
                 {TIMEZONES.map(tz => <option key={tz.id} value={tz.id}>{tz.label}</option>)}
               </select>
             </div>
