@@ -454,7 +454,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 font-sans pb-20 selection:bg-green-200 relative">
-      <header className="bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 text-white pt-10 pb-8 px-6 shadow-xl relative overflow-hidden">
+      {/* 🟢 UNIFIED PADDING (px-4 sm:px-6 lg:px-8) ON HEADER */}
+      <header className="bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 text-white pt-10 pb-8 px-4 sm:px-6 lg:px-8 shadow-xl relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_40px,#fff_40px,#fff_80px)] pointer-events-none transform -skew-x-12 scale-150"></div>
         <div className="max-w-6xl mx-auto relative z-10 flex flex-col gap-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase drop-shadow-md flex items-center gap-3 flex-wrap">
@@ -471,10 +472,8 @@ export default function App() {
              )}
           </h1>
           
-          {/* FULL WIDTH COMMAND BAR */}
           <div className="w-full bg-white/10 p-2 sm:p-2.5 rounded-xl border border-white/20 backdrop-blur-sm shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mt-2">
              
-             {/* Left Side: League Selector */}
              <div className="flex items-center w-full md:w-auto flex-1 min-w-[250px]">
                <span className="text-xs font-bold text-green-200 uppercase tracking-widest pl-2 hidden lg:block shrink-0 mr-2">Active League:</span>
                <div className="relative w-full">
@@ -498,7 +497,6 @@ export default function App() {
                </div>
              </div>
 
-             {/* Right Side: Action Buttons */}
              <div className="flex items-center gap-2 justify-between md:justify-end w-full md:w-auto overflow-x-auto pb-1 md:pb-0 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                {isOwner && (
                  <button onClick={() => setShowSettingsModal(true)} className="bg-white/90 hover:bg-white text-green-800 p-2.5 sm:px-4 rounded-lg shadow-sm transition-colors border border-green-200 flex items-center gap-2 shrink-0 snap-start">
@@ -530,7 +528,8 @@ export default function App() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-2 sm:px-4 -mt-5 relative z-20">
+      {/* 🟢 UNIFIED PADDING (px-4 sm:px-6 lg:px-8) ON TABS BAR */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-5 relative z-20">
         <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/50 p-1.5 sm:p-2 flex overflow-x-auto gap-1.5 sm:gap-2 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
           {['standings', 'groups', 'bracket', 'matches', 'teams'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} 
@@ -543,7 +542,8 @@ export default function App() {
         </div>
       </div>
 
-      <main className="max-w-6xl mx-auto px-4 mt-10">
+      {/* 🟢 UNIFIED PADDING (px-4 sm:px-6 lg:px-8) ON MAIN CONTENT */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
         {activeTab === 'standings' && <StandingsTab settings={settings} awards={awards} memberStats={memberStats} />}
         {activeTab === 'groups' && <GroupsTab teamStats={teamStats} matches={matches} settings={settings} />}
         {activeTab === 'bracket' && <BracketTab matches={matches} members={members} assignments={assignments} />}
