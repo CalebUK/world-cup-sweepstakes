@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Loader2, Settings, X, Trophy, Plus, Globe, Trash2, CheckCircle, LogOut, LayoutGrid } from 'lucide-react';
+import { Loader2, Settings, X, Trophy, Plus, Globe, Trash2, CheckCircle, LogOut, LayoutGrid, User, Mail } from 'lucide-react';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'; 
 import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 
@@ -47,6 +47,7 @@ export default function App() {
 
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
   const [pendingJoinCode, setPendingJoinCode] = useState('');
   const [pendingJoinName, setPendingJoinName] = useState('');
 
@@ -281,16 +282,13 @@ export default function App() {
     setShowSettingsModal(false);
   };
 
-  // NEW: TRUE NUCLEAR RESET
-  // Wipes Local Storage AND logs out of Firebase's hidden session
   const handleHardReset = async () => {
     try {
       localStorage.clear();
-      await auth.signOut(); // This is the crucial missing piece!
+      await auth.signOut();
     } catch (e) {
       console.error("Failed to sign out fully:", e);
     }
-    // Reload the page cleanly to get a brand new anonymous ID
     window.location.href = window.location.origin + window.location.pathname;
   };
 
@@ -541,7 +539,12 @@ export default function App() {
                  )}
                  <button onClick={() => setShowJoinModal(true)} className="bg-emerald-500 hover:bg-emerald-400 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-emerald-400 flex items-center gap-1 shrink-0" title="Manage Leagues">
                    <Plus className="w-5 h-5 sm:hidden" />
-                   <span className="hidden sm:block font-black text-sm uppercase tracking-wider px-2">+ Join</span>
+                   <span className="hidden sm:block font-black text-sm uppercase tracking-wider px-2">Leagues</span>
+                 </button>
+                 {/* NEW ACCOUNT MODAL BUTTON */}
+                 <button onClick={() => setShowAccountModal(true)} className="bg-slate-700/90 hover:bg-slate-800 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-slate-600 flex items-center gap-1 shrink-0" title="My Account">
+                   <User className="w-5 h-5 sm:hidden" />
+                   <span className="hidden sm:block font-black text-sm uppercase tracking-wider px-2">Account</span>
                  </button>
                </div>
             </div>
@@ -688,6 +691,71 @@ export default function App() {
                 <button onClick={handleCloseWelcome} className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-3 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 uppercase tracking-wider">Let's Go!</button>
              </div>
            </div>
+        </div>
+      )}
+
+      {/* ACCOUNT & LOGIN MODAL */}
+      {showAccountModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-md border-4 border-slate-200 relative">
+            <button onClick={() => setShowAccountModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
+            
+            <div className="flex flex-col items-center text-center space-y-3 mb-6">
+              <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shadow-inner">
+                <User className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-wide">Your Account</h3>
+                <p className="text-sm text-slate-500 mt-1 font-medium px-2">
+                  You are currently playing as an <strong>Anonymous Guest</strong>. Link an account below to save your leagues and access them on any device!
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {/* SOCIAL BUTTONS ROW */}
+              <div className="space-y-3">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border-b border-slate-100 pb-2">Link Social Account</h4>
+                <div className="flex items-center gap-2">
+                  <button className="flex-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-black py-3 rounded-xl transition-colors text-sm shadow-sm">
+                    Google
+                  </button>
+                  <button className="flex-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-black py-3 rounded-xl transition-colors text-sm shadow-sm">
+                    Microsoft
+                  </button>
+                  <button className="flex-1 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-black py-3 rounded-xl transition-colors text-sm shadow-sm">
+                    Yahoo
+                  </button>
+                </div>
+              </div>
+
+              <div className="relative flex items-center justify-center">
+                <div className="absolute inset-0 border-t border-slate-200"></div>
+                <span className="relative bg-white px-4 text-xs font-black text-slate-300 uppercase tracking-widest">OR</span>
+              </div>
+
+              {/* EMAIL MAGIC LINK */}
+              <div className="space-y-3">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Send Email Magic Link</h4>
+                <div className="flex flex-col gap-2">
+                  <div className="relative">
+                    <Mail className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input 
+                      type="email" 
+                      placeholder="Enter your email address" 
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-800 focus:border-indigo-500 focus:ring-0 outline-none transition-colors"
+                    />
+                  </div>
+                  <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 rounded-xl shadow-md uppercase tracking-wider transition-all hover:-translate-y-0.5">
+                    Send Link
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-400 text-center font-medium leading-relaxed px-4">
+                  We'll send a secure link to your inbox. Click it to instantly link your devices. No passwords required!
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
