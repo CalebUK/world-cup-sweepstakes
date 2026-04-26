@@ -96,31 +96,23 @@ export default function App() {
     }
   });
 
+  // --- 🔥 NEW, BULLETPROOF AUTHENTICATION ENGINE 🔥 ---
   useEffect(() => {
-    const initAuth = async () => {
-      if (isSignInWithEmailLink(auth, window.location.href)) {
-        let email = window.localStorage.getItem('emailForSignIn');
-        if (email) {
-          try {
-            await signInWithEmailLink(auth, email, window.location.href);
-            window.localStorage.removeItem('emailForSignIn');
-            setShowAccountModal(true);
-            setAuthMessage({ type: 'success', text: 'Successfully linked account!' });
-            setTimeout(() => setShowAccountModal(false), 2000);
-          } catch (err) {
-            console.error("Magic link error:", err);
-            setShowAccountModal(true);
-            setAuthMessage({ type: 'error', text: "Link expired or invalid." });
-          }
-        }
+    // 1. Intercept Magic Links immediately
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      let email = window.localStorage.getItem('emailForSignIn');
+      if (email) {
+        signInWithEmailLink(auth, email, window.location.href)
+          .then(() => { window.localStorage.removeItem('emailForSignIn'); })
+          .catch(console.error);
       }
-      try { await signInAnonymously(auth); } catch (err) { console.error(err); }
-    };
-    initAuth();
-    
+    }
+
+    // 2. Patiently wait for Firebase to figure out who is logged in
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      setUser(u);
       if (u) {
+        // We have a user! (Either Anonymous or Google)
+        setUser(u);
         const registryRef = doc(db, 'artifacts', appId, 'users', u.uid, 'metadata', 'leagues');
         const regSnap = await getDoc(registryRef);
         let ownedList = [];
@@ -139,26 +131,42 @@ export default function App() {
         if (hostParam) {
           const isMine = ownedList.some(l => l.id === hostParam);
           const isJoined = joinedLeagues.some(l => l.id === hostParam);
-          
           if (!isMine && !isJoined) {
             setPendingJoinCode(hostParam);
             setShowJoinModal(true);
           } else {
             setActiveLeagueId(hostParam);
             try { localStorage.setItem('wcActiveLeague', hostParam); } catch (e) {}
-            window.history.replaceState({}, '', window.location.pathname);
           }
-        } else if (!activeLeagueId) {
-          setActiveLeagueId(u.uid);
-          try { localStorage.setItem('wcActiveLeague', u.uid); } catch (e) {}
+          window.history.replaceState({}, '', window.location.pathname);
+        } else {
+          // Validate current LocalStorage League ID
+          let currentLocalId;
+          try { currentLocalId = localStorage.getItem('wcActiveLeague'); } catch(e) {}
+          
+          const isMine = ownedList.some(l => l.id === currentLocalId);
+          const isJoined = joinedLeagues.some(l => l.id === currentLocalId);
+
+          if (currentLocalId && (isMine || isJoined)) {
+             setActiveLeagueId(currentLocalId);
+          } else {
+             // If local storage has an orphaned ghost ID, force them to their actual owned league
+             setActiveLeagueId(ownedList[0].id);
+             try { localStorage.setItem('wcActiveLeague', ownedList[0].id); } catch (e) {}
+          }
         }
+      } else {
+        // 🔥 CRITICAL FIX: Only create an anonymous user if Firebase explicitly says NO ONE is logged in
+        try { await signInAnonymously(auth); } catch (err) { console.error(err); }
       }
     });
     
     const emergencyTimeout = setTimeout(() => setLoading(false), 5000);
+    // Dependency array is strictly EMPTY so it only runs once per mount
     return () => { unsubscribe(); clearTimeout(emergencyTimeout); };
-  }, [activeLeagueId, joinedLeagues]);
+  }, []); 
 
+  // --- DUAL-SYNC ENGINE (League Data + Global Matches) ---
   useEffect(() => {
     if (!user || !activeLeagueId) return;
     setLoading(true); 
@@ -549,6 +557,8 @@ export default function App() {
         {activeTab === 'matches' && <MatchesTab matches={matches} localTimezone={localTimezone} setLocalTimezone={setLocalTimezone} isViewer={!isSuperAdmin} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} handleRandomizeGroups={handleRandomizeGroups} />}
         {activeTab === 'teams' && <TeamsTab eliminatedTeams={eliminatedTeams} isViewer={isViewer} assignments={assignments} members={members} handleAssign={handleAssign} toggleEliminated={toggleEliminated} />}
       </main>
+
+      {/* --- ALL MODALS BELOW --- */}
 
       {showLeaveModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
