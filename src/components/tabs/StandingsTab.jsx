@@ -38,10 +38,19 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
               rank="1st" 
               member={awards.overall['1st']} 
               icon={<img src="/logos/world_cup_trophy.svg" alt="Trophy" className="w-8 h-8 drop-shadow-md shrink-0" />}
-            <AwardRow rank="2nd" member={awards.overall['2nd']} icon={<img src="/standings/second.svg" alt="trophy" className="w-6 h-6 drop-shadow-sm shrink-0" />} 
-                hideRankText={true}
-            <AwardRow rank="3rd" member={awards.overall['3rd']} icon={<img src="/standings/third.svg" alt="trophy" className="w-6 h-6 drop-shadow-sm shrink-0" />} 
-                hideRankText={true}
+            />
+            <AwardRow 
+              rank="2nd" 
+              member={awards.overall['2nd']} 
+              icon={<img src="/standings/second.svg" alt="trophy" className="w-6 h-6 drop-shadow-sm shrink-0" />} 
+              hideRankText={true}
+            />
+            <AwardRow 
+              rank="3rd" 
+              member={awards.overall['3rd']} 
+              icon={<img src="/standings/third.svg" alt="trophy" className="w-6 h-6 drop-shadow-sm shrink-0" />} 
+              hideRankText={true}
+            />
 
             {settings.woodenSpoon && (
               <AwardRow 
