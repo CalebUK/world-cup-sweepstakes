@@ -40,6 +40,8 @@ const isValidLeagueCode = (code) => /^[a-zA-Z0-9_-]{8,64}$/.test(code);
 
 export default function App() {
   const [user, setUser] = useState(null);
+  // leaguesLoaded gates isOwner so it never flickers to false while Firestore loads
+  const [leaguesLoaded, setLeaguesLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('standings');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -62,10 +64,12 @@ export default function App() {
   const [authEmail, setAuthEmail] = useState('');
   const [authMessage, setAuthMessage] = useState(null);
 
+  // Only computed once leagues have loaded from Firestore — prevents the
+  // "viewer flicker" where hostedLeagues is empty on first render
   const isOwner = useMemo(() => {
-    if (!user) return false;
+    if (!user || !leaguesLoaded) return false;
     return hostedLeagues.some(l => l.id === activeLeagueId) || activeLeagueId === user.uid;
-  }, [user, hostedLeagues, activeLeagueId]);
+  }, [user, leaguesLoaded, hostedLeagues, activeLeagueId]);
 
   const isViewer = !isOwner;
   const isSuperAdmin = user?.uid === SUPER_ADMIN_UID;
@@ -99,73 +103,123 @@ export default function App() {
   });
 
   useEffect(() => {
+    // Step 1: Handle magic link FIRST, before touching anonymous auth.
+    // If we're on a magic link URL, sign in with that — don't also fire
+    // signInAnonymously, which would race against it.
     const initAuth = async () => {
       if (isSignInWithEmailLink(auth, window.location.href)) {
-        let email = window.localStorage.getItem('emailForSignIn');
+        const email = window.localStorage.getItem('emailForSignIn');
         if (email) {
           try {
             await signInWithEmailLink(auth, email, window.location.href);
             window.localStorage.removeItem('emailForSignIn');
+            // Clean the magic link token out of the URL so a refresh doesn't
+            // try to consume the same (now expired) link again
+            window.history.replaceState({}, '', window.location.pathname);
             setShowAccountModal(true);
-            setAuthMessage({ type: 'success', text: 'Successfully linked account!' });
-            setTimeout(() => setShowAccountModal(false), 2000);
+            setAuthMessage({ type: 'success', text: 'Successfully signed in!' });
+            setTimeout(() => { setShowAccountModal(false); setAuthMessage(null); }, 3000);
           } catch (err) {
             console.error("Magic link error:", err);
+            // Link failed — fall through to anonymous so the app still loads
+            window.history.replaceState({}, '', window.location.pathname);
             setShowAccountModal(true);
-            setAuthMessage({ type: 'error', text: "Link expired or invalid." });
+            setAuthMessage({ type: 'error', text: 'That sign-in link has expired or already been used. Please request a new one.' });
+            try { await signInAnonymously(auth); } catch (anonErr) { console.error(anonErr); }
           }
+        } else {
+          // Magic link URL but no stored email (e.g. opened on a different device)
+          window.history.replaceState({}, '', window.location.pathname);
+          setShowAccountModal(true);
+          setAuthMessage({ type: 'error', text: 'Please enter your email address to complete sign-in.' });
+          try { await signInAnonymously(auth); } catch (anonErr) { console.error(anonErr); }
         }
+        return; // Don't fall through to signInAnonymously below
       }
-      try { await signInAnonymously(auth); } catch (err) { console.error(err); }
+
+      // Step 2: Normal load — sign in anonymously if not already authenticated
+      if (!auth.currentUser) {
+        try { await signInAnonymously(auth); } catch (err) { console.error(err); }
+      }
     };
+
     initAuth();
-    
+
+    // Step 3: React to auth state changes (fires after initAuth resolves)
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setUser(u);
-      if (u) {
-        const registryRef = doc(db, 'artifacts', appId, 'users', u.uid, 'metadata', 'leagues');
-        const regSnap = await getDoc(registryRef);
-        let ownedList = [];
+      setLeaguesLoaded(false); // Reset while we fetch leagues for this user
 
-        if (regSnap.exists()) {
-          ownedList = regSnap.data().list || [];
-        } else {
-          ownedList = [{ id: u.uid, name: 'My First Sweepstakes' }];
-          await setDoc(registryRef, { list: ownedList });
+      if (u) {
+        // Fetch the user's owned leagues registry from Firestore
+        const registryRef = doc(db, 'artifacts', appId, 'users', u.uid, 'metadata', 'leagues');
+        let ownedList = [];
+        try {
+          const regSnap = await getDoc(registryRef);
+          if (regSnap.exists()) {
+            ownedList = regSnap.data().list || [];
+          } else {
+            ownedList = [{ id: u.uid, name: 'My First Sweepstakes' }];
+            await setDoc(registryRef, { list: ownedList });
+          }
+        } catch (err) {
+          console.error('Failed to load leagues registry:', err);
+          // Fall back gracefully — treat the user's UID as their default league
+          ownedList = [{ id: u.uid, name: 'My Sweepstakes' }];
         }
+
         setHostedLeagues(ownedList);
 
+        // Determine which league to show, now that we have the owned list
         const urlParams = new URLSearchParams(window.location.search);
         const hostParam = urlParams.get('host');
-        
+        const savedLeagueId = (() => { try { return localStorage.getItem('wcActiveLeague'); } catch { return null; } })();
+        const currentJoinedLeagues = (() => { try { return JSON.parse(localStorage.getItem('wcJoinedLeagues')) || []; } catch { return []; } })();
+
         if (hostParam) {
-          // Validate the host param before using it as a Firestore ID
           if (!isValidLeagueCode(hostParam)) {
             console.warn('Invalid host param in URL, ignoring.');
             window.history.replaceState({}, '', window.location.pathname);
           } else {
             const isMine = ownedList.some(l => l.id === hostParam);
-            const isJoined = joinedLeagues.some(l => l.id === hostParam);
-            
+            const isJoined = currentJoinedLeagues.some(l => l.id === hostParam);
             if (!isMine && !isJoined) {
               setPendingJoinCode(hostParam);
               setShowJoinModal(true);
             } else {
               setActiveLeagueId(hostParam);
               try { localStorage.setItem('wcActiveLeague', hostParam); } catch (e) {}
-              window.history.replaceState({}, '', window.location.pathname);
             }
+            window.history.replaceState({}, '', window.location.pathname);
           }
-        } else if (!activeLeagueId) {
+        } else if (savedLeagueId) {
+          // Restore the last active league — validate it still exists or is joined
+          const isStillMine = ownedList.some(l => l.id === savedLeagueId);
+          const isStillJoined = currentJoinedLeagues.some(l => l.id === savedLeagueId);
+          if (isStillMine || isStillJoined || savedLeagueId === u.uid) {
+            setActiveLeagueId(savedLeagueId);
+          } else {
+            // Saved league no longer valid — fall back to their default
+            setActiveLeagueId(u.uid);
+            try { localStorage.setItem('wcActiveLeague', u.uid); } catch (e) {}
+          }
+        } else {
+          // First time — default to their own league
           setActiveLeagueId(u.uid);
           try { localStorage.setItem('wcActiveLeague', u.uid); } catch (e) {}
         }
+
+        // Mark leagues as loaded AFTER everything above is set, so isOwner
+        // computes correctly on the first render that sees it
+        setLeaguesLoaded(true);
       }
     });
     
     const emergencyTimeout = setTimeout(() => setLoading(false), 5000);
     return () => { unsubscribe(); clearTimeout(emergencyTimeout); };
-  }, [activeLeagueId, joinedLeagues]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps — this effect runs once on mount only. State is read
+          // from localStorage directly inside the handler to avoid stale closures.
 
   useEffect(() => {
     if (!user || !activeLeagueId) return;
