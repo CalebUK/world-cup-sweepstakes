@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Trophy, Plus, Trash2, User, ShieldCheck, HelpCircle } from 'lucide-react';
+import { Settings, Plus, Trash2, User, ShieldCheck, HelpCircle, ChevronDown } from 'lucide-react';
 
 export const AppHeader = ({
   isViewer,
@@ -20,7 +20,6 @@ export const AppHeader = ({
     <header className="bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 text-white pt-10 pb-8 px-4 sm:px-6 lg:px-8 shadow-xl relative overflow-hidden">
       <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_40px,#fff_40px,#fff_80px)] pointer-events-none transform -skew-x-12 scale-150" />
 
-      {/* Constrain to same max-width as the tab bar below */}
       <div className="max-w-6xl mx-auto relative z-10 flex flex-col gap-4">
 
         {/* Title row */}
@@ -41,7 +40,6 @@ export const AppHeader = ({
               <ShieldCheck className="w-3 h-3" /> Commish
             </span>
           )}
-          {/* Help button — re-opens the welcome modal */}
           <button
             onClick={onOpenHelp}
             title="How does this work?"
@@ -51,19 +49,15 @@ export const AppHeader = ({
           </button>
         </h1>
 
-        {/* Controls bar — same rounded-xl card style as the tab bar */}
-        <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/30 p-1.5 sm:p-2 flex flex-col md:flex-row items-stretch md:items-center gap-2 mt-2">
+        {/* Controls bar — matches the tab bar: same bg, same border, same shadow, same padding */}
+        <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/50 p-1.5 sm:p-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 sm:gap-2">
 
-          {/* League selector */}
-          <div className="flex items-center flex-1 min-w-0 gap-2 px-1">
-            <Trophy className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest hidden lg:block shrink-0">
-              Active League:
-            </span>
+          {/* League dropdown — styled as a visible select with border and chevron */}
+          <div className="relative flex-1 min-w-0">
             <select
               value={activeLeagueId || ''}
               onChange={e => onSwitchLeague(e.target.value)}
-              className="flex-1 min-w-0 bg-transparent text-slate-900 font-black text-sm sm:text-base py-2 pr-2 appearance-none cursor-pointer border-0 focus:ring-0 outline-none truncate"
+              className="w-full appearance-none bg-slate-50 hover:bg-slate-100 border-2 border-slate-200 text-slate-900 font-black text-sm sm:text-base py-2.5 pl-3 pr-9 rounded-lg cursor-pointer focus:ring-2 focus:ring-emerald-400 focus:outline-none transition-colors truncate"
             >
               {hostedLeagues.length > 0 && (
                 <optgroup label="👑 My Hosted Leagues">
@@ -82,17 +76,16 @@ export const AppHeader = ({
                 </optgroup>
               )}
             </select>
+            {/* Custom chevron arrow so it's obvious it's a dropdown */}
+            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {/* Divider */}
-          <div className="hidden md:block w-px h-8 bg-slate-200 shrink-0" />
-
-          {/* Action buttons — same style as tab buttons */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 md:pb-0 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] shrink-0">
+          {/* Action buttons — same style as the tab buttons */}
+          <div className="flex items-center gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] shrink-0">
             {isOwner && (
               <button
                 onClick={onOpenSettings}
-                className="shrink-0 py-2.5 px-3 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700 flex items-center gap-1.5 snap-start"
+                className="shrink-0 flex-1 sm:flex-none py-2.5 px-3 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700 flex items-center justify-center gap-1.5"
               >
                 <Settings className="w-4 h-4" />
                 <span className="hidden sm:block">Admin</span>
@@ -101,7 +94,7 @@ export const AppHeader = ({
             {isViewer && (
               <button
                 onClick={onOpenLeave}
-                className="shrink-0 py-2.5 px-3 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all bg-red-50 text-red-500 hover:bg-red-100 flex items-center gap-1.5 snap-start"
+                className="shrink-0 py-2.5 px-3 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all duration-200 bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center"
                 title="Remove this league"
               >
                 <Trash2 className="w-4 h-4" />
@@ -109,17 +102,17 @@ export const AppHeader = ({
             )}
             <button
               onClick={onOpenJoin}
-              className="shrink-0 py-2.5 px-3 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all bg-emerald-600 text-white hover:bg-emerald-500 flex items-center gap-1.5 snap-start"
+              className="shrink-0 flex-1 sm:flex-none py-2.5 px-3 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 bg-green-600 text-white hover:bg-green-500 shadow-md sm:scale-[1.02] flex items-center justify-center gap-1.5"
             >
               <Plus className="w-4 h-4 sm:hidden" />
               <span className="hidden sm:block">Leagues</span>
             </button>
             <button
               onClick={onOpenAccount}
-              className={`shrink-0 py-2.5 px-3 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all flex items-center gap-1.5 snap-start ${
+              className={`shrink-0 flex-1 sm:flex-none py-2.5 px-3 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 ${
                 isAccountLinked
-                  ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                  : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                  ? 'bg-slate-50 text-emerald-700 hover:bg-green-50 hover:text-green-700'
+                  : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700'
               }`}
             >
               {isAccountLinked && user?.photoURL ? (
