@@ -46,40 +46,46 @@ const formatMatchDate = (datetime) => {
 };
 
 const TeamRow = ({ teamId, label, score, penScore, isWinner, isHighlighted, owner }) => {
-  const shortName = teamId || (label ? label.slice(0, 3).toUpperCase() : 'TBD');
+  const hasTeam = !!teamId;
 
   return (
     <div className={`flex items-center gap-1.5 px-2 py-1.5 border-b last:border-0 border-slate-100 transition-all ${
       isHighlighted ? 'bg-emerald-50' : 'bg-white'
     }`}>
-      {/* Logo */}
-      <TeamLogo teamId={teamId} className="w-4 h-4 shrink-0" />
-
-      {/* 3-letter team code — fixed width so owner always starts at same x */}
-      <span className={`text-[11px] w-8 shrink-0 leading-none ${isWinner ? 'font-black text-slate-900' : 'font-medium text-slate-400'}`}>
-        {shortName}
-      </span>
-
-      {/* Owner name — takes up remaining space */}
-      <span className={`text-[10px] flex-1 min-w-0 truncate leading-none ${
-        isHighlighted ? 'text-emerald-700 font-black' : 'text-slate-500 font-medium'
-      }`}>
-        {owner ? owner.name : ''}
-      </span>
-
-      {/* Pen score badge — only shown when in AET */}
-      {penScore !== undefined && penScore !== '' && (
-        <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-1 py-0.5 rounded border border-amber-200 leading-none shrink-0">
-          ({penScore})
-        </span>
+      {hasTeam ? (
+        // ── Team is known: logo · 3-letter code · owner name · pen · score ──
+        <>
+          <TeamLogo teamId={teamId} className="w-4 h-4 shrink-0" />
+          <span className={`text-[11px] w-8 shrink-0 leading-none ${isWinner ? 'font-black text-slate-900' : 'font-medium text-slate-400'}`}>
+            {teamId}
+          </span>
+          <span className={`text-[10px] flex-1 min-w-0 truncate leading-none ${
+            isHighlighted ? 'text-emerald-700 font-black' : 'text-slate-500 font-medium'
+          }`}>
+            {owner ? owner.name : ''}
+          </span>
+          {penScore !== undefined && penScore !== '' && (
+            <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-1 py-0.5 rounded border border-amber-200 leading-none shrink-0">
+              ({penScore})
+            </span>
+          )}
+          <span className={`text-[11px] font-black w-5 h-5 flex items-center justify-center rounded leading-none shrink-0 ${
+            isWinner ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-500'
+          }`}>
+            {score !== '' && score !== undefined ? score : '-'}
+          </span>
+        </>
+      ) : (
+        // ── Team not yet decided: show full descriptive label across the whole row ──
+        <>
+          <span className="text-[10px] text-slate-400 font-medium flex-1 min-w-0 truncate leading-tight italic px-0.5">
+            {label || 'TBD'}
+          </span>
+          <span className="text-[11px] font-black w-5 h-5 flex items-center justify-center rounded bg-slate-100 text-slate-400 leading-none shrink-0">
+            -
+          </span>
+        </>
       )}
-
-      {/* Score box */}
-      <span className={`text-[11px] font-black w-5 h-5 flex items-center justify-center rounded leading-none shrink-0 ${
-        isWinner ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-500'
-      }`}>
-        {score !== '' && score !== undefined ? score : '-'}
-      </span>
     </div>
   );
 };
@@ -129,7 +135,7 @@ const MatchCard = ({ match, members, assignments, highlightMember }) => {
 const BracketColumn = ({ stageId, matchIds, koMatches, members, assignments, highlightMember, labelName }) => {
   const stageMatches = matchIds.map(id => koMatches.find(m => m.id === id));
   return (
-    <div className="flex flex-col flex-1 min-w-[220px] max-w-[260px]">
+    <div className="flex flex-col flex-1 min-w-[200px] max-w-[240px]">
       <div className="text-center mb-3 h-6 shrink-0">
         <span className="bg-slate-800 text-slate-300 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-slate-700 shadow-sm">
           {labelName}
@@ -165,7 +171,7 @@ export const BracketTab = ({ matches, members, assignments }) => {
 
       <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <h2 className="text-xl font-black text-emerald-800 flex items-center gap-2 uppercase tracking-wide">
-          <Trophy className="w-6 h-6 text-yellow-500" /> Knockout Stage
+          <Trophy className="w-6 h-6 text-yellow-500" /> Tournament Bracket
         </h2>
         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 w-full sm:w-auto">
           <User className="w-4 h-4 text-emerald-600" />
@@ -183,7 +189,7 @@ export const BracketTab = ({ matches, members, assignments }) => {
 
       <div className="bg-slate-900 rounded-xl shadow-xl border-2 border-slate-800 overflow-hidden">
         <div className="p-3 sm:p-5 overflow-x-auto">
-          <div className="flex gap-2 sm:gap-3 min-w-[1800px] min-h-[900px] items-stretch">
+          <div className="flex gap-2 sm:gap-3 min-w-[1640px] min-h-[900px] items-stretch">
 
             {STAGE_ORDER.map(stageId => (
               <BracketColumn
@@ -198,7 +204,7 @@ export const BracketTab = ({ matches, members, assignments }) => {
               />
             ))}
 
-            <div className="flex flex-col flex-1 min-w-[220px] max-w-[260px]">
+            <div className="flex flex-col flex-1 min-w-[200px] max-w-[240px]">
               <div className="text-center mb-3 h-6 shrink-0">
                 <span className="bg-yellow-600 text-yellow-100 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
                   Final 🏆
