@@ -45,8 +45,8 @@ const formatMatchDate = (datetime) => {
   }
 };
 
-const TeamRow = ({ teamId, label, score, penScore, isWinner, isHighlighted, owner }) => {
-  const hasTeam = !!teamId;
+const TeamRow = ({ teamId, label, score, penScore, isWinner, isHighlighted, owner, showTeams }) => {
+  const hasTeam = !!teamId && showTeams;
 
   return (
     <div className={`flex items-center gap-1.5 px-2 py-1.5 border-b last:border-0 border-slate-100 transition-all ${
@@ -90,7 +90,7 @@ const TeamRow = ({ teamId, label, score, penScore, isWinner, isHighlighted, owne
   );
 };
 
-const MatchCard = ({ match, members, assignments, highlightMember }) => {
+const MatchCard = ({ match, members, assignments, highlightMember, showTeams }) => {
   if (!match) return <div className="flex-1" />;
 
   const winnerId = getWinnerId(match);
@@ -121,18 +121,18 @@ const MatchCard = ({ match, members, assignments, highlightMember }) => {
       <TeamRow
         teamId={match.teamA} label={match.labelA}
         score={match.scoreA} penScore={match.isAET ? match.penScoreA : undefined}
-        isWinner={winnerId === match.teamA} isHighlighted={highlightA} owner={ownerA}
+        isWinner={winnerId === match.teamA} isHighlighted={highlightA} owner={ownerA} showTeams={showTeams}
       />
       <TeamRow
         teamId={match.teamB} label={match.labelB}
         score={match.scoreB} penScore={match.isAET ? match.penScoreB : undefined}
-        isWinner={winnerId === match.teamB} isHighlighted={highlightB} owner={ownerB}
+        isWinner={winnerId === match.teamB} isHighlighted={highlightB} owner={ownerB} showTeams={showTeams}
       />
     </div>
   );
 };
 
-const BracketColumn = ({ stageId, matchIds, koMatches, members, assignments, highlightMember, labelName }) => {
+const BracketColumn = ({ stageId, matchIds, koMatches, members, assignments, highlightMember, labelName, showTeams }) => {
   const stageMatches = matchIds.map(id => koMatches.find(m => m.id === id));
   return (
     <div className="flex flex-col flex-1 min-w-[200px] max-w-[240px]">
@@ -164,6 +164,8 @@ export const BracketTab = ({ matches, members, assignments }) => {
 
   const koMatches = matches.filter(m => m.stage !== 'Group');
   const finalMatch = koMatches.find(m => m.id === 'ko_Final_1');
+  const groupMatchesPlayed = matches.filter(m => m.stage === 'Group' && m.isPlayed).length;
+  const showTeams = groupMatchesPlayed >= 24;
   const stageNames = { R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarterfinals', SF: 'Semifinals' };
 
   return (
@@ -211,7 +213,7 @@ export const BracketTab = ({ matches, members, assignments }) => {
                 </span>
               </div>
               <div className="flex-1 flex flex-col justify-center px-1 py-2">
-                <MatchCard match={finalMatch} members={members} assignments={assignments} highlightMember={highlightMember} />
+                <MatchCard match={finalMatch} members={members} assignments={assignments} highlightMember={highlightMember} showTeams={showTeams} />
               </div>
             </div>
 
