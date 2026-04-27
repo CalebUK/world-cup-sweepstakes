@@ -145,11 +145,13 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
           ))}
 
           <button 
-            onClick={handleAddMember}
-            className="w-full mt-4 py-4 border-2 border-dashed border-emerald-300 rounded-xl text-emerald-600 font-black flex items-center justify-center gap-2 hover:bg-emerald-50 hover:border-emerald-400 transition-colors"
-          >
-            <PlusCircle className="w-5 h-5" /> Add New Manager
-          </button>
+  onClick={handleAddMember}
+  disabled={members.length >= 24}
+  className="w-full mt-4 py-4 border-2 border-dashed border-emerald-300 rounded-xl text-emerald-600 font-black flex items-center justify-center gap-2 hover:bg-emerald-50 hover:border-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-emerald-300"
+>
+  <PlusCircle className="w-5 h-5" /> 
+  {members.length >= 24 ? 'Manager Limit Reached (24)' : 'Add New Manager'}
+</button>
         </div>
       </div>
 
