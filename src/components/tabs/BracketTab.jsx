@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Trophy, User } from 'lucide-react';
-import { TEAMS_DATA } from '../../config/data.js';
 import { TeamLogo } from '../TeamLogo.jsx';
 
 // Left side feeds into SF1 → Final
@@ -47,38 +46,40 @@ const formatMatchDate = (datetime) => {
 };
 
 const TeamRow = ({ teamId, label, score, penScore, isWinner, isHighlighted, owner }) => {
-  const team = TEAMS_DATA.find(t => t.id === teamId);
-  const displayName = team ? team.name : (label || 'TBD');
+  const shortName = teamId || (label ? label.slice(0, 3).toUpperCase() : 'TBD');
 
   return (
-    <div className={`flex items-center justify-between px-2 py-1.5 border-b last:border-0 border-slate-100 transition-all ${
+    <div className={`flex items-center gap-1.5 px-2 py-1.5 border-b last:border-0 border-slate-100 transition-all ${
       isHighlighted ? 'bg-emerald-50' : 'bg-white'
     }`}>
-      <div className="flex items-center gap-2 overflow-hidden flex-1 pr-2 min-w-0">
-        <TeamLogo teamId={teamId} className="w-5 h-5 shrink-0" />
-        <div className="flex flex-col min-w-0">
-          <span className={`text-xs leading-tight truncate ${isWinner ? 'font-black text-slate-900' : 'font-medium text-slate-500'}`}>
-            {displayName}
-          </span>
-          {owner && (
-            <span className={`text-[10px] leading-tight truncate ${isHighlighted ? 'text-emerald-700 font-black' : 'text-emerald-600 font-bold'}`}>
-              {owner.name}
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="flex items-center gap-1 shrink-0">
-        {penScore !== undefined && penScore !== '' && (
-          <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-1 py-0.5 rounded border border-amber-200 leading-none">
-            ({penScore})
-          </span>
-        )}
-        <span className={`text-sm font-black w-6 h-6 flex items-center justify-center rounded leading-none shrink-0 ${
-          isWinner ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-600'
-        }`}>
-          {score !== '' && score !== undefined ? score : '-'}
+      {/* Logo */}
+      <TeamLogo teamId={teamId} className="w-4 h-4 shrink-0" />
+
+      {/* 3-letter team code — fixed width so owner always starts at same x */}
+      <span className={`text-[11px] w-8 shrink-0 leading-none ${isWinner ? 'font-black text-slate-900' : 'font-medium text-slate-400'}`}>
+        {shortName}
+      </span>
+
+      {/* Owner name — takes up remaining space */}
+      <span className={`text-[10px] flex-1 min-w-0 truncate leading-none ${
+        isHighlighted ? 'text-emerald-700 font-black' : 'text-slate-500 font-medium'
+      }`}>
+        {owner ? owner.name : ''}
+      </span>
+
+      {/* Pen score badge — only shown when in AET */}
+      {penScore !== undefined && penScore !== '' && (
+        <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-1 py-0.5 rounded border border-amber-200 leading-none shrink-0">
+          ({penScore})
         </span>
-      </div>
+      )}
+
+      {/* Score box */}
+      <span className={`text-[11px] font-black w-5 h-5 flex items-center justify-center rounded leading-none shrink-0 ${
+        isWinner ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-500'
+      }`}>
+        {score !== '' && score !== undefined ? score : '-'}
+      </span>
     </div>
   );
 };
@@ -128,7 +129,7 @@ const MatchCard = ({ match, members, assignments, highlightMember }) => {
 const BracketColumn = ({ stageId, matchIds, koMatches, members, assignments, highlightMember, labelName }) => {
   const stageMatches = matchIds.map(id => koMatches.find(m => m.id === id));
   return (
-    <div className="flex flex-col flex-1 min-w-[180px] max-w-[220px]">
+    <div className="flex flex-col flex-1 min-w-[220px] max-w-[260px]">
       <div className="text-center mb-3 h-6 shrink-0">
         <span className="bg-slate-800 text-slate-300 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-slate-700 shadow-sm">
           {labelName}
@@ -182,7 +183,7 @@ export const BracketTab = ({ matches, members, assignments }) => {
 
       <div className="bg-slate-900 rounded-xl shadow-xl border-2 border-slate-800 overflow-hidden">
         <div className="p-3 sm:p-5 overflow-x-auto">
-          <div className="flex gap-2 sm:gap-3 min-w-[1400px] min-h-[900px] items-stretch">
+          <div className="flex gap-2 sm:gap-3 min-w-[1800px] min-h-[900px] items-stretch">
 
             {STAGE_ORDER.map(stageId => (
               <BracketColumn
@@ -197,7 +198,7 @@ export const BracketTab = ({ matches, members, assignments }) => {
               />
             ))}
 
-            <div className="flex flex-col flex-1 min-w-[180px] max-w-[220px]">
+            <div className="flex flex-col flex-1 min-w-[220px] max-w-[260px]">
               <div className="text-center mb-3 h-6 shrink-0">
                 <span className="bg-yellow-600 text-yellow-100 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
                   Final 🏆
