@@ -165,7 +165,7 @@ export const BracketTab = ({ matches, members, assignments }) => {
 
       <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <h2 className="text-xl font-black text-emerald-800 flex items-center gap-2 uppercase tracking-wide">
-          <Trophy className="w-6 h-6 text-yellow-500" /> Tournament Bracket
+          <Trophy className="w-6 h-6 text-yellow-500" /> Knockout Stage
         </h2>
         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 w-full sm:w-auto">
           <User className="w-4 h-4 text-emerald-600" />
