@@ -266,6 +266,7 @@ export default function App() {
         onOpenLeave={() => setShowLeaveModal(true)}
         onOpenJoin={() => setShowJoinModal(true)}
         onOpenAccount={() => setShowAccountModal(true)}
+        onOpenHelp={() => setShowWelcomeModal(true)}
       />
 
       {/* Tab bar */}
