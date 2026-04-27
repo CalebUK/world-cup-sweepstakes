@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Info, Filter, ArrowUpDown, ShieldAlert, ShieldX, AlertTriangle } from 'lucide-react';
+import { Filter, ArrowUpDown, ShieldAlert, ShieldX, AlertTriangle } from 'lucide-react';
 import { TEAMS_DATA } from '../../config/data.js';
-import { TEAM_ODDS } from '../../config/odds.js';
+import { TEAM_ODDS, ODDS_LAST_UPDATED } from '../../config/odds.js';
 import { TeamLogo } from '../TeamLogo.jsx';
 import { TeamPixelArt } from '../TeamPixelArt.jsx';
 
@@ -12,14 +12,12 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
   const [sortBy, setSortBy] = useState(() => {
     try { return localStorage.getItem('worldCupTeamsSort') || 'Group'; } catch { return 'Group'; }
   });
-
   const [teamToRestore, setTeamToRestore] = useState(null);
 
   const handleFilterChange = (val) => {
     setManagerFilter(val);
     try { localStorage.setItem('worldCupTeamsFilter', val); } catch (e) {}
   };
-
   const handleSortChange = (val) => {
     setSortBy(val);
     try { localStorage.setItem('worldCupTeamsSort', val); } catch (e) {}
@@ -33,15 +31,11 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
       displayedTeams = displayedTeams.filter(t => assignments[t.id] === managerFilter);
     }
   }
-
   displayedTeams = [...displayedTeams].sort((a, b) => {
     if (sortBy === 'Group') {
-      if (a.group === b.group) return a.name.localeCompare(b.name);
-      return a.group.localeCompare(b.group);
+      return a.group === b.group ? a.name.localeCompare(b.name) : a.group.localeCompare(b.group);
     }
-    if (sortBy === 'Rank') {
-      return (a.rank || 999) - (b.rank || 999);
-    }
+    if (sortBy === 'Rank') return (a.rank || 999) - (b.rank || 999);
     if (sortBy === 'Odds') {
       const getOddsVal = (id) => {
         const str = TEAM_ODDS[id];
@@ -56,24 +50,37 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
 
   return (
     <div className="space-y-6 animate-fade-in relative">
-      {!isViewer && (
-        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm flex items-start gap-3">
-          <Info className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
-          <p className="text-sm sm:text-base font-bold text-blue-800 leading-relaxed">
-            Please assign teams to their respective managers (as listed in the settings) in line with how they were drawn (from a hat, randomiser, penalties etc).
-          </p>
-        </div>
-      )}
 
-      {/* 🟢 RESTORED INFORMATION BOX */}
-      <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 sm:p-5 flex items-start sm:items-center gap-3 sm:gap-4 shadow-sm">
-        <Info className="w-5 h-5 sm:w-6 sm:h-6 text-sky-500 shrink-0 mt-0.5 sm:mt-0" />
-        <div>
-           <h4 className="text-sm font-black text-sky-800 uppercase tracking-wide">Tournament Data</h4>
-           <p className="text-xs sm:text-sm font-medium text-sky-700 mt-0.5">FIFA Rankings and Betting Odds were last updated on <strong className="font-black">April 1st, 2026</strong>. Values will remain locked for the duration of the tournament.</p>
+      {/* ── Top info row ────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+        <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-4 flex flex-col gap-1">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">FIFA Rankings</span>
+          <span className="text-sm font-black text-slate-800">April 2026</span>
+          <span className="text-xs text-slate-500 font-medium mt-1 leading-snug">Rankings locked for the duration of the tournament.</span>
+        </div>
+
+        <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-4 flex flex-col gap-1">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">DraftKings Odds</span>
+          <span className="text-sm font-black text-slate-800">Updated: {ODDS_LAST_UPDATED}</span>
+          <span className="text-xs text-slate-500 font-medium mt-1 leading-snug">Odds locked for the duration of the tournament.</span>
+        </div>
+
+        <div className="bg-sky-50 rounded-xl border-2 border-sky-200 shadow-sm p-4 flex flex-col gap-1">
+          <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Draft & Squad Status</span>
+          {!isViewer ? (
+            <p className="text-xs font-medium text-sky-800 mt-1 leading-snug">
+              Assign teams to managers in line with how they were drawn (hat, randomiser, penalties etc). Manage your squad in Admin settings.
+            </p>
+          ) : (
+            <p className="text-xs font-medium text-sky-800 mt-1 leading-snug">
+              View your assigned teams and track who has been eliminated from the tournament.
+            </p>
+          )}
         </div>
       </div>
 
+      {/* ── Filters ─────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl shadow-sm border-2 border-emerald-100 p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="flex items-center gap-2 w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
           <Filter className="w-4 h-4 text-slate-400 shrink-0" />
@@ -85,7 +92,6 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
             {members.map(m => <option key={m.id} value={m.id}>{m.name}'s Teams</option>)}
           </select>
         </div>
-
         <div className="flex items-center gap-2 w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
           <ArrowUpDown className="w-4 h-4 text-slate-400 shrink-0" />
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:block">Sort By:</span>
@@ -97,50 +103,38 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
         </div>
       </div>
 
+      {/* ── Team cards ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {displayedTeams.map(team => {
           const isEliminated = eliminatedTeams[team.id];
           const oddsStr = TEAM_ODDS[team.id];
-          
           return (
             <div key={team.id} className={`group relative aspect-square rounded-2xl border-2 transition-all shadow-md flex flex-col overflow-hidden ${
               isEliminated ? 'border-red-200 opacity-80 grayscale' : 'border-slate-200 hover:border-emerald-400 hover:shadow-xl hover:-translate-y-1'
             }`}>
-              
               <div className="absolute inset-0 z-0 bg-slate-800">
                 <TeamPixelArt teamId={team.id} className="w-full h-full object-cover object-center opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-b from-slate-900/10 via-slate-900/40 to-slate-900/95"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-900/10 via-slate-900/40 to-slate-900/95" />
               </div>
-
               {isEliminated && (
                 <div className="absolute top-0 left-0 right-0 bg-red-600 text-white text-center py-1 text-[10px] font-black uppercase tracking-widest z-20 shadow-md">
                   Eliminated
                 </div>
               )}
-              
               <div className="relative z-10 flex flex-col items-center justify-center pt-5 sm:pt-8 flex-1 px-2 overflow-hidden w-full min-w-0">
                 <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-full p-2 flex items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.5)] mb-2 sm:mb-3 shrink-0">
                   <TeamLogo teamId={team.id} className="w-full h-full object-contain" />
                 </div>
-                
                 <span className={`font-black text-white text-center leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] px-1 block w-full truncate ${team.name.length > 15 ? 'text-[11px] sm:text-xl' : 'text-base sm:text-2xl'}`}>
                   {team.name}
                 </span>
               </div>
-
               <div className="relative z-10 flex flex-col gap-2 p-2 sm:p-3 mt-auto w-full">
                 <div className="flex items-center justify-center gap-0.5 sm:gap-1.5 w-full flex-nowrap px-0.5">
-                  <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-slate-800 px-1 py-0.5 sm:py-1 rounded shadow-sm whitespace-nowrap shrink-0">
-                    Group {team.group}
-                  </span>
-                  <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-emerald-800 px-1 py-0.5 sm:py-1 rounded shadow-sm whitespace-nowrap shrink-0">
-                    Rank {team.rank}
-                  </span>
-                  <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-purple-800 px-1 py-0.5 sm:py-1 rounded shadow-sm whitespace-nowrap shrink-0">
-                    Odds {oddsStr || 'N/A'}
-                  </span>
+                  <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-slate-800 px-1 py-0.5 sm:py-1 rounded shadow-sm whitespace-nowrap shrink-0">Group {team.group}</span>
+                  <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-emerald-800 px-1 py-0.5 sm:py-1 rounded shadow-sm whitespace-nowrap shrink-0">Rank {team.rank}</span>
+                  <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-purple-800 px-1 py-0.5 sm:py-1 rounded shadow-sm whitespace-nowrap shrink-0">Odds {oddsStr || 'N/A'}</span>
                 </div>
-
                 <div className="flex items-center gap-1.5 sm:gap-2 w-full pb-1">
                   {isViewer ? (
                     <div className="flex-1 text-center py-2 bg-white/95 backdrop-blur-md border border-white/50 rounded-lg font-black text-[11px] sm:text-xs text-emerald-800 shadow-sm truncate px-2">
@@ -148,17 +142,20 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
                     </div>
                   ) : (
                     <>
-                      <select 
-                        value={assignments[team.id] || ''} 
-                        onChange={(e) => handleAssign(team.id, e.target.value)} 
+                      <select
+                        value={assignments[team.id] || ''}
+                        onChange={(e) => handleAssign(team.id, e.target.value)}
                         disabled={isEliminated}
                         className={`flex-1 py-2 px-2 border-0 rounded-lg text-[11px] sm:text-xs font-black text-slate-800 focus:ring-2 focus:ring-emerald-500 bg-white/95 backdrop-blur-md shadow-sm min-w-0 ${isEliminated ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                       >
                         <option value="">-- Assign --</option>
                         {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                       </select>
-                      
-                      <button onClick={() => isEliminated ? setTeamToRestore(team.id) : toggleEliminated(team.id)} title={isEliminated ? "Restore Team" : "Mark Eliminated"} className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-lg font-bold transition-all shadow-sm backdrop-blur-md ${isEliminated ? 'bg-red-500/90 text-white hover:bg-red-600' : 'bg-white/90 text-slate-400 hover:text-red-500 hover:bg-white'}`}>
+                      <button
+                        onClick={() => isEliminated ? setTeamToRestore(team.id) : toggleEliminated(team.id)}
+                        title={isEliminated ? 'Restore Team' : 'Mark Eliminated'}
+                        className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-lg font-bold transition-all shadow-sm backdrop-blur-md ${isEliminated ? 'bg-red-500/90 text-white hover:bg-red-600' : 'bg-white/90 text-slate-400 hover:text-red-500 hover:bg-white'}`}
+                      >
                         {isEliminated ? <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5" /> : <ShieldX className="w-4 h-4 sm:w-5 sm:h-5" />}
                       </button>
                     </>
@@ -168,7 +165,9 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
             </div>
           );
         })}
-        {displayedTeams.length === 0 && <div className="col-span-full py-12 text-center text-slate-400 font-bold text-lg">No teams found for this filter.</div>}
+        {displayedTeams.length === 0 && (
+          <div className="col-span-full py-12 text-center text-slate-400 font-bold text-lg">No teams found for this filter.</div>
+        )}
       </div>
 
       {teamToRestore && (
@@ -180,7 +179,7 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
               </div>
               <div>
                 <h3 className="text-xl font-black text-slate-900 uppercase tracking-wide">Restore Team?</h3>
-                <p className="text-sm text-slate-500 mt-2 font-medium">Warning: This team has been eliminated from the World Cup. Restoring them will allow you to change their assignment, but you will need to manually re-eliminate them afterwards.</p>
+                <p className="text-sm text-slate-500 mt-2 font-medium">This team has been eliminated. Restoring will allow reassignment — remember to re-eliminate afterwards.</p>
               </div>
               <div className="flex w-full gap-3 mt-4">
                 <button onClick={() => setTeamToRestore(null)} className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Cancel</button>
@@ -190,7 +189,6 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
           </div>
         </div>
       )}
-
     </div>
   );
 };
