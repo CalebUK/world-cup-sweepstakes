@@ -3,21 +3,21 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBlsf3Sw7UfufRhSeqJa0TTcRm0sbtKsKU",
-  authDomain: "world-cup-sweepstakes-db50a.firebaseapp.com",
-  projectId: "world-cup-sweepstakes-db50a",
-  storageBucket: "world-cup-sweepstakes-db50a.firebasestorage.app",
-  messagingSenderId: "788152604877",
-  appId: "1:788152604877:web:b67b3f7763b136cfc07184",
-  measurementId: "G-5B5K2VB1VE"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Export the services so the rest of your app can use them!
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// We can just use a static ID for your family app now instead of the dynamic Canvas one!
 export const appId = 'world-cup-family-2026';
+
+// Super admin UID — set in .env (never hardcode in source)
+export const SUPER_ADMIN_UID = import.meta.env.VITE_SUPER_ADMIN_UID || '';
