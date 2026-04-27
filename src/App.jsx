@@ -1,71 +1,75 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Loader2, Settings, X, Trophy, Plus, Globe, Trash2, CheckCircle, LogOut, LayoutGrid, User, Mail, ShieldCheck } from 'lucide-react';
-import { 
-  onAuthStateChanged, signInAnonymously, GoogleAuthProvider, 
-  signInWithPopup, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink 
-} from 'firebase/auth'; 
-import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
+import React, { useState, useMemo } from 'react';
+import { Loader2 } from 'lucide-react';
 
-// --- CONFIGURATION & UTILS ---
-import { auth, db, appId, SUPER_ADMIN_UID } from './config/firebase.js';
-import { DEFAULT_SCORING, generateAllMatches } from './config/data.js';
+// --- CONFIG & UTILS ---
+import { auth, SUPER_ADMIN_UID } from './config/firebase.js';
+import { generateAllMatches } from './config/data.js';
 import { calculateStats } from './utils/tournamentLogic.js';
 
 // --- HOOKS ---
+import { useAuth } from './hooks/useAuth.js';
+import { useLeagues } from './hooks/useLeagues.js';
+import { useLeagueData } from './hooks/useLeagueData.js';
 import { useEspnSync } from './hooks/useEspnSync.js';
 import { useTournamentEngine } from './hooks/useTournamentEngine.js';
 
-// --- COMPONENTS & TABS ---
+// --- LAYOUT ---
+import { AppHeader } from './components/layout/AppHeader.jsx';
+
+// --- TABS ---
 import { StandingsTab } from './components/tabs/StandingsTab.jsx';
 import { GroupsTab } from './components/tabs/GroupsTab.jsx';
 import { MatchesTab } from './components/tabs/MatchesTab.jsx';
 import { TeamsTab } from './components/tabs/TeamsTab.jsx';
-import { SettingsTab } from './components/tabs/SettingsTab.jsx';
 import { BracketTab } from './components/tabs/BracketTab.jsx';
+
+// --- MODALS ---
 import { AccountModal } from './components/modals/AccountModal.jsx';
 import { WelcomeModal } from './components/modals/WelcomeModal.jsx';
+import { LeaveModal } from './components/modals/LeaveModal.jsx';
+import { JoinModal } from './components/modals/JoinModal.jsx';
+import { SettingsModal } from './components/modals/SettingsModal.jsx';
 
-// Default members used when a brand-new league is created
-const DEFAULT_6_USERS = [
-  { id: 'm1', name: 'User 1', isKid: false },
-  { id: 'm2', name: 'User 2', isKid: false },
-  { id: 'm3', name: 'User 3', isKid: false },
-  { id: 'm4', name: 'User 4', isKid: false },
-  { id: 'm5', name: 'User 5', isKid: true },
-  { id: 'm6', name: 'User 6', isKid: true },
-];
-
-// Validates a league invite code / UUID before using it as a Firestore document ID
-const isValidLeagueCode = (code) => /^[a-zA-Z0-9_-]{8,64}$/.test(code);
+const TABS = ['standings', 'groups', 'bracket', 'matches', 'teams'];
 
 export default function App() {
-  const [user, setUser] = useState(null);
-  // leaguesLoaded gates isOwner so it never flickers to false while Firestore loads
-  const [leaguesLoaded, setLeaguesLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('standings');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  
-  const [hostedLeagues, setHostedLeagues] = useState([]);
-  const [joinedLeagues, setJoinedLeagues] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('wcJoinedLeagues')) || []; } catch { return []; }
-  });
   const [activeLeagueId, setActiveLeagueId] = useState(() => {
     try { return localStorage.getItem('wcActiveLeague') || null; } catch { return null; }
   });
+  const [showWelcomeModal, setShowWelcomeModal] = useState(() => {
+    try { return localStorage.getItem('hideWorldCupWelcome') !== 'true'; } catch { return true; }
+  });
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [localTimezone, setLocalTimezone] = useState(() => {
+    try {
+      return localStorage.getItem('worldCupTimezone') || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/London';
+    } catch { return 'Europe/London'; }
+  });
 
-  const [showJoinModal, setShowJoinModal] = useState(false);
-  const [showLeaveModal, setShowLeaveModal] = useState(false);
-  const [showAccountModal, setShowAccountModal] = useState(false);
-  const [pendingJoinCode, setPendingJoinCode] = useState('');
-  const [pendingJoinName, setPendingJoinName] = useState('');
-  const [joinCodeError, setJoinCodeError] = useState('');
+  // ─── Auth ─────────────────────────────────────────────────────────────────
 
-  const [authEmail, setAuthEmail] = useState('');
-  const [authMessage, setAuthMessage] = useState(null);
+  // useAuth needs to be able to open the join modal when an invite link is
+  // detected — we forward the setters after useLeagues is called, but we need
+  // the callbacks defined before calling useAuth, so we use thin forwarders.
+  const [pendingJoinCodeFromUrl, setPendingJoinCodeFromUrl] = useState('');
+  const [openJoinModalFromUrl, setOpenJoinModalFromUrl] = useState(false);
 
-  // Only computed once leagues have loaded from Firestore — prevents the
-  // "viewer flicker" where hostedLeagues is empty on first render
+  const {
+    user, hostedLeagues, setHostedLeagues, leaguesLoaded, updateHostedLeagues,
+    showAccountModal, setShowAccountModal,
+    authEmail, setAuthEmail, authMessage, setAuthMessage,
+    handleGoogleLogin, handleMagicLink, handleLogout,
+  } = useAuth({
+    setActiveLeagueId,
+    setPendingJoinCode: setPendingJoinCodeFromUrl,
+    setShowJoinModal: setOpenJoinModalFromUrl,
+  });
+
+  // ─── Permissions ──────────────────────────────────────────────────────────
+
   const isOwner = useMemo(() => {
     if (!user || !leaguesLoaded) return false;
     return hostedLeagues.some(l => l.id === activeLeagueId) || activeLeagueId === user.uid;
@@ -73,381 +77,48 @@ export default function App() {
 
   const isViewer = !isOwner;
   const isSuperAdmin = user?.uid === SUPER_ADMIN_UID;
-  const isAccountLinked = user && !user.isAnonymous; 
+  const isAccountLinked = user && !user.isAnonymous;
 
-  const [showWelcomeModal, setShowWelcomeModal] = useState(() => {
-    try { return localStorage.getItem('hideWorldCupWelcome') !== 'true'; } catch { return true; }
-  });
-  const [dontShowAgain, setDontShowAgain] = useState(false);
+  // ─── Leagues ──────────────────────────────────────────────────────────────
 
-  const handleCloseWelcome = () => {
-    if (dontShowAgain) {
-      try { localStorage.setItem('hideWorldCupWelcome', 'true'); } catch (e) {}
-    }
-    setShowWelcomeModal(false);
-  };
-  
-  const [members, setMembers] = useState([]);
-  const [assignments, setAssignments] = useState({});
-  const [eliminatedTeams, setEliminatedTeams] = useState({});
-  const [manualRestores, setManualRestores] = useState({});
-  const [matches, setMatches] = useState([]);
-  const [settings, setSettings] = useState({});
-
-  const [localTimezone, setLocalTimezone] = useState(() => {
-    try {
-      return localStorage.getItem('worldCupTimezone') || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/London';
-    } catch {
-      return 'Europe/London';
-    }
+  const {
+    joinedLeagues,
+    showJoinModal, setShowJoinModal,
+    showLeaveModal, setShowLeaveModal,
+    pendingJoinCode, setPendingJoinCode,
+    pendingJoinName, setPendingJoinName,
+    joinCodeError, setJoinCodeError,
+    handleSwitchLeague, handleCreateLeague, handleJoinSubmit, confirmLeaveLeague,
+  } = useLeagues({
+    user, hostedLeagues, updateHostedLeagues, activeLeagueId, setActiveLeagueId,
+    initialPendingCode: pendingJoinCodeFromUrl,
+    initialShowJoin: openJoinModalFromUrl,
   });
 
-  useEffect(() => {
-    // Step 1: Handle magic link FIRST, before touching anonymous auth.
-    // If we're on a magic link URL, sign in with that — don't also fire
-    // signInAnonymously, which would race against it.
-    const initAuth = async () => {
-      if (isSignInWithEmailLink(auth, window.location.href)) {
-        const email = window.localStorage.getItem('emailForSignIn');
-        if (email) {
-          try {
-            await signInWithEmailLink(auth, email, window.location.href);
-            window.localStorage.removeItem('emailForSignIn');
-            // Clean the magic link token out of the URL so a refresh doesn't
-            // try to consume the same (now expired) link again
-            window.history.replaceState({}, '', window.location.pathname);
-            setShowAccountModal(true);
-            setAuthMessage({ type: 'success', text: 'Successfully signed in!' });
-            setTimeout(() => { setShowAccountModal(false); setAuthMessage(null); }, 3000);
-          } catch (err) {
-            console.error("Magic link error:", err);
-            // Link failed — fall through to anonymous so the app still loads
-            window.history.replaceState({}, '', window.location.pathname);
-            setShowAccountModal(true);
-            setAuthMessage({ type: 'error', text: 'That sign-in link has expired or already been used. Please request a new one.' });
-            try { await signInAnonymously(auth); } catch (anonErr) { console.error(anonErr); }
-          }
-        } else {
-          // Magic link URL but no stored email (e.g. opened on a different device)
-          window.history.replaceState({}, '', window.location.pathname);
-          setShowAccountModal(true);
-          setAuthMessage({ type: 'error', text: 'Please enter your email address to complete sign-in.' });
-          try { await signInAnonymously(auth); } catch (anonErr) { console.error(anonErr); }
-        }
-        return; // Don't fall through to signInAnonymously below
-      }
+  // ─── League data ──────────────────────────────────────────────────────────
 
-      // Step 2: Normal load — sign in anonymously if not already authenticated
-      if (!auth.currentUser) {
-        try { await signInAnonymously(auth); } catch (err) { console.error(err); }
-      }
-    };
+  const {
+    members, setMembers,
+    assignments, setAssignments,
+    eliminatedTeams, setEliminatedTeams,
+    manualRestores, setManualRestores,
+    matches, setMatches,
+    settings, setSettings,
+    saveState,
+    DEFAULT_6_USERS,
+  } = useLeagueData({ user, activeLeagueId, isOwner, isSuperAdmin, setHostedLeagues, setLoading });
 
-    initAuth();
-
-    // Step 3: React to auth state changes (fires after initAuth resolves)
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      setUser(u);
-      setLeaguesLoaded(false); // Reset while we fetch leagues for this user
-
-      if (u) {
-        // Fetch the user's owned leagues registry from Firestore
-        const registryRef = doc(db, 'artifacts', appId, 'users', u.uid, 'metadata', 'leagues');
-        let ownedList = [];
-        try {
-          const regSnap = await getDoc(registryRef);
-          if (regSnap.exists()) {
-            ownedList = regSnap.data().list || [];
-          } else {
-            ownedList = [{ id: u.uid, name: 'My First Sweepstakes' }];
-            await setDoc(registryRef, { list: ownedList });
-          }
-        } catch (err) {
-          console.error('Failed to load leagues registry:', err);
-          // Fall back gracefully — treat the user's UID as their default league
-          ownedList = [{ id: u.uid, name: 'My Sweepstakes' }];
-        }
-
-        setHostedLeagues(ownedList);
-
-        // Determine which league to show, now that we have the owned list
-        const urlParams = new URLSearchParams(window.location.search);
-        const hostParam = urlParams.get('host');
-        const savedLeagueId = (() => { try { return localStorage.getItem('wcActiveLeague'); } catch { return null; } })();
-        const currentJoinedLeagues = (() => { try { return JSON.parse(localStorage.getItem('wcJoinedLeagues')) || []; } catch { return []; } })();
-
-        if (hostParam) {
-          if (!isValidLeagueCode(hostParam)) {
-            console.warn('Invalid host param in URL, ignoring.');
-            window.history.replaceState({}, '', window.location.pathname);
-          } else {
-            const isMine = ownedList.some(l => l.id === hostParam);
-            const isJoined = currentJoinedLeagues.some(l => l.id === hostParam);
-            if (!isMine && !isJoined) {
-              setPendingJoinCode(hostParam);
-              setShowJoinModal(true);
-            } else {
-              setActiveLeagueId(hostParam);
-              try { localStorage.setItem('wcActiveLeague', hostParam); } catch (e) {}
-            }
-            window.history.replaceState({}, '', window.location.pathname);
-          }
-        } else if (savedLeagueId) {
-          // Restore the last active league — validate it still exists or is joined
-          const isStillMine = ownedList.some(l => l.id === savedLeagueId);
-          const isStillJoined = currentJoinedLeagues.some(l => l.id === savedLeagueId);
-          if (isStillMine || isStillJoined || savedLeagueId === u.uid) {
-            setActiveLeagueId(savedLeagueId);
-          } else {
-            // Saved league no longer valid — fall back to their default
-            setActiveLeagueId(u.uid);
-            try { localStorage.setItem('wcActiveLeague', u.uid); } catch (e) {}
-          }
-        } else {
-          // First time — default to their own league
-          setActiveLeagueId(u.uid);
-          try { localStorage.setItem('wcActiveLeague', u.uid); } catch (e) {}
-        }
-
-        // Mark leagues as loaded AFTER everything above is set, so isOwner
-        // computes correctly on the first render that sees it
-        setLeaguesLoaded(true);
-      }
-    });
-    
-    const emergencyTimeout = setTimeout(() => setLoading(false), 5000);
-    return () => { unsubscribe(); clearTimeout(emergencyTimeout); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty deps — this effect runs once on mount only. State is read
-          // from localStorage directly inside the handler to avoid stale closures.
-
-  useEffect(() => {
-    if (!user || !activeLeagueId) return;
-    setLoading(true); 
-
-    const leagueRef = doc(db, 'artifacts', appId, 'public', 'data', 'sweepstakes', activeLeagueId);
-    const globalMatchesRef = doc(db, 'artifacts', appId, 'public', 'data', 'globalMatches', 'worldCup2026');
-    
-    const unsubLeague = onSnapshot(leagueRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setMembers(data.members || DEFAULT_6_USERS);
-        setAssignments(data.assignments || {});
-        setEliminatedTeams(data.eliminatedTeams || {});
-        setManualRestores(data.manualRestores || {});
-        setSettings(data.settings || { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'My Hosted Sweepstakes' });
-        
-        if (isOwner) {
-          setHostedLeagues(prev => {
-            const index = prev.findIndex(l => l.id === activeLeagueId);
-            if (index !== -1 && prev[index].name !== (data.settings?.leagueName || 'My Hosted Sweepstakes')) {
-              const newList = [...prev];
-              newList[index] = { ...newList[index], name: data.settings.leagueName };
-              setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'metadata', 'leagues'), { list: newList });
-              return newList;
-            }
-            return prev;
-          });
-        }
-      } else if (isOwner) {
-        setDoc(leagueRef, {
-          members: DEFAULT_6_USERS,
-          assignments: {},
-          eliminatedTeams: {},
-          manualRestores: {},
-          settings: { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: 'New Sweepstakes' }
-        });
-      }
-    });
-
-    const unsubGlobal = onSnapshot(globalMatchesRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setMatches(docSnap.data().matches || generateAllMatches());
-      } else if (user.uid === SUPER_ADMIN_UID) {
-        setDoc(globalMatchesRef, { matches: generateAllMatches() });
-      } else {
-        setMatches(generateAllMatches()); 
-      }
-      setLoading(false);
-    });
-
-    return () => { unsubLeague(); unsubGlobal(); };
-  }, [user, activeLeagueId, isOwner]);
-
-  const saveState = async (key, value) => {
-    if (!user) return;
-    try {
-      const serialised = JSON.stringify(value);
-      if (serialised.length > 500_000) {
-        console.error(`saveState: payload for "${key}" is too large (${serialised.length} bytes), refusing to save.`);
-        return;
-      }
-      const safeValue = JSON.parse(serialised);
-      if (key === 'matches') {
-        if (!isSuperAdmin) return;
-        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'globalMatches', 'worldCup2026');
-        await setDoc(ref, { matches: safeValue }, { merge: true });
-      } else {
-        if (isViewer) return; 
-        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'sweepstakes', activeLeagueId);
-        await setDoc(ref, { [key]: safeValue }, { merge: true });
-      }
-    } catch (err) {
-      console.error("Error saving to cloud:", err);
-    }
-  };
+  // ─── Sync & engine ────────────────────────────────────────────────────────
 
   useEspnSync(isSuperAdmin, settings, setMatches, saveState);
-  
   useTournamentEngine({
-    matches, setMatches, teamStats: calculateStats(matches, eliminatedTeams, settings, members, assignments).teamStats, 
-    eliminatedTeams, setEliminatedTeams, manualRestores, settings, isOwner, isSuperAdmin, saveState
+    matches, setMatches,
+    teamStats: calculateStats(matches, eliminatedTeams, settings, members, assignments).teamStats,
+    eliminatedTeams, setEliminatedTeams,
+    manualRestores, settings, isOwner, isSuperAdmin, saveState,
   });
 
-  const handleGoogleLogin = async () => {
-    try {
-      setAuthMessage({ type: 'info', text: 'Opening Google Login...' });
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      setAuthMessage({ type: 'success', text: 'Successfully linked account!' });
-      setTimeout(() => {
-        setShowAccountModal(false);
-        setAuthMessage(null);
-      }, 1500);
-    } catch (error) {
-      console.error(error);
-      let errorMsg = error.message;
-      if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
-        errorMsg = 'Sign in was cancelled.';
-      }
-      setAuthMessage({ type: 'error', text: errorMsg });
-    }
-  };
-
-  const handleMagicLink = async () => {
-    if (!authEmail) return;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(authEmail)) {
-      setAuthMessage({ type: 'error', text: 'Please enter a valid email address.' });
-      return;
-    }
-    try {
-      setAuthMessage({ type: 'info', text: 'Sending secure link...' });
-      const actionCodeSettings = {
-        url: window.location.origin + window.location.pathname,
-        handleCodeInApp: true,
-      };
-      await sendSignInLinkToEmail(auth, authEmail, actionCodeSettings);
-      window.localStorage.setItem('emailForSignIn', authEmail);
-      setAuthMessage({ type: 'success', text: 'Success! Check your email inbox.' });
-    } catch (error) {
-      setAuthMessage({ type: 'error', text: error.message });
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await auth.signOut();
-      window.location.reload(); 
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleCreateLeague = async () => {
-    if (!user) return;
-    const newId = crypto.randomUUID();
-    const newName = `New League ${hostedLeagues.length + 1}`;
-    const newList = [...hostedLeagues, { id: newId, name: newName }];
-    
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'metadata', 'leagues'), { list: newList });
-    setHostedLeagues(newList);
-    setActiveLeagueId(newId);
-    try { localStorage.setItem('wcActiveLeague', newId); } catch (e) {}
-    setShowJoinModal(false);
-  };
-
-  const handleSwitchLeague = (id) => {
-    setActiveLeagueId(id);
-    try { localStorage.setItem('wcActiveLeague', id); } catch (e) {}
-  };
-
-  const handleJoinSubmit = () => {
-    setJoinCodeError('');
-    if (!pendingJoinCode.trim() || !pendingJoinName.trim()) return;
-
-    let finalCode = pendingJoinCode.trim();
-
-    // Extract the host param if a full URL was pasted
-    if (finalCode.includes('?host=') || finalCode.startsWith('http')) {
-      try {
-        finalCode = new URL(finalCode).searchParams.get('host') || finalCode;
-      } catch (e) {
-        // Not a valid URL — use as-is and let the validation below catch it
-      }
-    }
-
-    // Validate before writing to Firestore
-    if (!isValidLeagueCode(finalCode)) {
-      setJoinCodeError('That doesn\'t look like a valid invite code. Please check the link and try again.');
-      return;
-    }
-
-    const currentLeagues = [...joinedLeagues];
-    if (!currentLeagues.find(l => l.id === finalCode)) {
-      const newLeagues = [...currentLeagues, { id: finalCode, name: pendingJoinName.trim() }];
-      try { localStorage.setItem('wcJoinedLeagues', JSON.stringify(newLeagues)); } catch (e) {}
-      setJoinedLeagues(newLeagues);
-    }
-    handleSwitchLeague(finalCode);
-    setPendingJoinCode('');
-    setPendingJoinName('');
-    setJoinCodeError('');
-    setShowJoinModal(false);
-  };
-
-  const confirmLeaveLeague = () => {
-    if (!activeLeagueId) return;
-    const newLeagues = joinedLeagues.filter(l => l.id !== activeLeagueId);
-    setJoinedLeagues(newLeagues);
-    try { localStorage.setItem('wcJoinedLeagues', JSON.stringify(newLeagues)); } catch (e) {}
-    if (hostedLeagues.length > 0) handleSwitchLeague(hostedLeagues[0].id);
-    setShowLeaveModal(false);
-  };
-
-  const handleResetData = () => {
-    if (isViewer) return;
-    const defaultSettings = { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: settings.leagueName || 'My Sweepstakes' };
-    setMembers(DEFAULT_6_USERS);
-    setAssignments({});
-    setEliminatedTeams({});
-    setManualRestores({});
-    setSettings(defaultSettings);
-    
-    saveState('members', DEFAULT_6_USERS);
-    saveState('assignments', {});
-    saveState('eliminatedTeams', {});
-    saveState('manualRestores', {});
-    saveState('settings', defaultSettings);
-    
-    if (isSuperAdmin) {
-      const resetMatches = generateAllMatches();
-      setMatches(resetMatches);
-      saveState('matches', resetMatches);
-    }
-    
-    setShowSettingsModal(false);
-  };
-
-  const handleHardReset = async () => {
-    try {
-      localStorage.clear();
-      await auth.signOut();
-    } catch (e) {
-      console.error("Failed to sign out fully:", e);
-    }
-    window.location.href = window.location.origin + window.location.pathname;
-  };
+  // ─── Computed stats ───────────────────────────────────────────────────────
 
   const { teamStats, memberStats, awards } = useMemo(() => {
     const stats = calculateStats(matches, eliminatedTeams, settings, members, assignments);
@@ -456,25 +127,31 @@ export default function App() {
       const second = stats.awards.overall['2nd']?.id;
       const third = stats.awards.overall['3rd']?.id;
       if (third && (third === first || third === second)) {
-        const sortedMembers = [...stats.memberStats].sort((a, b) => b.pts - a.pts);
-        const eligibleThird = sortedMembers.find(m => m.id !== first && m.id !== second);
-        if (eligibleThird) stats.awards.overall['3rd'] = eligibleThird;
+        const sorted = [...stats.memberStats].sort((a, b) => b.pts - a.pts);
+        const eligible = sorted.find(m => m.id !== first && m.id !== second);
+        if (eligible) stats.awards.overall['3rd'] = eligible;
         else delete stats.awards.overall['3rd'];
       }
     }
     return stats;
   }, [members, assignments, matches, eliminatedTeams, settings]);
 
-  const handleRandomizeGroups = () => {
-    if (!isSuperAdmin) return;
-    const nextMatches = matches.map(m => (m.stage === 'Group' ? { ...m, scoreA: Math.floor(Math.random() * 4).toString(), scoreB: Math.floor(Math.random() * 4).toString(), isPlayed: true } : m));
-    setMatches(nextMatches);
-    saveState('matches', nextMatches);
-  };
+  // ─── Handlers ─────────────────────────────────────────────────────────────
 
   const handleMatchUpdate = (matchId, field, value) => {
     if (!isSuperAdmin) return;
     const next = matches.map(m => m.id === matchId ? { ...m, [field]: value } : m);
+    setMatches(next);
+    saveState('matches', next);
+  };
+
+  const handleRandomizeGroups = () => {
+    if (!isSuperAdmin) return;
+    const next = matches.map(m =>
+      m.stage === 'Group'
+        ? { ...m, scoreA: Math.floor(Math.random() * 4).toString(), scoreB: Math.floor(Math.random() * 4).toString(), isPlayed: true }
+        : m
+    );
     setMatches(next);
     saveState('matches', next);
   };
@@ -514,7 +191,7 @@ export default function App() {
     setMembers(nextMembers);
     saveState('members', nextMembers);
     const nextAssignments = { ...assignments };
-    Object.keys(nextAssignments).forEach(teamId => { if (nextAssignments[teamId] === id) delete nextAssignments[teamId]; });
+    Object.keys(nextAssignments).forEach(tid => { if (nextAssignments[tid] === id) delete nextAssignments[tid]; });
     setAssignments(nextAssignments);
     saveState('assignments', nextAssignments);
   };
@@ -525,12 +202,44 @@ export default function App() {
     saveState('settings', next);
   };
 
+  const handleResetData = () => {
+    if (isViewer) return;
+    const defaultSettings = { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: settings.leagueName || 'My Sweepstakes' };
+    setMembers(DEFAULT_6_USERS);
+    setAssignments({});
+    setEliminatedTeams({});
+    setManualRestores({});
+    setSettings(defaultSettings);
+    saveState('members', DEFAULT_6_USERS);
+    saveState('assignments', {});
+    saveState('eliminatedTeams', {});
+    saveState('manualRestores', {});
+    saveState('settings', defaultSettings);
+    if (isSuperAdmin) {
+      const reset = generateAllMatches();
+      setMatches(reset);
+      saveState('matches', reset);
+    }
+    setShowSettingsModal(false);
+  };
+
+  const handleHardReset = async () => {
+    try { localStorage.clear(); await auth.signOut(); } catch (e) { console.error(e); }
+    window.location.href = window.location.origin + window.location.pathname;
+  };
+
   const getOwnerName = (teamId) => {
     const ownerId = assignments[teamId];
     if (!ownerId) return 'Unassigned';
-    const member = members.find(m => m.id === ownerId);
-    return member ? member.name : 'Unassigned';
+    return members.find(m => m.id === ownerId)?.name || 'Unassigned';
   };
+
+  const handleCloseWelcome = () => {
+    if (dontShowAgain) { try { localStorage.setItem('hideWorldCupWelcome', 'true'); } catch (e) {} }
+    setShowWelcomeModal(false);
+  };
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -543,203 +252,105 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 font-sans pb-20 selection:bg-green-200 relative">
-      <header className="bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 text-white pt-10 pb-8 px-4 sm:px-6 lg:px-8 shadow-xl relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_40px,#fff_40px,#fff_80px)] pointer-events-none transform -skew-x-12 scale-150"></div>
-        <div className="max-w-6xl mx-auto relative z-10 flex flex-col gap-4">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase drop-shadow-md flex items-center gap-3 flex-wrap">
-             <img src="/logos/world-cup.svg" className="w-10 h-10 sm:w-12 sm:h-12 object-contain shrink-0" alt="World Cup Logo" onError={(e) => e.target.style.display='none'} />
-             World Cup 2026
-             {isViewer ? (
-               <span className="bg-amber-500 text-amber-950 text-[10px] sm:text-xs font-black px-2 sm:px-3 py-1 rounded-full uppercase tracking-widest shadow-md shrink-0">
-                 Viewer
-               </span>
-             ) : (
-               <span className="bg-indigo-500 text-indigo-50 text-[10px] sm:text-xs font-black px-2 sm:px-3 py-1 rounded-full uppercase tracking-widest shadow-md shrink-0 flex items-center gap-1">
-                 <ShieldCheck className="w-3 h-3" /> Commish
-               </span>
-             )}
-          </h1>
-          
-          <div className="w-full bg-white/10 p-2 sm:p-2.5 rounded-xl border border-white/20 backdrop-blur-sm shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mt-2">
-             <div className="flex items-center w-full md:w-auto flex-1 min-w-[250px]">
-               <span className="text-xs font-bold text-green-200 uppercase tracking-widest pl-2 hidden lg:block shrink-0 mr-2">Active League:</span>
-               <div className="relative w-full">
-                 <select 
-                   value={activeLeagueId || ''} 
-                   onChange={e => handleSwitchLeague(e.target.value)}
-                   className="w-full bg-white/90 text-slate-900 font-black text-sm sm:text-base py-2.5 pl-9 pr-4 rounded-lg appearance-none cursor-pointer border-0 focus:ring-2 focus:ring-emerald-400 shadow-inner truncate"
-                 >
-                   {hostedLeagues.length > 0 && <optgroup label="👑 My Hosted Leagues">
-                     {hostedLeagues.map(l => (
-                       <option key={l.id} value={l.id}>{l.name} {activeLeagueId === l.id && '(Commish)'}</option>
-                     ))}
-                   </optgroup>}
-                   {joinedLeagues.length > 0 && <optgroup label="👁️ Joined Leagues">
-                     {joinedLeagues.map(l => (
-                       <option key={l.id} value={l.id}>{l.name}</option>
-                     ))}
-                   </optgroup>}
-                 </select>
-                 <Trophy className="w-4 h-4 text-emerald-700 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-               </div>
-             </div>
 
-             <div className="flex items-center gap-2 justify-between md:justify-end w-full md:w-auto overflow-x-auto pb-1 md:pb-0 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
-               {isOwner && (
-                 <button onClick={() => setShowSettingsModal(true)} className="bg-white/90 hover:bg-white text-green-800 p-2.5 sm:px-4 rounded-lg shadow-sm transition-colors border border-green-200 flex items-center gap-2 shrink-0 snap-start">
-                   <Settings className="w-5 h-5" />
-                   <span className="hidden sm:block font-black text-sm uppercase tracking-wider">Admin</span>
-                 </button>
-               )}
-               {isViewer && (
-                 <button onClick={() => setShowLeaveModal(true)} className="bg-red-500/90 hover:bg-red-500 text-white p-2.5 rounded-lg shadow-sm transition-colors border border-red-400 flex items-center justify-center shrink-0 snap-start" title="Remove this league">
-                   <Trash2 className="w-5 h-5" />
-                 </button>
-               )}
-               <button onClick={() => setShowJoinModal(true)} className="bg-emerald-500 hover:bg-emerald-400 text-white p-2.5 sm:px-4 rounded-lg shadow-sm transition-colors border border-emerald-400 flex items-center gap-2 shrink-0 snap-start">
-                 <Plus className="w-5 h-5 sm:hidden" />
-                 <span className="hidden sm:block font-black text-sm uppercase tracking-wider">Leagues</span>
-               </button>
-               <button onClick={() => setShowAccountModal(true)} className={`p-2.5 sm:px-4 rounded-lg shadow-sm transition-colors border flex items-center gap-2 shrink-0 snap-start ${isAccountLinked ? 'bg-emerald-700/90 hover:bg-emerald-800 border-emerald-600' : 'bg-slate-700/90 hover:bg-slate-800 border-slate-600'}`}>
-                 {isAccountLinked && user.photoURL ? (
-                   <img src={user.photoURL} alt="Profile" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border border-emerald-400 object-cover" />
-                 ) : (
-                   <User className="w-5 h-5 text-white sm:hidden" />
-                 )}
-                 <span className="hidden sm:block text-white font-black text-sm uppercase tracking-wider">
-                   {isAccountLinked ? 'Linked' : 'Account'}
-                 </span>
-               </button>
-             </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        isViewer={isViewer}
+        isOwner={isOwner}
+        isAccountLinked={isAccountLinked}
+        user={user}
+        activeLeagueId={activeLeagueId}
+        hostedLeagues={hostedLeagues}
+        joinedLeagues={joinedLeagues}
+        onSwitchLeague={handleSwitchLeague}
+        onOpenSettings={() => setShowSettingsModal(true)}
+        onOpenLeave={() => setShowLeaveModal(true)}
+        onOpenJoin={() => setShowJoinModal(true)}
+        onOpenAccount={() => setShowAccountModal(true)}
+      />
 
+      {/* Tab bar */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-5 relative z-20">
         <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/50 p-1.5 sm:p-2 flex overflow-x-auto gap-1.5 sm:gap-2 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
-          {['standings', 'groups', 'bracket', 'matches', 'teams'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} 
+          {TABS.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
               className={`shrink-0 flex-1 min-w-[85px] sm:min-w-0 py-2.5 sm:py-3 px-2 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 snap-start ${
-                activeTab === tab ? 'bg-green-600 text-white shadow-md sm:scale-[1.02]' : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700'
-              }`}>
+                activeTab === tab
+                  ? 'bg-green-600 text-white shadow-md sm:scale-[1.02]'
+                  : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700'
+              }`}
+            >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Tab content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
         {activeTab === 'standings' && <StandingsTab settings={settings} awards={awards} memberStats={memberStats} />}
-        {activeTab === 'groups' && <GroupsTab teamStats={teamStats} matches={matches} settings={settings} />}
-        {activeTab === 'bracket' && <BracketTab matches={matches} members={members} assignments={assignments} />}
-        {activeTab === 'matches' && <MatchesTab matches={matches} localTimezone={localTimezone} setLocalTimezone={setLocalTimezone} isViewer={!isSuperAdmin} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} handleRandomizeGroups={handleRandomizeGroups} />}
-        {activeTab === 'teams' && <TeamsTab eliminatedTeams={eliminatedTeams} isViewer={isViewer} assignments={assignments} members={members} handleAssign={handleAssign} toggleEliminated={toggleEliminated} />}
+        {activeTab === 'groups'   && <GroupsTab teamStats={teamStats} matches={matches} settings={settings} />}
+        {activeTab === 'bracket'  && <BracketTab matches={matches} members={members} assignments={assignments} />}
+        {activeTab === 'matches'  && (
+          <MatchesTab
+            matches={matches}
+            localTimezone={localTimezone}
+            setLocalTimezone={setLocalTimezone}
+            isViewer={!isSuperAdmin}
+            handleMatchUpdate={handleMatchUpdate}
+            getOwnerName={getOwnerName}
+            eliminatedTeams={eliminatedTeams}
+            handleRandomizeGroups={handleRandomizeGroups}
+          />
+        )}
+        {activeTab === 'teams' && (
+          <TeamsTab
+            eliminatedTeams={eliminatedTeams}
+            isViewer={isViewer}
+            assignments={assignments}
+            members={members}
+            handleAssign={handleAssign}
+            toggleEliminated={toggleEliminated}
+          />
+        )}
       </main>
 
-      {/* --- ALL MODALS BELOW --- */}
-
-      {showLeaveModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm border-4 border-red-600">
-            <div className="flex flex-col items-center text-center space-y-4">
-              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
-                <LogOut className="w-8 h-8" />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-slate-900 uppercase tracking-wide">Leave League?</h3>
-                <p className="text-sm text-slate-500 mt-2 font-medium">Are you sure you want to remove this league from your list? You can always rejoin later with the invite link.</p>
-              </div>
-              <div className="flex w-full gap-3 mt-4">
-                <button onClick={() => setShowLeaveModal(false)} className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Cancel</button>
-                <button onClick={confirmLeaveLeague} className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-colors shadow-md">Leave League</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* Modals */}
+      {showLeaveModal && <LeaveModal onConfirm={confirmLeaveLeague} onCancel={() => setShowLeaveModal(false)} />}
       {showJoinModal && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md border-4 border-emerald-600 relative">
-            <button onClick={() => { setShowJoinModal(false); setJoinCodeError(''); }} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 bg-slate-100 p-1.5 rounded-lg transition-colors"><X className="w-5 h-5" /></button>
-            <div className="flex items-center gap-3 mb-6 border-b-2 border-emerald-50 pb-4">
-               <LayoutGrid className="w-8 h-8 text-emerald-600 bg-emerald-100 p-1.5 rounded-lg" />
-               <h2 className="text-xl font-black text-emerald-800 uppercase tracking-widest">Manage Leagues</h2>
-            </div>
-            <div className="space-y-6">
-               <div className="space-y-4">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Join a League</h3>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">League Invite Code (or URL)</label>
-                    <input type="text" placeholder="Paste link here" value={pendingJoinCode} onChange={e => { setPendingJoinCode(e.target.value); setJoinCodeError(''); }} className="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-800 focus:border-emerald-500 outline-none" />
-                    {joinCodeError && <p className="text-xs text-red-600 font-bold mt-1">{joinCodeError}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Nickname for this League</label>
-                    <input type="text" placeholder="e.g. The Office Pool" value={pendingJoinName} onChange={e => setPendingJoinName(e.target.value)} className="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-800 focus:border-emerald-500 outline-none" />
-                  </div>
-                  <button onClick={handleJoinSubmit} disabled={!pendingJoinCode.trim() || !pendingJoinName.trim()} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-md uppercase tracking-widest transition-all disabled:opacity-50">
-                    Add to My Leagues
-                  </button>
-               </div>
-
-               <div className="pt-4 border-t-2 border-slate-100">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Host Your Own</h3>
-                  <button onClick={handleCreateLeague} className="w-full border-2 border-dashed border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50 text-emerald-600 font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2">
-                    <Plus className="w-5 h-5" /> Create New Sweepstakes
-                  </button>
-               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showSettingsModal && isOwner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border-4 border-green-800 relative">
-             <div className="sticky top-0 z-20 bg-white border-b-2 border-slate-100 p-4 flex justify-between items-center shadow-sm">
-                <h2 className="text-xl font-black text-green-800 flex items-center gap-2 uppercase tracking-wide">
-                  <Settings className="w-6 h-6 text-slate-500" /> Sweepstakes Rules & Settings
-                </h2>
-                <button onClick={() => setShowSettingsModal(false)} className="text-slate-400 hover:text-red-600 bg-slate-100 hover:bg-red-50 p-2 rounded-lg transition-colors"><X className="w-6 h-6" /></button>
-             </div>
-             <div className="p-6">
-                <SettingsTab 
-                  settings={settings} 
-                  updateSettings={updateSettings} 
-                  members={members} 
-                  handleAddMember={handleAddMember} 
-                  handleUpdateMember={handleUpdateMember} 
-                  handleDeleteMember={handleDeleteMember} 
-                  handleResetData={handleResetData} 
-                  handleHardReset={handleHardReset}
-                  userUid={activeLeagueId} 
-                />
-             </div>
-           </div>
-        </div>
-      )}
-
-      {showWelcomeModal && (
-        <WelcomeModal 
-          dontShowAgain={dontShowAgain} 
-          setDontShowAgain={setDontShowAgain} 
-          handleCloseWelcome={handleCloseWelcome} 
+        <JoinModal
+          pendingJoinCode={pendingJoinCode} setPendingJoinCode={setPendingJoinCode}
+          pendingJoinName={pendingJoinName} setPendingJoinName={setPendingJoinName}
+          joinCodeError={joinCodeError} setJoinCodeError={setJoinCodeError}
+          onJoinSubmit={handleJoinSubmit}
+          onCreateLeague={handleCreateLeague}
+          onClose={() => { setShowJoinModal(false); setJoinCodeError(''); }}
         />
       )}
-
+      {showSettingsModal && isOwner && (
+        <SettingsModal
+          settings={settings} updateSettings={updateSettings}
+          members={members}
+          handleAddMember={handleAddMember}
+          handleUpdateMember={handleUpdateMember}
+          handleDeleteMember={handleDeleteMember}
+          handleResetData={handleResetData}
+          handleHardReset={handleHardReset}
+          userUid={activeLeagueId}
+          onClose={() => setShowSettingsModal(false)}
+        />
+      )}
+      {showWelcomeModal && <WelcomeModal dontShowAgain={dontShowAgain} setDontShowAgain={setDontShowAgain} handleCloseWelcome={handleCloseWelcome} />}
       {showAccountModal && (
-        <AccountModal 
-          user={user} 
-          isAccountLinked={isAccountLinked} 
-          authEmail={authEmail} 
-          setAuthEmail={setAuthEmail} 
-          authMessage={authMessage} 
-          setAuthMessage={setAuthMessage} 
-          setShowAccountModal={setShowAccountModal} 
-          handleGoogleLogin={handleGoogleLogin} 
-          handleMagicLink={handleMagicLink} 
-          handleLogout={handleLogout} 
+        <AccountModal
+          user={user} isAccountLinked={isAccountLinked}
+          authEmail={authEmail} setAuthEmail={setAuthEmail}
+          authMessage={authMessage} setAuthMessage={setAuthMessage}
+          setShowAccountModal={setShowAccountModal}
+          handleGoogleLogin={handleGoogleLogin}
+          handleMagicLink={handleMagicLink}
+          handleLogout={handleLogout}
         />
       )}
     </div>
