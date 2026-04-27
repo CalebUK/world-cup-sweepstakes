@@ -28,8 +28,3 @@ export const appId = 'world-cup-family-2026';
 
 // Super admin UID — set in .env (never hardcode in source)
 export const SUPER_ADMIN_UID = import.meta.env.VITE_SUPER_ADMIN_UID || '';
-
-export const appId = 'world-cup-family-2026';
-
-// Super admin UID — set in .env (never hardcode in source)
-export const SUPER_ADMIN_UID = import.meta.env.VITE_SUPER_ADMIN_UID || '';
