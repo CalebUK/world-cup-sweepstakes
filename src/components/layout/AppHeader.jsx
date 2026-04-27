@@ -17,7 +17,7 @@ export const AppHeader = ({
   onOpenHelp,
 }) => {
   return (
-    <header className="bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 text-white pt-10 pb-8 px-4 sm:px-6 lg:px-8 shadow-xl relative overflow-hidden">
+    <header className="bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 text-white pt-10 pb-12 px-4 sm:px-6 lg:px-8 shadow-xl relative overflow-hidden">
       <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_40px,#fff_40px,#fff_80px)] pointer-events-none transform -skew-x-12 scale-150" />
 
       <div className="max-w-6xl mx-auto relative z-10 flex flex-col gap-4">
