@@ -1,87 +1,113 @@
 import React from 'react';
-import { Medal, Award, Table, Trophy, Info } from 'lucide-react';
+import { Medal, Table, Trophy, Info } from 'lucide-react';
 import { TeamLogo } from '../TeamLogo.jsx';
 import { TEAM_ODDS } from '../../config/odds.js';
 
-export const StandingsTab = ({ settings, awards, memberStats }) => {
-  const kidsToShow = settings.kidAwardsType === 'top3' ? (awards.kids?.list || []).slice(0, 3) : (awards.kids?.list || []);
-  const showGF = (settings.scoring?.bonus?.perGoal || 0) > 0;
-  
-  const AwardRow = ({ rank, member, icon, hideRankText }) => (
-    <div className="flex items-center justify-between p-3 bg-white rounded-lg border-2 border-slate-100 shadow-sm hover:border-green-200 transition-colors">
-      <div className="flex items-center gap-3">
-        {icon}
-        {!hideRankText && <span className="font-bold text-slate-500 uppercase text-sm tracking-wider">{rank}</span>}
-      </div>
-      <div className="font-black text-slate-800 text-xl flex-1 text-right sm:text-left pl-2">
-        {member ? (
-          <div className="flex items-center justify-end sm:justify-start gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
-            <span className="truncate max-w-[120px] sm:max-w-none">{member.name}</span>
-            <span className="text-xs sm:text-sm font-bold bg-green-100 text-green-800 px-2 py-0.5 rounded border border-green-200 shrink-0">
-              {member.pts} pts
-            </span>
-          </div>
-        ) : '-'}
-      </div>
+// Trophy SVG paths for 1st/2nd/3rd place
+const TROPHY_ICONS = {
+  gold:   { src: '/standings/first.svg',  alt: '1st Place' },
+  silver: { src: '/standings/second.svg', alt: '2nd Place' },
+  bronze: { src: '/standings/third.svg',  alt: '3rd Place' },
+  spoon:  { src: '/standings/woodenspoon.svg', alt: 'Wooden Spoon' },
+};
+
+const TrophyImg = ({ type, className = 'w-8 h-8' }) => (
+  <img
+    src={TROPHY_ICONS[type].src}
+    alt={TROPHY_ICONS[type].alt}
+    className={`drop-shadow-md shrink-0 ${className}`}
+    onError={(e) => { e.target.style.display = 'none'; }}
+  />
+);
+
+// Award podium row — icon, rank text, and member centred
+const AwardRow = ({ rank, member, trophyType, hideRankText = false }) => (
+  <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-slate-100 shadow-sm hover:border-green-200 transition-colors">
+    {/* Fixed-width icon slot so all icons are vertically aligned */}
+    <div className="w-10 flex items-center justify-center shrink-0">
+      <TrophyImg type={trophyType} className="w-8 h-8" />
     </div>
-  );
+    {/* Fixed-width rank label */}
+    {!hideRankText && (
+      <span className="w-16 font-bold text-slate-500 uppercase text-xs tracking-wider shrink-0">{rank}</span>
+    )}
+    {/* Name + points — centred when rank text is hidden */}
+    <div className={`font-black text-slate-800 text-xl flex-1 flex items-center ${hideRankText ? 'justify-center' : 'justify-start'} gap-2 flex-wrap`}>
+      {member ? (
+        <>
+          <span className="truncate max-w-[120px] sm:max-w-none">{member.name}</span>
+          <span className="text-xs sm:text-sm font-bold bg-green-100 text-green-800 px-2 py-0.5 rounded border border-green-200 shrink-0">
+            {member.pts} pts
+          </span>
+        </>
+      ) : (
+        <span className="text-slate-400 text-base font-bold">–</span>
+      )}
+    </div>
+  </div>
+);
+
+export const StandingsTab = ({ settings, awards, memberStats }) => {
+  const kidsToShow = settings.kidAwardsType === 'top3'
+    ? (awards.kids?.list || []).slice(0, 3)
+    : (awards.kids?.list || []);
+
+  const showGF = (settings.scoring?.bonus?.perGoal || 0) > 0;
+
+  const kidTrophyType = (idx) => {
+    if (idx === 0) return 'gold';
+    if (idx === 1) return 'silver';
+    if (idx === 2) return 'bronze';
+    return null;
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
+
+      {/* ── Award podiums ─────────────────────────────────────────── */}
       <div className={`grid grid-cols-1 ${settings.kidAwards ? 'md:grid-cols-2' : ''} gap-6`}>
+
+        {/* Overall */}
         <div className="bg-white rounded-xl shadow-md border-2 border-green-100 overflow-hidden flex flex-col">
           <div className="bg-green-800 text-white p-4 font-bold flex items-center gap-2 uppercase tracking-wide shrink-0">
             <Trophy className="w-5 h-5 text-yellow-400" /> Overall Awards
           </div>
-          <div className="p-4 space-y-4 flex-1 flex flex-col justify-center">
-            <AwardRow 
-              rank="1st" 
-              member={awards.overall['1st']} 
-              icon={<img src="/logos/world_cup_trophy.svg" alt="Trophy" className="w-8 h-8 drop-shadow-md shrink-0" />}
-            />
-            <AwardRow 
-              rank="2nd" 
-              member={awards.overall['2nd']} 
-              icon={<img src="/logos/world_cup_trophy.svg" alt="Trophy" className="w-8 h-8 drop-shadow-md shrink-0" />}
-              hideRankText={false}
-            />
-            <AwardRow 
-              rank="3rd" 
-              member={awards.overall['3rd']} 
-              icon={<img src="/logos/world_cup_trophy.svg" alt="Trophy" className="w-8 h-8 drop-shadow-md shrink-0" />} 
-              hideRankText={false}
-            />
-
+          <div className="p-4 space-y-3 flex-1 flex flex-col justify-center">
+            <AwardRow rank="1st" member={awards.overall['1st']} trophyType="gold" />
+            <AwardRow rank="2nd" member={awards.overall['2nd']} trophyType="silver" />
+            {awards.overall['3rd'] && (
+              <AwardRow rank="3rd" member={awards.overall['3rd']} trophyType="bronze" />
+            )}
             {settings.woodenSpoon && (
-              <AwardRow 
-                rank="Wooden Spoon" 
-                member={awards.overall['Spoon']} 
-                icon={<img src="/standings/woodenspoon.svg" alt="Wooden Spoon" className="w-6 h-6 drop-shadow-sm shrink-0" />} 
-                hideRankText={true}
-              />
+              <AwardRow rank="Wooden Spoon" member={awards.overall['Spoon']} trophyType="spoon" hideRankText />
             )}
           </div>
         </div>
 
+        {/* Kids */}
         {settings.kidAwards && (
           <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 overflow-hidden flex flex-col">
             <div className="bg-emerald-600 text-white p-4 font-bold flex items-center gap-2 uppercase tracking-wide shrink-0">
-              <Award className="w-5 h-5 text-emerald-200" /> Kids Awards
+              <Medal className="w-5 h-5 text-emerald-200" /> Kids Awards
             </div>
-            <div className="p-4 space-y-4 flex-1 flex flex-col justify-center">
+            <div className="p-4 space-y-3 flex-1 flex flex-col justify-center">
               {kidsToShow.length > 0 ? kidsToShow.map((kid, idx) => {
-                let iconColor = "text-slate-400";
-                if (idx === 0) iconColor = "text-yellow-500";
-                else if (idx === 2) iconColor = "text-amber-600";
-                else if (idx === 3) iconColor = "text-emerald-500";
-                
-                return (
-                  <AwardRow 
-                    key={kid.id} 
-                    rank={`${idx + 1}${idx === 0 ? 'st' : idx === 1 ? 'nd' : idx === 2 ? 'rd' : 'th'} Place`} 
-                    member={kid} 
-                    icon={idx === 0 ? <img src="/logos/world_cup_trophy.svg" alt="Trophy" className="w-7 h-7 drop-shadow-sm shrink-0" /> : <Medal className={`${iconColor} w-6 h-6 shrink-0`}/>} 
-                  />
+                const type = kidTrophyType(idx);
+                const ordinal = idx === 0 ? '1st' : idx === 1 ? '2nd' : idx === 2 ? '3rd' : `${idx + 1}th`;
+                return type ? (
+                  <AwardRow key={kid.id} rank={`${ordinal} Place`} member={kid} trophyType={type} />
+                ) : (
+                  // 4th+ — no trophy image, just a medal icon
+                  <div key={kid.id} className="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-slate-100 shadow-sm">
+                    <div className="w-10 flex items-center justify-center shrink-0">
+                      <Medal className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <span className="w-16 font-bold text-slate-500 uppercase text-xs tracking-wider shrink-0">{ordinal}</span>
+                    <div className="font-black text-slate-800 text-xl flex-1 flex items-center gap-2 flex-wrap">
+                      <span className="truncate max-w-[120px] sm:max-w-none">{kid.name}</span>
+                      <span className="text-xs sm:text-sm font-bold bg-green-100 text-green-800 px-2 py-0.5 rounded border border-green-200 shrink-0">{kid.pts} pts</span>
+                    </div>
+                  </div>
                 );
               }) : (
                 <div className="text-sm text-slate-500 text-center py-4">No kids assigned yet.</div>
@@ -91,6 +117,7 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
         )}
       </div>
 
+      {/* ── Full standings table ──────────────────────────────────── */}
       <div className="bg-white rounded-xl shadow-md border-2 border-green-100 overflow-hidden">
         <div className="bg-green-50 p-4 font-bold text-green-800 flex items-center gap-2 border-b border-green-200 uppercase tracking-wide">
           <Table className="w-5 h-5" /> Full Standings
@@ -119,19 +146,17 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
             </thead>
             <tbody>
               {memberStats.map((member, idx) => {
+                const isFirst = idx === 0;
                 const isLastPlace = settings.woodenSpoon && idx === memberStats.length - 1 && memberStats.length > 0;
-                
+
                 let sumOdds = 0;
                 let hasOdds = false;
                 member.teams.filter(t => t.isActive).forEach(t => {
-                   const oddsStr = TEAM_ODDS[t.id];
-                   if (oddsStr) {
-                       const oddsVal = parseInt(oddsStr.replace(/\D/g, ''));
-                       if (!isNaN(oddsVal)) {
-                           sumOdds += oddsVal;
-                           hasOdds = true;
-                       }
-                   }
+                  const oddsStr = TEAM_ODDS[t.id];
+                  if (oddsStr) {
+                    const oddsVal = parseInt(oddsStr.replace(/\D/g, ''));
+                    if (!isNaN(oddsVal)) { sumOdds += oddsVal; hasOdds = true; }
+                  }
                 });
                 const displayOdds = hasOdds ? (sumOdds > 0 ? `+${sumOdds}` : sumOdds) : 'N/A';
 
@@ -141,9 +166,28 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
                     <td className="p-4">
                       <div className="font-bold text-slate-800 flex items-center gap-2 text-lg">
                         {member.name}
-                        {isLastPlace && <img src="/standings/woodenspoon.svg" alt="Wooden Spoon" title="Wooden Spoon" className="w-6 h-6 drop-shadow-sm shrink-0" />}
+                        {/* 1st place trophy icon in the table — matches the podium */}
+                        {isFirst && (
+                          <img
+                            src="/standings/first.svg"
+                            alt="1st Place"
+                            className="w-6 h-6 drop-shadow-sm shrink-0"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        )}
+                        {isLastPlace && (
+                          <img
+                            src="/standings/woodenspoon.svg"
+                            alt="Wooden Spoon"
+                            title="Wooden Spoon"
+                            className="w-6 h-6 drop-shadow-sm shrink-0"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        )}
                       </div>
-                      {member.isKid && <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full mt-1 inline-block font-semibold">Kid</span>}
+                      {member.isKid && (
+                        <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full mt-1 inline-block font-semibold">Kid</span>
+                      )}
                     </td>
                     <td className="p-4 text-center font-black text-2xl text-green-600">{member.pts}</td>
                     <td className="p-4 text-center font-bold text-slate-500">{member.gd > 0 ? `+${member.gd}` : member.gd}</td>
@@ -153,9 +197,8 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
                     <td className="p-4">
                       <div className="flex flex-wrap items-center gap-2">
                         {member.teams.filter(t => t.isActive).map(t => (
-                          <span key={t.id} title={`${t.name} (${t.pts} pts)`} 
-                                className="transition-all hover:scale-110">
-                             <TeamLogo teamId={t.id} className="w-6 h-6" />
+                          <span key={t.id} title={`${t.name} (${t.pts} pts)`} className="transition-all hover:scale-110">
+                            <TeamLogo teamId={t.id} className="w-6 h-6" />
                           </span>
                         ))}
                         {member.teams.filter(t => t.isActive).length === 0 && (
