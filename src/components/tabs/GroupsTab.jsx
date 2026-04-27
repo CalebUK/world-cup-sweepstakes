@@ -115,7 +115,7 @@ export const GroupsTab = ({ teamStats, matches, settings }) => {
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <TeamLogo teamId={t.id} className="w-5 h-5 bg-white/90 rounded-full p-0.5 shrink-0" />
-                        <span title={t.name} className="text-white font-bold w-6 shrink-0">{t.id}</span>
+                        <span title={t.name} className="text-white font-bold w-8 shrink-0">{t.id}</span>
                         {/* Fixed-width badge so all group letters align */}
                         <span className={`inline-flex items-center justify-center w-16 text-[10px] px-1.5 py-0.5 rounded font-black shadow-sm border ${isAdvancing ? 'bg-emerald-950 text-emerald-200 border-emerald-600' : 'bg-red-950 text-red-200 border-red-700'}`}>
                           Grp {t.group}
