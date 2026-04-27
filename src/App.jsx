@@ -221,9 +221,14 @@ export default function App() {
   }, [user, activeLeagueId, isOwner]);
 
   const saveState = async (key, value) => {
-    if (!user) return; 
+    if (!user) return;
     try {
-      const safeValue = JSON.parse(JSON.stringify(value));
+      const serialised = JSON.stringify(value);
+      if (serialised.length > 500_000) {
+        console.error(`saveState: payload for "${key}" is too large (${serialised.length} bytes), refusing to save.`);
+        return;
+      }
+      const safeValue = JSON.parse(serialised);
       if (key === 'matches') {
         if (!isSuperAdmin) return;
         const ref = doc(db, 'artifacts', appId, 'public', 'data', 'globalMatches', 'worldCup2026');
@@ -267,6 +272,11 @@ export default function App() {
 
   const handleMagicLink = async () => {
     if (!authEmail) return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(authEmail)) {
+      setAuthMessage({ type: 'error', text: 'Please enter a valid email address.' });
+      return;
+    }
     try {
       setAuthMessage({ type: 'info', text: 'Sending secure link...' });
       const actionCodeSettings = {
@@ -432,6 +442,7 @@ export default function App() {
   };
 
   const handleAddMember = () => {
+    if (members.length >= 24) return;
     const next = [...members, { id: `m${Date.now()}`, name: `User ${members.length + 1}`, isKid: false }];
     setMembers(next);
     saveState('members', next);
