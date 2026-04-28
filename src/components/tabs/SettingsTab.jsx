@@ -294,7 +294,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
           ) : (
             <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
               <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
-              <span className="text-sm font-bold text-amber-800 flex-1">Reset all match scores to 0?</span>
+              <span className="text-sm font-bold text-amber-800 flex-1">This will reset all match scores to 0 and clear the knockout bracket. Your managers, team assignments, and settings will not be affected.</span>
               <button onClick={confirmReset} className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-black text-xs rounded-lg uppercase tracking-wider transition-colors">Yes, Reset</button>
               <button onClick={() => setShowResetConfirm(false)} className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-xs rounded-lg uppercase tracking-wider transition-colors">Cancel</button>
             </div>
