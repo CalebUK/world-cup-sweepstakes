@@ -68,6 +68,19 @@ export const useLeagues = ({
     setShowJoinModal(false);
   };
 
+  const handleDeleteHostedLeague = async (leagueId) => {
+    if (!user || !leagueId) return;
+    // Never delete the user's primary league (their own UID)
+    if (leagueId === user.uid) return;
+    const newList = hostedLeagues.filter(l => l.id !== leagueId);
+    await updateHostedLeagues(user.uid, newList);
+    // If we just deleted the active league, switch to the first remaining one
+    if (activeLeagueId === leagueId) {
+      const fallback = newList[0]?.id || user.uid;
+      handleSwitchLeague(fallback);
+    }
+  };
+
   const confirmLeaveLeague = () => {
     if (!activeLeagueId) return;
     const newLeagues = joinedLeagues.filter(l => l.id !== activeLeagueId);
@@ -93,5 +106,6 @@ export const useLeagues = ({
     handleCreateLeague,
     handleJoinSubmit,
     confirmLeaveLeague,
+    handleDeleteHostedLeague,
   };
 };
