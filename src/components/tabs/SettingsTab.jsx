@@ -119,7 +119,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
                   value={member.name} 
                   onChange={(e) => handleUpdateMember(member.id, 'name', e.target.value)}
                   className={`w-full font-black text-slate-800 text-lg bg-slate-50 sm:bg-transparent border-2 rounded-lg px-3 py-2 sm:px-2 focus:ring-0 focus:bg-white sm:focus:bg-slate-50 transition-colors ${
-                    {members.filter(m => m.name.trim() === member.name.trim() && m.id !== member.id).length > 0
+                    {members.filter(m => m.name.trim() === member.name.trim() && m.id !== member.id).length > 0 && (
                       <p className="text-[10px] text-amber-600 font-bold mt-1 ml-1">⚠️ Duplicate name</p>
                     )}
                       ? 'border-amber-400 focus:border-amber-500 bg-amber-50'
