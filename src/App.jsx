@@ -329,7 +329,20 @@ export default function App() {
 
       {/* Tab content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
-        {activeTab === 'standings' && <StandingsTab settings={settings} awards={awards} memberStats={memberStats} />}
+        {activeTab === 'standings' && (
+          settings.fantasyMode ? (
+            <FantasyStandingsTab
+              members={members}
+              matches={matches}
+              picks={fantasyPicks}
+              matchStats={fantasyMatchStats}
+              draftMeta={fantasyDraftMeta}
+              picksPerCategory={settings.fantasyPicksPerCategory || 5}
+            />
+          ) : (
+            <StandingsTab settings={settings} awards={awards} memberStats={memberStats} />
+          )
+        )}
         {activeTab === 'groups'   && <GroupsTab teamStats={teamStats} matches={matches} settings={settings} />}
         {activeTab === 'bracket'  && <BracketTab matches={matches} members={members} assignments={assignments} />}
         {activeTab === 'matches'  && (
