@@ -85,9 +85,9 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
                   {eligibleTeamsA.map(t => <option key={t.id} value={t.id}>{t.id} - {t.name}</option>)}
                 </select>
               ) : (
-                <div className="font-black text-slate-800 text-base sm:text-lg truncate drop-shadow-sm">{tA?.name || match.teamA || match.labelA || 'TBD'}</div>
+                <div className="font-black text-slate-800 text-left md:text-right text-base sm:text-lg truncate pr-2 drop-shadow-sm">{tA?.name || match.teamA || match.labelA || 'TBD'}</div>
               )}
-              <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+              <div className="text-[10px] text-slate-500 text-left md:text-right uppercase tracking-wider font-bold">
                 Manager: <span className="text-emerald-700">{getOwnerName(match.teamA)}</span>
               </div>
             </div>
@@ -95,17 +95,21 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
           </div>
         </div>
 
-        {/* ── Score + controls ── */}
-        <div className="w-full md:w-1/3 flex flex-col items-center gap-2">
-          <div className="text-white/70 text-[10px] font-bold uppercase tracking-widest">{groupText}</div>
-          <div className="text-white/60 text-[10px] flex items-center gap-1">
-            <Clock className="w-3 h-3" /> {dateFormatted} {timeFormatted}
-          </div>
-          <div className="text-white/60 text-[10px] flex items-center gap-1 text-center">
-            <MapPin className="w-3 h-3 shrink-0" /> {match.location}
-          </div>
+        {/* ── Score + controls — original white card preserved ── */}
+        <div className="flex flex-col items-center gap-2 bg-white/95 backdrop-blur-sm px-5 py-3 rounded-2xl border-2 border-emerald-100 shadow-xl min-w-[180px]">
+          <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{groupText}</div>
+          {match.datetime && (
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex flex-col items-center gap-0.5 text-center">
+              <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> {dateFormatted} • {timeFormatted}</span>
+              {match.location && (
+                <span className="flex items-center justify-center gap-1 mt-0.5 text-slate-400/80 leading-tight">
+                  <MapPin className="w-3 h-3 shrink-0 self-start mt-0.5" /> <span className="max-w-[160px] text-wrap text-center">{match.location}</span>
+                </span>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-3 mt-1">
-            {isViewer || match.isPlayed ? (
+            {isViewer ? (
               <>
                 <div className="w-12 h-12 flex items-center justify-center bg-slate-100 border-2 border-slate-200 rounded-lg font-black text-2xl text-slate-800 shadow-inner">{match.scoreA}</div>
                 <span className="text-slate-300 font-black text-xl">-</span>
