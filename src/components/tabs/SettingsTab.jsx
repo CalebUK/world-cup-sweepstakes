@@ -118,7 +118,12 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
                   type="text" 
                   value={member.name} 
                   onChange={(e) => handleUpdateMember(member.id, 'name', e.target.value)}
-                  className="w-full font-black text-slate-800 text-lg bg-slate-50 sm:bg-transparent border-2 border-slate-100 sm:border-transparent rounded-lg px-3 py-2 sm:px-2 focus:ring-0 focus:border-emerald-500 focus:bg-white sm:focus:bg-slate-50 transition-colors"
+                  className={`w-full font-black text-slate-800 text-lg bg-slate-50 sm:bg-transparent border-2 rounded-lg px-3 py-2 sm:px-2 focus:ring-0 focus:bg-white sm:focus:bg-slate-50 transition-colors ${
+                    members.filter(m => m.name.trim() === member.name.trim() && m.id !== member.id).length > 0
+                      <p className="text-[10px] text-amber-600 font-bold mt-1 ml-1">⚠️ Duplicate name</p>
+                      ? 'border-amber-400 focus:border-amber-500 bg-amber-50'
+                      : 'border-slate-100 sm:border-transparent focus:border-emerald-500'
+                  }`}
                   placeholder="e.g. Dad"
                 />
               </div>
@@ -263,7 +268,22 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
           </div>
         </div>
       </div>
-
+      {/* League Debug Info */}
+       <div className="bg-slate-50 rounded-xl border-2 border-slate-200 p-4 sm:p-5">
+         <h2 className="text-sm font-black text-slate-600 flex items-center gap-2 uppercase tracking-wide mb-3">
+           🔧 Debug Info
+         </h2>
+         <div className="space-y-2">
+           <div>
+             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Firebase League ID</label>
+             <code className="block text-xs text-slate-600 bg-white border border-slate-200 px-3 py-2 rounded-lg mt-1 break-all select-all font-mono">
+               {userUid}
+             </code>
+          </div>
+          <p className="text-[10px] text-slate-400 font-medium">This is the Firestore document ID for this league. Use it to look up data directly in the Firebase Console.</p>
+        </div>
+      </div>
+      
       {/* DANGER ZONE - MASTER DATA RESET */}
       <div className="bg-red-50 rounded-xl shadow-md border-2 border-red-200 p-4 sm:p-6 overflow-hidden">
         <h2 className="text-xl font-black text-red-800 flex items-center gap-2 uppercase tracking-wide border-b-2 border-red-100 pb-4 mb-4">
