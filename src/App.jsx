@@ -30,6 +30,10 @@ import { LeaveModal } from './components/modals/LeaveModal.jsx';
 import { JoinModal } from './components/modals/JoinModal.jsx';
 import { SettingsModal } from './components/modals/SettingsModal.jsx';
 
+// --- FANTASY ---
+import { useFantasyData } from './fantasy/useFantasyData.js';
+import { FantasyDraftModal } from './fantasy/FantasyDraftModal.jsx';
+
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('standings');
@@ -107,6 +111,26 @@ export default function App() {
     leagueDataReady,
     DEFAULT_6_USERS,
   } = useLeagueData({ user, activeLeagueId, isOwner, isSuperAdmin, setHostedLeagues, setLoading });
+
+  // ─── Fantasy data (only active when settings.fantasyMode is true) ─────────
+
+  const {
+    ownership: fantasyOwnership,
+    picks: fantasyPicks,
+    matchStats: fantasyMatchStats,
+    draftMeta: fantasyDraftMeta,
+    fantasyDataReady,
+    commitDraft: fantasyCommitDraft,
+    updatePick: fantasyUpdatePick,
+    updateMatchStat: fantasyUpdateMatchStat,
+  } = useFantasyData({
+    user,
+    activeLeagueId,
+    isOwner,
+    fantasyMode: !!settings.fantasyMode,
+  });
+
+  const [showFantasyDraftModal, setShowFantasyDraftModal] = useState(false);
 
   // ─── Sync & engine ────────────────────────────────────────────────────────
 
@@ -357,6 +381,15 @@ export default function App() {
           handleHardReset={handleHardReset}
           userUid={activeLeagueId}
           onClose={() => setShowSettingsModal(false)}
+        />
+      )}
+      {showFantasyDraftModal && isOwner && settings.fantasyMode && (
+        <FantasyDraftModal
+          members={members}
+          ownership={fantasyOwnership}
+          draftMeta={fantasyDraftMeta}
+          commitDraft={fantasyCommitDraft}
+          onClose={() => setShowFantasyDraftModal(false)}
         />
       )}
       {showWelcomeModal && <WelcomeModal dontShowAgain={dontShowAgain} setDontShowAgain={setDontShowAgain} handleCloseWelcome={handleCloseWelcome} />}
