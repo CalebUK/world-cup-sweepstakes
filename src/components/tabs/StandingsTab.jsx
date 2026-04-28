@@ -120,7 +120,7 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
         const isLast = settings.woodenSpoon && idx === memberStats.length - 1 && memberStats.length > 1;
         const activeTeams = m.teams.filter(t => t.isActive);
         const teamBadges = activeTeams.map(t =>
-          `<span style="display:inline-block;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:4px;padding:3px 7px;font-size:11px;font-weight:700;margin:2px 2px 2px 0;line-height:1;vertical-align:middle;">${t.id}</span>`
+          `<span style="display:inline-block;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:4px;padding:4px 7px 2px 7px;font-size:11px;font-weight:700;margin:2px 2px 2px 0;line-height:1;vertical-align:middle;">${t.id}</span>`
         ).join('') || '<span style="color:#ef4444;font-size:11px;font-weight:700;">Eliminated</span>';
 
         // Total Odds calculation
@@ -135,7 +135,7 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
         const rankCell = isFirst
           ? iconImg(firstBase64, 30)
           : isLast
-            ? iconImg(spoonBase64, 30)
+            ? iconImg(spoonBase64, 22)
             : `<span style="font-weight:900;font-size:16px;color:#166534;">${idx + 1}</span>`;
 
         return `<tr style="background:${rowBg};border-bottom:1px solid #f0fdf4;">
