@@ -104,6 +104,7 @@ export default function App() {
     matches, setMatches,
     settings, setSettings,
     saveState,
+    leagueDataReady,
     DEFAULT_6_USERS,
   } = useLeagueData({ user, activeLeagueId, isOwner, isSuperAdmin, setHostedLeagues, setLoading });
 
@@ -115,6 +116,7 @@ export default function App() {
     teamStats: calculateStats(matches, eliminatedTeams, settings, members, assignments).teamStats,
     eliminatedTeams, setEliminatedTeams,
     manualRestores, settings, isOwner, isSuperAdmin, saveState,
+    leagueDataReady,
   });
 
   // ─── Computed stats ───────────────────────────────────────────────────────
