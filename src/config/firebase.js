@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -17,12 +17,9 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Explicitly persist the auth session in localStorage so it survives
-// hard refreshes and browser restarts. Without this, email-link sessions
-// can silently drop on refresh.
-setPersistence(auth, browserLocalPersistence).catch(err => {
-  console.error('Failed to set auth persistence:', err);
-});
+// NOTE: setPersistence is no longer called here.
+// It is now awaited inside useAuth's initAuth() before any sign-in logic
+// runs, ensuring persistence is set before Firebase touches the session.
 
 export const appId = 'world-cup-family-2026';
 
