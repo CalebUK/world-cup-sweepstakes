@@ -121,6 +121,39 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
         border-radius: 8px;
         border: 2px solid #dcfce7;
       `;
+
+      // ── Pre-fetch all images as base64 so html2canvas never has to
+      // deal with CORS or external URLs, and force explicit px sizes
+      // so logos don't render at their full natural dimensions ────────
+      const LOGO_SIZE = 24; // px — matches w-6 h-6
+      const imgEls = Array.from(clone.querySelectorAll('img'));
+      await Promise.all(imgEls.map(async (img) => {
+        // Force explicit pixel size regardless of CSS classes
+        img.width  = LOGO_SIZE;
+        img.height = LOGO_SIZE;
+        img.style.width  = `${LOGO_SIZE}px`;
+        img.style.height = `${LOGO_SIZE}px`;
+        img.style.objectFit = 'contain';
+        img.style.display = 'inline-block';
+        img.style.verticalAlign = 'middle';
+        img.style.flexShrink = '0';
+        const src = img.src;
+        if (!src || src.startsWith('data:')) return; // already base64
+        try {
+          const resp = await fetch(src, { mode: 'cors' });
+          const blob = await resp.blob();
+          await new Promise((res) => {
+            const reader = new FileReader();
+            reader.onload = () => { img.src = reader.result; res(); };
+            reader.onerror = res; // on error just leave as-is
+            reader.readAsDataURL(blob);
+          });
+        } catch {
+          // If fetch fails, hide the broken image rather than show a broken icon
+          img.style.display = 'none';
+        }
+      }));
+
       wrapper.appendChild(clone);
 
       // Footer
@@ -133,10 +166,11 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
 
       const canvas = await html2canvas(wrapper, {
         backgroundColor: '#ffffff',
-        scale: 1.5, // good quality without being huge
+        scale: 1.5,
         useCORS: true,
+        allowTaint: false,
         logging: false,
-        width: CAPTURE_WIDTH + 48, // account for padding
+        width: CAPTURE_WIDTH + 48,
         windowWidth: CAPTURE_WIDTH + 48,
       });
 
