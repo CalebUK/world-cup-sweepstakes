@@ -3,8 +3,9 @@ import { Trophy, Calendar, Filter, ChevronDown, ChevronRight, Clock, MapPin, Arr
 import { TEAMS_DATA, KNOCKOUT_STAGES, TIMEZONES } from '../../config/data.js';
 import { TeamLogo } from '../TeamLogo.jsx';
 import { TeamPixelArt } from '../TeamPixelArt.jsx';
+import { FantasyStatsPanel } from '../../fantasy/FantasyStatsPanel.jsx';
 
-const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer, handleMatchUpdate, getOwnerName, eliminatedTeams }) => {
+const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer, handleMatchUpdate, getOwnerName, eliminatedTeams, fantasyMode, fantasyMatchStats, fantasyUpdateMatchStat }) => {
   const tA = TEAMS_DATA.find(t => t.id === match.teamA);
   const tB = TEAMS_DATA.find(t => t.id === match.teamB);
 
@@ -188,11 +189,21 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
           </div>
         </div>
       )}
+
+      {/* ── Fantasy Stats (only visible in fantasy mode, played matches) ── */}
+      {fantasyMode && match.isPlayed && (
+        <FantasyStatsPanel
+          match={match}
+          matchStats={fantasyMatchStats?.[match.id]}
+          isViewer={isViewer}
+          updateMatchStat={fantasyUpdateMatchStat}
+        />
+      )}
     </div>
   );
 };
 
-export const MatchesTab = ({ matches, localTimezone, setLocalTimezone, isViewer, handleMatchUpdate, getOwnerName, eliminatedTeams, handleRandomizeGroups }) => {
+export const MatchesTab = ({ matches, localTimezone, setLocalTimezone, isViewer, handleMatchUpdate, getOwnerName, eliminatedTeams, handleRandomizeGroups, fantasyMode, fantasyMatchStats, fantasyUpdateMatchStat }) => {
   const [matchFilter, setMatchFilter] = useState(() => {
     try { return localStorage.getItem('worldCupGroupFilter') || 'All'; } catch { return 'All'; }
   });
@@ -301,7 +312,7 @@ export const MatchesTab = ({ matches, localTimezone, setLocalTimezone, isViewer,
                       </button>
                       {uiState[stageInfo.id] && (
                         <div className="p-4 space-y-4 bg-slate-50 border-t-2 border-slate-100">
-                          {stageMatches.map(m => <MatchRow key={m.id} match={m} matches={matches} isKnockout={true} localTimezone={localTimezone} isViewer={isViewer} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} />)}
+                          {stageMatches.map(m => <MatchRow key={m.id} match={m} matches={matches} isKnockout={true} localTimezone={localTimezone} isViewer={isViewer} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} fantasyMode={fantasyMode} fantasyMatchStats={fantasyMatchStats} fantasyUpdateMatchStat={fantasyUpdateMatchStat />)}
                         </div>
                       )}
                     </div>
@@ -340,7 +351,7 @@ export const MatchesTab = ({ matches, localTimezone, setLocalTimezone, isViewer,
               </div>
             </div>
             <div className="space-y-4">
-              {groupMatches.map(m => <MatchRow key={m.id} match={m} matches={matches} localTimezone={localTimezone} isViewer={isViewer} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} />)}
+              {groupMatches.map(m => <MatchRow key={m.id} match={m} matches={matches} localTimezone={localTimezone} isViewer={isViewer} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} fantasyMode={fantasyMode} fantasyMatchStats={fantasyMatchStats} fantasyUpdateMatchStat={fantasyUpdateMatchStat />)}
             </div>
           </div>
         )}
