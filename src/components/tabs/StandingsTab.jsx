@@ -122,7 +122,7 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
             <div className="bg-emerald-600 text-white p-4 font-bold flex items-center gap-2 uppercase tracking-wide shrink-0">
               <Medal className="w-5 h-5 text-emerald-200" /> Kids Awards
             </div>
-            <div className="p-4 space-y-3 flex-1 flex flex-col justify-center">
+            <div className="p-4 space-y-3 flex-1 flex flex-col justify-start">
               {kidsToShow.length > 0 ? kidsToShow.map((kid, idx) => {
                 const type = kidTrophyType(idx);
                 const ordinal = idx === 0 ? '1st' : idx === 1 ? '2nd' : idx === 2 ? '3rd' : `${idx + 1}th`;
