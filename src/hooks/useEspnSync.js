@@ -33,8 +33,10 @@ export const useEspnSync = (isSuperAdmin, settings, setMatches, saveState) => {
         setMatches(prevMatches => {
           let hasChanges = false;
           const nextMatches = prevMatches.map(m => {
+            // Skip matches that are already marked as played
             if (m.isPlayed) return m;
 
+            // Use espnName for matching if available, otherwise fall back to name
             const teamDataA = TEAMS_DATA.find(t => t.id === m.teamA);
             const teamDataB = TEAMS_DATA.find(t => t.id === m.teamB);
             if (!teamDataA || !teamDataB) return m;
@@ -51,13 +53,19 @@ export const useEspnSync = (isSuperAdmin, settings, setMatches, saveState) => {
               const compB = event.competitions[0].competitors.find(c => c.team.name === tB);
               const isFinished = event.status.type.completed;
 
+              // Parse scores as numbers to avoid string vs number comparison issues
+              const newScoreA = parseInt(compA.score) || 0;
+              const newScoreB = parseInt(compB.score) || 0;
+              const currentScoreA = parseInt(m.scoreA) || 0;
+              const currentScoreB = parseInt(m.scoreB) || 0;
+
               if (compA && compB && (
-                m.scoreA !== compA.score ||
-                m.scoreB !== compB.score ||
+                currentScoreA !== newScoreA ||
+                currentScoreB !== newScoreB ||
                 m.isPlayed !== isFinished
               )) {
                 hasChanges = true;
-                return { ...m, scoreA: compA.score, scoreB: compB.score, isPlayed: isFinished };
+                return { ...m, scoreA: newScoreA, scoreB: newScoreB, isPlayed: isFinished };
               }
             }
             return m;
