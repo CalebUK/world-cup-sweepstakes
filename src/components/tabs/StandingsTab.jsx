@@ -91,19 +91,56 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
       // Dynamically import html2canvas so it doesn't bloat the initial bundle
       const el = tableRef.current;
       const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(el, {
+
+      // Clone the table into a fixed-width off-screen container so html2canvas
+      // renders it at full size without squashing columns or clipping content
+      const CAPTURE_WIDTH = 900;
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = `
+        position: fixed;
+        top: -9999px;
+        left: -9999px;
+        width: ${CAPTURE_WIDTH}px;
+        background: #ffffff;
+        padding: 24px;
+        box-sizing: border-box;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        border-radius: 12px;
+      `;
+
+      // Add a title header above the table
+      const title = document.createElement('div');
+      title.style.cssText = 'font-size: 18px; font-weight: 900; color: #166534; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;';
+      title.textContent = `🏆 ${settings.leagueName || 'World Cup Sweepstakes'} — Standings`;
+      wrapper.appendChild(title);
+
+      const clone = el.cloneNode(true);
+      clone.style.cssText = `
+        width: 100%;
+        overflow: visible;
+        border-radius: 8px;
+        border: 2px solid #dcfce7;
+      `;
+      wrapper.appendChild(clone);
+
+      // Footer
+      const footer = document.createElement('div');
+      footer.style.cssText = 'font-size: 11px; color: #94a3b8; margin-top: 10px; text-align: right;';
+      footer.textContent = '📱 world-cup-sweepstakes.vercel.app';
+      wrapper.appendChild(footer);
+
+      document.body.appendChild(wrapper);
+
+      const canvas = await html2canvas(wrapper, {
         backgroundColor: '#ffffff',
-        scale: 2,
+        scale: 1.5, // good quality without being huge
         useCORS: true,
         logging: false,
-        // Force full dimensions — ignores what's visible in the viewport
-        width: el.scrollWidth,
-        height: el.scrollHeight,
-        windowWidth: el.scrollWidth,
-        windowHeight: el.scrollHeight,
-        scrollX: -window.scrollX,
-        scrollY: -window.scrollY,
+        width: CAPTURE_WIDTH + 48, // account for padding
+        windowWidth: CAPTURE_WIDTH + 48,
       });
+
+      document.body.removeChild(wrapper);
 
       // Try image clipboard first
       try {
