@@ -34,6 +34,7 @@ import { SettingsModal } from './components/modals/SettingsModal.jsx';
 import { useFantasyData } from './fantasy/useFantasyData.js';
 import { FantasyDraftModal } from './fantasy/FantasyDraftModal.jsx';
 import { FantasyTeamsTab } from './fantasy/FantasyTeamsTab.jsx';
+import { FantasyStandingsTab } from './fantasy/FantasyStandingsTab.jsx';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
