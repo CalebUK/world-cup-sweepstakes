@@ -4,9 +4,10 @@ import { sortGroupTeams, getThirdPlaceStandings, getR32Mappings } from '../utils
 
 export const useTournamentEngine = ({
   matches, setMatches, teamStats, eliminatedTeams, setEliminatedTeams,
-  manualRestores, settings, isOwner, isSuperAdmin, saveState
+  manualRestores, settings, isOwner, isSuperAdmin, saveState, leagueDataReady,
 }) => {
   useEffect(() => {
+    if (!leagueDataReady) return;
     if (matches.length === 0 || Object.keys(teamStats).length === 0) return;
     let hasMatchesChanges = false;
     let newlyEliminated = false;
@@ -119,5 +120,5 @@ export const useTournamentEngine = ({
       setMatches(nextMatches);
       saveState('matches', nextMatches);
     }
-  }, [matches, teamStats, eliminatedTeams, isOwner, isSuperAdmin, settings, manualRestores]); // Only re-run when these specific values change
+  }, [matches, teamStats, eliminatedTeams, isOwner, isSuperAdmin, settings, manualRestores, leagueDataReady]); // Only re-run when these specific values change
 };
