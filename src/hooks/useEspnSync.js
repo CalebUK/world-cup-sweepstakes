@@ -35,9 +35,11 @@ export const useEspnSync = (isSuperAdmin, settings, setMatches, saveState) => {
           const nextMatches = prevMatches.map(m => {
             if (m.isPlayed) return m;
 
-            const tA = TEAMS_DATA.find(t => t.id === m.teamA)?.name;
-            const tB = TEAMS_DATA.find(t => t.id === m.teamB)?.name;
-            if (!tA || !tB) return m;
+            const teamDataA = TEAMS_DATA.find(t => t.id === m.teamA);
+            const teamDataB = TEAMS_DATA.find(t => t.id === m.teamB);
+            if (!teamDataA || !teamDataB) return m;
+            const tA = teamDataA.espnName || teamDataA.name;
+            const tB = teamDataB.espnName || teamDataB.name;
 
             const event = espnEvents.find(e => {
               const compNames = e.competitions[0]?.competitors.map(c => c.team.name) || [];
