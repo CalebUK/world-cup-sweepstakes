@@ -89,6 +89,7 @@ export default function App() {
     pendingJoinName, setPendingJoinName,
     joinCodeError, setJoinCodeError,
     handleSwitchLeague, handleCreateLeague, handleJoinSubmit, confirmLeaveLeague,
+    handleDeleteHostedLeague,
   } = useLeagues({
     user, hostedLeagues, updateHostedLeagues, activeLeagueId, setActiveLeagueId,
     initialPendingCode: pendingJoinCodeFromUrl,
@@ -326,6 +327,10 @@ export default function App() {
           joinCodeError={joinCodeError} setJoinCodeError={setJoinCodeError}
           onJoinSubmit={handleJoinSubmit}
           onCreateLeague={handleCreateLeague}
+          onDeleteHostedLeague={handleDeleteHostedLeague}
+          hostedLeagues={hostedLeagues}
+          activeLeagueId={activeLeagueId}
+          user={user}
           onClose={() => { setShowJoinModal(false); setJoinCodeError(''); }}
         />
       )}
