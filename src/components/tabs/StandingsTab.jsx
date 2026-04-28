@@ -97,13 +97,19 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
       const rows = memberStats.map((m, idx) => {
         const isFirst = idx === 0;
         const isLast = settings.woodenSpoon && idx === memberStats.length - 1 && memberStats.length > 1;
-        const medal = medals[idx] || '';
         const activeTeams = m.teams.filter(t => t.isActive);
         const teamBadges = activeTeams.map(t =>
           `<span style="display:inline-block;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;margin:2px 2px 2px 0;line-height:1.4;">${t.id}</span>`
         ).join('') || '<span style="color:#ef4444;font-size:11px;font-weight:700;">Eliminated</span>';
 
-        const gd = m.gd > 0 ? `+${m.gd}` : m.gd;
+        // Total Odds calculation
+        let sumOdds = 0; let hasOdds = false;
+        activeTeams.forEach(t => {
+          const oddsStr = TEAM_ODDS[t.id];
+          if (oddsStr) { const v = parseInt(oddsStr.replace(/\D/g, '')); if (!isNaN(v)) { sumOdds += v; hasOdds = true; } }
+        });
+        const displayOdds = hasOdds ? (sumOdds > 0 ? `+${sumOdds}` : `${sumOdds}`) : 'N/A';
+
         const rowBg = isFirst ? '#f0fdf4' : isLast ? '#fff7ed' : (idx % 2 === 0 ? '#ffffff' : '#f8fafc');
         const rankIcon = isFirst ? '🥇' : isLast ? '🥄' : `${idx + 1}`;
 
@@ -111,7 +117,8 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
           <td style="padding:10px 14px;font-weight:900;font-size:16px;color:#166534;white-space:nowrap;">${rankIcon}</td>
           <td style="padding:10px 14px;font-weight:700;font-size:14px;color:#1e293b;">${m.name}</td>
           <td style="padding:10px 14px;text-align:center;font-weight:900;font-size:20px;color:#16a34a;">${m.pts}</td>
-          <td style="padding:10px 14px;text-align:center;font-weight:600;font-size:13px;color:#64748b;">${gd}</td>
+          <td style="padding:10px 14px;text-align:center;font-weight:600;font-size:13px;color:#64748b;">${m.totalRank ?? '—'}</td>
+          <td style="padding:10px 14px;text-align:center;font-weight:600;font-size:13px;color:#7c3aed;">${displayOdds}</td>
           <td style="padding:10px 14px;">${teamBadges}</td>
         </tr>`;
       }).join('');
@@ -127,7 +134,8 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
                 <th style="padding:8px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Rank</th>
                 <th style="padding:8px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Manager</th>
                 <th style="padding:8px 14px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Pts</th>
-                <th style="padding:8px 14px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">GD</th>
+                <th style="padding:8px 14px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Total Rank</th>
+                <th style="padding:8px 14px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;color:#7c3aed;letter-spacing:0.05em;">Total Odds</th>
                 <th style="padding:8px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Remaining Teams</th>
               </tr>
             </thead>
