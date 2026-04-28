@@ -13,6 +13,14 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
     try { return localStorage.getItem('worldCupTeamsSort') || 'Group'; } catch { return 'Group'; }
   });
   const [teamToRestore, setTeamToRestore] = useState(null);
+  const [eliminatedToBottom, setEliminatedToBottom] = useState(() => {
+    try { return localStorage.getItem('worldCupEliminatedBottom') === 'true'; } catch { return false; }
+  });
+
+  const handleEliminatedToBottom = (val) => {
+    setEliminatedToBottom(val);
+    try { localStorage.setItem('worldCupEliminatedBottom', val); } catch (e) {}
+  };
 
   const handleFilterChange = (val) => {
     setManagerFilter(val);
@@ -32,6 +40,13 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
     }
   }
   displayedTeams = [...displayedTeams].sort((a, b) => {
+    // Always push eliminated to bottom first if checkbox is on
+    if (eliminatedToBottom) {
+      const aElim = !!eliminatedTeams[a.id];
+      const bElim = !!eliminatedTeams[b.id];
+      if (aElim && !bElim) return 1;
+      if (!aElim && bElim) return -1;
+    }
     if (sortBy === 'Group') {
       return a.group === b.group ? a.name.localeCompare(b.name) : a.group.localeCompare(b.group);
     }
@@ -51,21 +66,10 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
   return (
     <div className="space-y-6 animate-fade-in relative">
 
-      {/* ── Top info row ────────────────────────────────────────────── */}
+      {/* ── Top info row — Status · Rank · Odds ─────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-        <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-4 flex flex-col gap-1">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">FIFA Rankings</span>
-          <span className="text-sm font-black text-slate-800">April 2026</span>
-          <span className="text-xs text-slate-500 font-medium mt-1 leading-snug">Rankings locked for the duration of the tournament.</span>
-        </div>
-
-        <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-4 flex flex-col gap-1">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">DraftKings Odds</span>
-          <span className="text-sm font-black text-slate-800">Updated: {ODDS_LAST_UPDATED}</span>
-          <span className="text-xs text-slate-500 font-medium mt-1 leading-snug">Odds locked for the duration of the tournament.</span>
-        </div>
-
+        {/* 1. Draft & Squad Status */}
         <div className="bg-sky-50 rounded-xl border-2 border-sky-200 shadow-sm p-4 flex flex-col gap-1">
           <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Draft & Squad Status</span>
           {!isViewer ? (
@@ -78,29 +82,53 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
             </p>
           )}
         </div>
+
+        {/* 2. FIFA Rankings */}
+        <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-4 flex flex-col gap-1">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">FIFA Rankings</span>
+          <span className="text-sm font-black text-slate-800">April 2026</span>
+          <span className="text-xs text-slate-500 font-medium mt-1 leading-snug">Rankings locked for the duration of the tournament.</span>
+        </div>
+
+        {/* 3. DraftKings Odds */}
+        <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-4 flex flex-col gap-1">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">DraftKings Odds</span>
+          <span className="text-sm font-black text-slate-800">Updated: {ODDS_LAST_UPDATED}</span>
+        </div>
       </div>
 
       {/* ── Filters ─────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl shadow-sm border-2 border-emerald-100 p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="flex items-center gap-2 w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-          <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:block">Manager:</span>
-          <select value={managerFilter} onChange={(e) => handleFilterChange(e.target.value)} className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer">
-            <option value="All">All Teams</option>
-            <option value="Unassigned">Unassigned Teams</option>
-            <option disabled>──────────</option>
-            {members.map(m => <option key={m.id} value={m.id}>{m.name}'s Teams</option>)}
-          </select>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+            <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:block">Manager:</span>
+            <select value={managerFilter} onChange={(e) => handleFilterChange(e.target.value)} className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer">
+              <option value="All">All Teams</option>
+              <option value="Unassigned">Unassigned Teams</option>
+              <option disabled>──────────</option>
+              {members.map(m => <option key={m.id} value={m.id}>{m.name}'s Teams</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+            <ArrowUpDown className="w-4 h-4 text-slate-400 shrink-0" />
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:block">Sort By:</span>
+            <select value={sortBy} onChange={(e) => handleSortChange(e.target.value)} className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer">
+              <option value="Group">Group</option>
+              <option value="Rank">FIFA Ranking (High to Low)</option>
+              <option value="Odds">Tournament Odds</option>
+            </select>
+          </div>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-          <ArrowUpDown className="w-4 h-4 text-slate-400 shrink-0" />
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:block">Sort By:</span>
-          <select value={sortBy} onChange={(e) => handleSortChange(e.target.value)} className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer">
-            <option value="Group">Group</option>
-            <option value="Rank">FIFA Ranking (High to Low)</option>
-            <option value="Odds">Tournament Odds</option>
-          </select>
-        </div>
+        <label className="flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2 cursor-pointer hover:bg-emerald-100 transition-colors w-full sm:w-auto">
+          <input
+            type="checkbox"
+            checked={eliminatedToBottom}
+            onChange={e => handleEliminatedToBottom(e.target.checked)}
+            className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+          />
+          <span className="text-xs font-black text-emerald-800 uppercase tracking-wider">Eliminated to Bottom</span>
+        </label>
       </div>
 
       {/* ── Team cards ──────────────────────────────────────────────── */}
