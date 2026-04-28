@@ -93,13 +93,34 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
 
       // ── Build a clean HTML table from data — no DOM cloning, no images.
       // Team codes render as styled pill badges which html2canvas handles perfectly.
-      const medals = ['🥇', '🥈', '🥉'];
+
+      // Pre-fetch rank SVGs as base64 so html2canvas can render them
+      const fetchAsBase64 = async (url) => {
+        try {
+          const resp = await fetch(url);
+          const blob = await resp.blob();
+          return await new Promise((res, rej) => {
+            const reader = new FileReader();
+            reader.onload = () => res(reader.result);
+            reader.onerror = rej;
+            reader.readAsDataURL(blob);
+          });
+        } catch { return null; }
+      };
+      const [firstBase64, spoonBase64] = await Promise.all([
+        fetchAsBase64('/standings/first.svg'),
+        fetchAsBase64('/standings/woodenspoon.svg'),
+      ]);
+      const iconImg = (b64, size = 28) => b64
+        ? `<img src="${b64}" style="width:${size}px;height:${size}px;display:inline-block;vertical-align:middle;" />`
+        : '';
+
       const rows = memberStats.map((m, idx) => {
         const isFirst = idx === 0;
         const isLast = settings.woodenSpoon && idx === memberStats.length - 1 && memberStats.length > 1;
         const activeTeams = m.teams.filter(t => t.isActive);
         const teamBadges = activeTeams.map(t =>
-          `<span style="display:inline-block;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;margin:2px 2px 2px 0;line-height:1.4;">${t.id}</span>`
+          `<span style="display:inline-block;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:4px;padding:3px 7px;font-size:11px;font-weight:700;margin:2px 2px 2px 0;line-height:1;vertical-align:middle;">${t.id}</span>`
         ).join('') || '<span style="color:#ef4444;font-size:11px;font-weight:700;">Eliminated</span>';
 
         // Total Odds calculation
@@ -111,10 +132,14 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
         const displayOdds = hasOdds ? (sumOdds > 0 ? `+${sumOdds}` : `${sumOdds}`) : 'N/A';
 
         const rowBg = isFirst ? '#f0fdf4' : isLast ? '#fff7ed' : (idx % 2 === 0 ? '#ffffff' : '#f8fafc');
-        const rankIcon = isFirst ? '🥇' : isLast ? '🥄' : `${idx + 1}`;
+        const rankCell = isFirst
+          ? iconImg(firstBase64, 30)
+          : isLast
+            ? iconImg(spoonBase64, 30)
+            : `<span style="font-weight:900;font-size:16px;color:#166534;">${idx + 1}</span>`;
 
         return `<tr style="background:${rowBg};border-bottom:1px solid #f0fdf4;">
-          <td style="padding:10px 14px;font-weight:900;font-size:16px;color:#166534;white-space:nowrap;">${rankIcon}</td>
+          <td style="padding:10px 14px;white-space:nowrap;text-align:center;vertical-align:middle;">${rankCell}</td>
           <td style="padding:10px 14px;font-weight:700;font-size:14px;color:#1e293b;">${m.name}</td>
           <td style="padding:10px 14px;text-align:center;font-weight:900;font-size:20px;color:#16a34a;">${m.pts}</td>
           <td style="padding:10px 14px;text-align:center;font-weight:600;font-size:13px;color:#64748b;">${m.totalRank ?? '—'}</td>
@@ -131,7 +156,7 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
           <table style="width:100%;border-collapse:collapse;font-family:ui-sans-serif,system-ui,sans-serif;">
             <thead>
               <tr style="background:#f0fdf4;border-bottom:2px solid #dcfce7;">
-                <th style="padding:8px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Rank</th>
+                <th style="padding:8px 14px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Rank</th>
                 <th style="padding:8px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Manager</th>
                 <th style="padding:8px 14px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Pts</th>
                 <th style="padding:8px 14px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Total Rank</th>
