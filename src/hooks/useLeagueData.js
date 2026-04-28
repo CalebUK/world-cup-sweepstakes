@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS = {
   kidAwardsType: 'all',
   leagueName: 'My Hosted Sweepstakes',
   autoSync: false,
+  fantasyMode: false,
 };
 
 /**
