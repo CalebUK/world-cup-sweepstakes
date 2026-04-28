@@ -65,12 +65,6 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
         {/* ── Team A ── */}
         <div className="w-full md:w-1/3 flex flex-col gap-2">
           <div className="bg-white/95 backdrop-blur-sm p-2 md:p-3 rounded-xl shadow-lg border border-emerald-100 flex items-center justify-between w-full relative overflow-hidden">
-            {/* Mobile-only corner badge — hidden on md+ where left/right position is obvious */}
-            <div className="absolute top-1 left-1 md:hidden z-20">
-              <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-600 text-white px-1.5 py-0.5 rounded leading-none shadow">
-                {codeA}
-              </span>
-            </div>
             <div className="absolute -left-4 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none z-0">
               <TeamPixelArt teamId={tA?.id} className="w-28 h-28" />
             </div>
@@ -108,7 +102,9 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
               )}
             </div>
           )}
-          <div className="flex items-center gap-3 mt-1">
+          <div className="flex items-center gap-2 mt-1">
+            {/* Team A code — only visible on mobile where stacking hides left/right context */}
+            <span className="md:hidden text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded leading-none">{codeA}</span>
             {isViewer ? (
               <>
                 <div className="w-12 h-12 flex items-center justify-center bg-slate-100 border-2 border-slate-200 rounded-lg font-black text-2xl text-slate-800 shadow-inner">{match.scoreA}</div>
@@ -122,6 +118,8 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
                 <input type="number" min="0" value={match.scoreB} onChange={(e) => handleMatchUpdate(match.id, 'scoreB', e.target.value)} className="w-12 h-12 text-center bg-slate-100 border-2 border-slate-200 rounded-lg font-black text-2xl text-slate-800 focus:border-emerald-500 focus:bg-white focus:outline-none transition-all shadow-inner" />
               </>
             )}
+            {/* Team B code — only visible on mobile */}
+            <span className="md:hidden text-[10px] font-black uppercase tracking-widest text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded leading-none">{codeB}</span>
           </div>
           <div className="flex items-center gap-4 mt-2">
             <label className={`flex items-center gap-2 text-sm font-bold text-slate-500 ${isViewer ? 'cursor-default' : 'cursor-pointer hover:text-emerald-600 transition-colors'}`}>
@@ -138,12 +136,6 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
         {/* ── Team B ── */}
         <div className="w-full md:w-1/3 flex flex-col gap-2">
           <div className="bg-white/95 backdrop-blur-sm p-2 md:p-3 rounded-xl shadow-lg border border-emerald-100 flex items-center justify-between w-full relative overflow-hidden">
-            {/* Mobile-only corner badge */}
-            <div className="absolute top-1 right-1 md:hidden z-20">
-              <span className="text-[9px] font-black uppercase tracking-widest bg-slate-600 text-white px-1.5 py-0.5 rounded leading-none shadow">
-                {codeB}
-              </span>
-            </div>
             <div className="absolute -right-4 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none z-0">
               <TeamPixelArt teamId={tB?.id} className="w-28 h-28" />
             </div>
@@ -169,28 +161,24 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
         </div>
       </div>
 
-      {/* ── Penalty Shootout ── */}
+      {/* ── Penalty Shootout — sits below the green card as its own white box ── */}
       {isKnockout && match.isAET && (
-        <div className="relative z-10 mt-4 pt-4 border-t-2 border-white/20 flex flex-col items-center bg-white/90 backdrop-blur rounded-b-lg -mx-4 -mb-4 pb-4 shadow-inner animate-fade-in">
-          <span className="text-xs font-black text-amber-600 mb-3 uppercase tracking-widest">Penalty Shootout</span>
-          <div className="flex items-center justify-center gap-8 sm:gap-24 w-full px-4">
-            {/* Team A penalties */}
+        <div className="relative z-10 mt-3 bg-white border-2 border-amber-200 rounded-xl px-5 py-4 shadow-md flex flex-col items-center gap-3 animate-fade-in">
+          <span className="text-xs font-black text-amber-600 uppercase tracking-widest">Penalty Shootout</span>
+          <div className="flex items-center justify-center gap-6 w-full">
+            {/* Team A */}
             <div className="flex flex-col items-center gap-1">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                {codeA}
-              </span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{codeA}</span>
               {isViewer ? (
                 <div className="w-12 h-12 flex items-center justify-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 shadow-inner">{match.penScoreA || '-'}</div>
               ) : (
                 <input type="number" min="0" value={match.penScoreA || ''} onChange={(e) => handleMatchUpdate(match.id, 'penScoreA', e.target.value)} className="w-12 h-12 text-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 focus:border-amber-500 focus:bg-white focus:outline-none transition-all shadow-inner" />
               )}
             </div>
-            <span className="text-slate-300 font-black text-xl self-end mb-3">-</span>
-            {/* Team B penalties */}
+            <span className="text-slate-300 font-black text-xl mt-4">-</span>
+            {/* Team B */}
             <div className="flex flex-col items-center gap-1">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                {codeB}
-              </span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{codeB}</span>
               {isViewer ? (
                 <div className="w-12 h-12 flex items-center justify-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 shadow-inner">{match.penScoreB || '-'}</div>
               ) : (
