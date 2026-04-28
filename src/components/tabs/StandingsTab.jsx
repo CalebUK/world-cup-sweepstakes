@@ -1,5 +1,5 @@
-import React from 'react';
-import { Medal, Table, Trophy, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { Medal, Table, Trophy, Info, Copy, CheckCircle } from 'lucide-react';
 import { TeamLogo } from '../TeamLogo.jsx';
 import { TEAM_ODDS } from '../../config/odds.js';
 
@@ -54,6 +54,8 @@ const AwardRow = ({ rank, member, trophyType }) => (
 );
 
 export const StandingsTab = ({ settings, awards, memberStats }) => {
+  const [copied, setCopied] = useState(false);
+
   const kidsToShow = settings.kidAwardsType === 'top3'
     ? (awards.kids?.list || []).slice(0, 3)
     : (awards.kids?.list || []);
@@ -65,6 +67,30 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
     if (idx === 1) return 'silver';
     if (idx === 2) return 'bronze';
     return null;
+  };
+
+  const handleCopyStandings = () => {
+    const medals = ['🥇', '🥈', '🥉'];
+    const lines = [
+      `🏆 ${settings.leagueName || 'World Cup Sweepstakes'} — Standings`,
+      '─────────────────────',
+      ...memberStats.map((m, idx) => {
+        const icon = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
+        const activeTeams = m.teams.filter(t => t.isActive).map(t => t.id).join(', ');
+        return `${icon} ${m.name} — ${m.pts} pts${activeTeams ? ` (${activeTeams})` : ''}`;
+      }),
+      '─────────────────────',
+      '📱 world-cup-sweepstakes.vercel.app',
+    ];
+    const text = lines.join('\n');
+    try {
+      navigator.clipboard.writeText(text).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      });
+    } catch (e) {
+      console.error('Clipboard write failed:', e);
+    }
   };
 
   return (
@@ -96,7 +122,7 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
             <div className="bg-emerald-600 text-white p-4 font-bold flex items-center gap-2 uppercase tracking-wide shrink-0">
               <Medal className="w-5 h-5 text-emerald-200" /> Kids Awards
             </div>
-            <div className="p-4 space-y-3 flex-1 flex flex-col justify-start">
+            <div className="p-4 space-y-3 flex-1 flex flex-col justify-center">
               {kidsToShow.length > 0 ? kidsToShow.map((kid, idx) => {
                 const type = kidTrophyType(idx);
                 const ordinal = idx === 0 ? '1st' : idx === 1 ? '2nd' : idx === 2 ? '3rd' : `${idx + 1}th`;
@@ -115,8 +141,20 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
 
       {/* ── Full standings table ──────────────────────────────────── */}
       <div className="bg-white rounded-xl shadow-md border-2 border-green-100 overflow-hidden">
-        <div className="bg-green-50 p-4 font-bold text-green-800 flex items-center gap-2 border-b border-green-200 uppercase tracking-wide">
-          <Table className="w-5 h-5" /> Full Standings
+        <div className="bg-green-50 p-4 font-bold text-green-800 flex items-center justify-between gap-2 border-b border-green-200 uppercase tracking-wide">
+          <div className="flex items-center gap-2">
+            <Table className="w-5 h-5" /> Full Standings
+          </div>
+          <button
+            onClick={handleCopyStandings}
+            className="flex items-center gap-2 bg-white hover:bg-green-100 border border-green-200 text-green-700 font-black text-xs px-3 py-1.5 rounded-lg transition-colors shadow-sm uppercase tracking-wider"
+            title="Copy standings to clipboard for sharing"
+          >
+            {copied
+              ? <><CheckCircle className="w-4 h-4 text-emerald-600" /> Copied!</>
+              : <><Copy className="w-4 h-4" /> Share</>
+            }
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
