@@ -88,90 +88,67 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
     if (copying) return;
     setCopying(true);
     try {
-      // Dynamically import html2canvas so it doesn't bloat the initial bundle
-      const el = tableRef.current;
       const html2canvas = (await import('html2canvas')).default;
+      const CAPTURE_WIDTH = 860;
 
-      // Clone the table into a fixed-width off-screen container so html2canvas
-      // renders it at full size without squashing columns or clipping content
-      const CAPTURE_WIDTH = 900;
+      // ── Build a clean HTML table from data — no DOM cloning, no images.
+      // Team codes render as styled pill badges which html2canvas handles perfectly.
+      const medals = ['🥇', '🥈', '🥉'];
+      const rows = memberStats.map((m, idx) => {
+        const isFirst = idx === 0;
+        const isLast = settings.woodenSpoon && idx === memberStats.length - 1 && memberStats.length > 1;
+        const medal = medals[idx] || '';
+        const activeTeams = m.teams.filter(t => t.isActive);
+        const teamBadges = activeTeams.map(t =>
+          `<span style="display:inline-block;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;margin:2px 2px 2px 0;line-height:1.4;">${t.id}</span>`
+        ).join('') || '<span style="color:#ef4444;font-size:11px;font-weight:700;">Eliminated</span>';
+
+        const gd = m.gd > 0 ? `+${m.gd}` : m.gd;
+        const rowBg = isFirst ? '#f0fdf4' : isLast ? '#fff7ed' : (idx % 2 === 0 ? '#ffffff' : '#f8fafc');
+        const rankIcon = isFirst ? '🥇' : isLast ? '🥄' : `${idx + 1}`;
+
+        return `<tr style="background:${rowBg};border-bottom:1px solid #f0fdf4;">
+          <td style="padding:10px 14px;font-weight:900;font-size:16px;color:#166534;white-space:nowrap;">${rankIcon}</td>
+          <td style="padding:10px 14px;font-weight:700;font-size:14px;color:#1e293b;">${m.name}</td>
+          <td style="padding:10px 14px;text-align:center;font-weight:900;font-size:20px;color:#16a34a;">${m.pts}</td>
+          <td style="padding:10px 14px;text-align:center;font-weight:600;font-size:13px;color:#64748b;">${gd}</td>
+          <td style="padding:10px 14px;">${teamBadges}</td>
+        </tr>`;
+      }).join('');
+
+      const html = `
+        <div style="font-family:ui-sans-serif,system-ui,sans-serif;background:#ffffff;padding:24px;width:${CAPTURE_WIDTH}px;box-sizing:border-box;">
+          <div style="font-size:17px;font-weight:900;color:#166534;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.05em;border-bottom:3px solid #dcfce7;padding-bottom:10px;">
+            🏆 ${settings.leagueName || 'World Cup Sweepstakes'} — Standings
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-family:ui-sans-serif,system-ui,sans-serif;">
+            <thead>
+              <tr style="background:#f0fdf4;border-bottom:2px solid #dcfce7;">
+                <th style="padding:8px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Rank</th>
+                <th style="padding:8px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Manager</th>
+                <th style="padding:8px 14px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Pts</th>
+                <th style="padding:8px 14px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">GD</th>
+                <th style="padding:8px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#166534;letter-spacing:0.05em;">Remaining Teams</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <div style="font-size:11px;color:#94a3b8;margin-top:12px;text-align:right;">📱 world-cup-sweepstakes.vercel.app</div>
+        </div>`;
+
       const wrapper = document.createElement('div');
-      wrapper.style.cssText = `
-        position: fixed;
-        top: -9999px;
-        left: -9999px;
-        width: ${CAPTURE_WIDTH}px;
-        background: #ffffff;
-        padding: 24px;
-        box-sizing: border-box;
-        font-family: ui-sans-serif, system-ui, sans-serif;
-        border-radius: 12px;
-      `;
-
-      // Add a title header above the table
-      const title = document.createElement('div');
-      title.style.cssText = 'font-size: 18px; font-weight: 900; color: #166534; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;';
-      title.textContent = `🏆 ${settings.leagueName || 'World Cup Sweepstakes'} — Standings`;
-      wrapper.appendChild(title);
-
-      const clone = el.cloneNode(true);
-      clone.style.cssText = `
-        width: 100%;
-        overflow: visible;
-        border-radius: 8px;
-        border: 2px solid #dcfce7;
-      `;
-
-      // ── Pre-fetch all images as base64 so html2canvas never has to
-      // deal with CORS or external URLs, and force explicit px sizes
-      // so logos don't render at their full natural dimensions ────────
-      const LOGO_SIZE = 24; // px — matches w-6 h-6
-      const imgEls = Array.from(clone.querySelectorAll('img'));
-      await Promise.all(imgEls.map(async (img) => {
-        // Force explicit pixel size regardless of CSS classes
-        img.width  = LOGO_SIZE;
-        img.height = LOGO_SIZE;
-        img.style.width  = `${LOGO_SIZE}px`;
-        img.style.height = `${LOGO_SIZE}px`;
-        img.style.objectFit = 'contain';
-        img.style.display = 'inline-block';
-        img.style.verticalAlign = 'middle';
-        img.style.flexShrink = '0';
-        const src = img.src;
-        if (!src || src.startsWith('data:')) return; // already base64
-        try {
-          const resp = await fetch(src, { mode: 'cors' });
-          const blob = await resp.blob();
-          await new Promise((res) => {
-            const reader = new FileReader();
-            reader.onload = () => { img.src = reader.result; res(); };
-            reader.onerror = res; // on error just leave as-is
-            reader.readAsDataURL(blob);
-          });
-        } catch {
-          // If fetch fails, hide the broken image rather than show a broken icon
-          img.style.display = 'none';
-        }
-      }));
-
-      wrapper.appendChild(clone);
-
-      // Footer
-      const footer = document.createElement('div');
-      footer.style.cssText = 'font-size: 11px; color: #94a3b8; margin-top: 10px; text-align: right;';
-      footer.textContent = '📱 world-cup-sweepstakes.vercel.app';
-      wrapper.appendChild(footer);
-
+      wrapper.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+      wrapper.innerHTML = html;
       document.body.appendChild(wrapper);
 
-      const canvas = await html2canvas(wrapper, {
+      const canvas = await html2canvas(wrapper.firstElementChild, {
         backgroundColor: '#ffffff',
         scale: 1.5,
-        useCORS: true,
-        allowTaint: false,
+        useCORS: false,
+        allowTaint: true,
         logging: false,
-        width: CAPTURE_WIDTH + 48,
-        windowWidth: CAPTURE_WIDTH + 48,
+        width: CAPTURE_WIDTH,
+        windowWidth: CAPTURE_WIDTH,
       });
 
       document.body.removeChild(wrapper);
@@ -322,13 +299,13 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
                   <tr key={member.id} className="border-b border-green-50 last:border-0 hover:bg-green-50/50 transition-colors">
                     <td className="p-4 font-black text-green-800 text-lg">{idx + 1}</td>
                     <td className="p-4">
-                      <div className="font-bold text-slate-800 flex items-center gap-2 text-lg">
-                        {member.name}
+                      <div className="font-bold text-slate-800 flex items-center gap-2 text-lg min-w-0">
+                        <span className="truncate">{member.name}</span>
                         {isFirst && (
-                          <img src="/standings/first.svg" alt="1st Place" className="w-6 h-6 drop-shadow-sm shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
+                          <img src="/standings/first.svg" alt="1st Place" className="w-5 h-5 drop-shadow-sm shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
                         )}
                         {isLastPlace && (
-                          <img src="/standings/woodenspoon.svg" alt="Wooden Spoon" title="Wooden Spoon" className="w-6 h-6 drop-shadow-sm shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
+                          <img src="/standings/woodenspoon.svg" alt="Wooden Spoon" title="Wooden Spoon" className="w-5 h-5 drop-shadow-sm shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
                         )}
                       </div>
                       {member.isKid && (
