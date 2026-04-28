@@ -58,6 +58,14 @@ export const useLeagueData = ({
     if (!user || !activeLeagueId) return;
     setLoading(true);
 
+    // ── Reset immediately so stale data from the previous league never
+    // bleeds through while we wait for the new league's snapshot ──────
+    setMembers([]);
+    setAssignments({});
+    setEliminatedTeams({});
+    setManualRestores({});
+    setSettings(DEFAULT_SETTINGS);
+
     const leagueRef = doc(db, 'artifacts', appId, 'public', 'data', 'sweepstakes', activeLeagueId);
     const globalMatchesRef = doc(db, 'artifacts', appId, 'public', 'data', 'globalMatches', 'worldCup2026');
     const localMatchesRef = doc(db, 'artifacts', appId, 'public', 'data', 'leagueMatches', activeLeagueId);
