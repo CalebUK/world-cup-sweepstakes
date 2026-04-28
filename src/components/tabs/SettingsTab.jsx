@@ -319,6 +319,16 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
         </div>
       </div>
 
+      {/* ── Developer Info ────────────────────────────────────────────── */}
+      {userUid && (
+        <div className="mt-2 pt-4 border-t border-slate-100 text-center">
+          <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-1">Admin Developer Tool:</p>
+          <code className="text-xs text-slate-500 bg-slate-50 border border-slate-200 px-2 py-1 rounded selection:bg-indigo-200 break-all">
+            UID: {userUid}
+          </code>
+        </div>
+      )}
+
     </div>
   );
 };
