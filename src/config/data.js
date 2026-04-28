@@ -4,7 +4,7 @@ export const TEAMS_DATA = [
   { id: 'KOR', name: 'Korea Republic', espnName: 'South Korea', group: 'A', rank: 25 },
   { id: 'CZE', name: 'Czechia', group: 'A', rank: 41 },
   { id: 'CAN', name: 'Canada', group: 'B', rank: 30 },
-  { id: 'BIH', name: 'Bosnia & Herzegovina', espnName: 'Bosnia-Herzegovina, group: 'B', rank: 65 },
+  { id: 'BIH', name: 'Bosnia & Herzegovina', espnName: 'Bosnia-Herzegovina', group: 'B', rank: 65 },
   { id: 'QAT', name: 'Qatar', group: 'B', rank: 55 },
   { id: 'SUI', name: 'Switzerland', group: 'B', rank: 19 },
   { id: 'BRA', name: 'Brasil', espnName: 'Brazil', group: 'C', rank: 6 },
