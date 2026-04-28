@@ -33,6 +33,7 @@ import { SettingsModal } from './components/modals/SettingsModal.jsx';
 // --- FANTASY ---
 import { useFantasyData } from './fantasy/useFantasyData.js';
 import { FantasyDraftModal } from './fantasy/FantasyDraftModal.jsx';
+import { FantasyTeamsTab } from './fantasy/FantasyTeamsTab.jsx';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -123,6 +124,7 @@ export default function App() {
     commitDraft: fantasyCommitDraft,
     updatePick: fantasyUpdatePick,
     updateMatchStat: fantasyUpdateMatchStat,
+    saveFantasyState: fantasySaveState, 
   } = useFantasyData({
     user,
     activeLeagueId,
@@ -343,14 +345,29 @@ export default function App() {
           />
         )}
         {activeTab === 'teams' && (
-          <TeamsTab
-            eliminatedTeams={eliminatedTeams}
-            isViewer={isViewer}
-            assignments={assignments}
-            members={members}
-            handleAssign={handleAssign}
-            toggleEliminated={toggleEliminated}
-          />
+          settings.fantasyMode ? (
+            <FantasyTeamsTab
+              isViewer={isViewer}
+              isOwner={isOwner}
+              members={members}
+              ownership={fantasyOwnership}
+              picks={fantasyPicks}
+              draftMeta={fantasyDraftMeta}
+              picksPerCategory={settings.fantasyPicksPerCategory || 5}
+              fantasyUpdatePick={fantasyUpdatePick}
+              saveFantasyState={fantasySaveState}
+              onOpenDraft={() => setShowFantasyDraftModal(true)}
+            />
+          ) : (
+            <TeamsTab
+              eliminatedTeams={eliminatedTeams}
+              isViewer={isViewer}
+              assignments={assignments}
+              members={members}
+              handleAssign={handleAssign}
+              toggleEliminated={toggleEliminated}
+            />
+          )
         )}
       </main>
 
