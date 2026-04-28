@@ -204,24 +204,17 @@ export default function App() {
   };
 
   const handleResetData = () => {
-    if (isViewer) return;
-    const defaultSettings = { woodenSpoon: true, kidAwards: true, kidAwardsType: 'all', leagueName: settings.leagueName || 'My Sweepstakes' };
-    setMembers(DEFAULT_6_USERS);
-    setAssignments({});
-    setEliminatedTeams({});
-    setManualRestores({});
-    setSettings(defaultSettings);
-    saveState('members', DEFAULT_6_USERS);
-    saveState('assignments', {});
-    saveState('eliminatedTeams', {});
-    saveState('manualRestores', {});
-    saveState('settings', defaultSettings);
-    if (isSuperAdmin) {
-      const reset = generateAllMatches();
-      setMatches(reset);
-      saveState('matches', reset);
-    }
-    setShowSettingsModal(false);
+  if (isViewer) return;
+  // Only reset match scores and eliminations — leave managers,
+  // assignments, and settings completely untouched.
+  const reset = generateAllMatches();
+  setMatches(reset);
+  setEliminatedTeams({});
+  setManualRestores({});
+  saveState('matches', reset);
+  saveState('eliminatedTeams', {});
+  saveState('manualRestores', {});
+  setShowSettingsModal(false);
   };
 
   const handleHardReset = async () => {
