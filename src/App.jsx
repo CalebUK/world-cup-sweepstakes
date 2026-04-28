@@ -342,6 +342,10 @@ export default function App() {
             getOwnerName={getOwnerName}
             eliminatedTeams={eliminatedTeams}
             handleRandomizeGroups={handleRandomizeGroups}
+            fantasyMode={!!settings.fantasyMode}
+            fantasyMatchStats={fantasyMatchStats}
+            fantasyUpdateMatchStat={fantasyUpdateMatchStat}
+            isFantasyViewer={!isOwner}
           />
         )}
         {activeTab === 'teams' && (
