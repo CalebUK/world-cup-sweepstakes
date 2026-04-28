@@ -89,12 +89,20 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
     setCopying(true);
     try {
       // Dynamically import html2canvas so it doesn't bloat the initial bundle
+      const el = tableRef.current;
       const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(tableRef.current, {
-        backgroundColor: '#f8fafc',
-        scale: 2, // retina quality
+      const canvas = await html2canvas(el, {
+        backgroundColor: '#ffffff',
+        scale: 2,
         useCORS: true,
         logging: false,
+        // Force full dimensions — ignores what's visible in the viewport
+        width: el.scrollWidth,
+        height: el.scrollHeight,
+        windowWidth: el.scrollWidth,
+        windowHeight: el.scrollHeight,
+        scrollX: -window.scrollX,
+        scrollY: -window.scrollY,
       });
 
       // Try image clipboard first
