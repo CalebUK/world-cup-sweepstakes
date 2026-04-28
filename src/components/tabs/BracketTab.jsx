@@ -45,52 +45,95 @@ const formatMatchDate = (datetime) => {
   }
 };
 
-const TeamRow = ({ teamId, label, score, penScore, isWinner, isHighlighted, owner, showTeams }) => {
+const TeamRow = ({ teamId, label, score, penScore, isWinner, isHighlighted, owner, showTeams, mirrored }) => {
   const hasTeam = !!teamId && showTeams;
+
+  // Score box — shared between both branches
+  const scoreBox = (
+    <span className={`text-[11px] font-black w-5 h-5 flex items-center justify-center rounded leading-none shrink-0 ${
+      isWinner ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-500'
+    }`}>
+      {score !== '' && score !== undefined ? score : '-'}
+    </span>
+  );
+
+  // Pen badge — only shown when AET
+  const penBadge = penScore !== undefined && penScore !== '' ? (
+    <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-1 py-0.5 rounded border border-amber-200 leading-none shrink-0">
+      ({penScore})
+    </span>
+  ) : null;
 
   return (
     <div className={`flex items-center gap-1.5 px-2 py-1.5 border-b last:border-0 border-slate-100 transition-all ${
       isHighlighted ? 'bg-emerald-50' : 'bg-white'
     }`}>
       {hasTeam ? (
-        // ── Team is known: logo · 3-letter code · owner name · pen · score ──
-        <>
-          <TeamLogo teamId={teamId} className="w-4 h-4 shrink-0" />
-          <span className={`text-[11px] w-8 shrink-0 leading-none ${isWinner ? 'font-black text-slate-900' : 'font-medium text-slate-400'}`}>
-            {teamId}
-          </span>
-          <span className={`text-[10px] flex-1 min-w-0 truncate leading-none ${
-            isHighlighted ? 'text-emerald-700 font-black' : 'text-slate-500 font-medium'
-          }`}>
-            {owner ? owner.name : ''}
-          </span>
-          {penScore !== undefined && penScore !== '' && (
-            <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-1 py-0.5 rounded border border-amber-200 leading-none shrink-0">
-              ({penScore})
+        // ── Team known ──────────────────────────────────────────────────────
+        // Left:  logo · code · owner · pen · score
+        // Right: score · pen · owner · code · logo   (mirrored)
+        mirrored ? (
+          <>
+            {scoreBox}
+            {penBadge}
+            <span className={`text-[10px] flex-1 min-w-0 truncate leading-none text-right ${
+              isHighlighted ? 'text-emerald-700 font-black' : 'text-slate-500 font-medium'
+            }`}>
+              {owner ? owner.name : ''}
             </span>
-          )}
-          <span className={`text-[11px] font-black w-5 h-5 flex items-center justify-center rounded leading-none shrink-0 ${
-            isWinner ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-500'
-          }`}>
-            {score !== '' && score !== undefined ? score : '-'}
-          </span>
-        </>
+            <span className={`text-[11px] w-8 shrink-0 leading-none text-right ${
+              isWinner ? 'font-black text-slate-900' : 'font-medium text-slate-400'
+            }`}>
+              {teamId}
+            </span>
+            <TeamLogo teamId={teamId} className="w-4 h-4 shrink-0" />
+          </>
+        ) : (
+          <>
+            <TeamLogo teamId={teamId} className="w-4 h-4 shrink-0" />
+            <span className={`text-[11px] w-8 shrink-0 leading-none ${
+              isWinner ? 'font-black text-slate-900' : 'font-medium text-slate-400'
+            }`}>
+              {teamId}
+            </span>
+            <span className={`text-[10px] flex-1 min-w-0 truncate leading-none ${
+              isHighlighted ? 'text-emerald-700 font-black' : 'text-slate-500 font-medium'
+            }`}>
+              {owner ? owner.name : ''}
+            </span>
+            {penBadge}
+            {scoreBox}
+          </>
+        )
       ) : (
-        // ── Team not yet decided: show full descriptive label across the whole row ──
-        <>
-          <span className="text-[10px] text-slate-400 font-medium flex-1 min-w-0 truncate leading-tight italic px-0.5">
-            {label || 'TBD'}
-          </span>
-          <span className="text-[11px] font-black w-5 h-5 flex items-center justify-center rounded bg-slate-100 text-slate-400 leading-none shrink-0">
-            -
-          </span>
-        </>
+        // ── Team not yet decided: full label, pointing inward ───────────────
+        // Left:  label text → score
+        // Right: score ← label text   (mirrored)
+        mirrored ? (
+          <>
+            <span className="text-[11px] font-black w-5 h-5 flex items-center justify-center rounded bg-slate-100 text-slate-400 leading-none shrink-0">
+              -
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium flex-1 min-w-0 truncate leading-tight italic px-0.5 text-right">
+              {label || 'TBD'}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="text-[10px] text-slate-400 font-medium flex-1 min-w-0 truncate leading-tight italic px-0.5">
+              {label || 'TBD'}
+            </span>
+            <span className="text-[11px] font-black w-5 h-5 flex items-center justify-center rounded bg-slate-100 text-slate-400 leading-none shrink-0">
+              -
+            </span>
+          </>
+        )
       )}
     </div>
   );
 };
 
-const MatchCard = ({ match, members, assignments, highlightMember, showTeams }) => {
+const MatchCard = ({ match, members, assignments, highlightMember, showTeams, mirrored }) => {
   if (!match) return <div className="flex-1" />;
 
   const winnerId = getWinnerId(match);
@@ -121,18 +164,20 @@ const MatchCard = ({ match, members, assignments, highlightMember, showTeams }) 
       <TeamRow
         teamId={match.teamA} label={match.labelA}
         score={match.scoreA} penScore={match.isAET ? match.penScoreA : undefined}
-        isWinner={winnerId === match.teamA} isHighlighted={highlightA} owner={ownerA} showTeams={showTeams}
+        isWinner={winnerId === match.teamA} isHighlighted={highlightA}
+        owner={ownerA} showTeams={showTeams} mirrored={mirrored}
       />
       <TeamRow
         teamId={match.teamB} label={match.labelB}
         score={match.scoreB} penScore={match.isAET ? match.penScoreB : undefined}
-        isWinner={winnerId === match.teamB} isHighlighted={highlightB} owner={ownerB} showTeams={showTeams}
+        isWinner={winnerId === match.teamB} isHighlighted={highlightB}
+        owner={ownerB} showTeams={showTeams} mirrored={mirrored}
       />
     </div>
   );
 };
 
-const BracketColumn = ({ stageId, matchIds, koMatches, members, assignments, highlightMember, labelName, showTeams }) => {
+const BracketColumn = ({ matchIds, koMatches, members, assignments, highlightMember, labelName, showTeams, mirrored }) => {
   const stageMatches = matchIds.map(id => koMatches.find(m => m.id === id));
   return (
     <div className="flex flex-col flex-1 min-w-[200px] max-w-[240px]">
@@ -144,7 +189,10 @@ const BracketColumn = ({ stageId, matchIds, koMatches, members, assignments, hig
       <div className="flex-1 flex flex-col">
         {stageMatches.map((m, i) => (
           <div key={m?.id || i} className="flex-1 flex flex-col justify-center px-1 py-2">
-            <MatchCard match={m} members={members} assignments={assignments} highlightMember={highlightMember} />
+            <MatchCard
+              match={m} members={members} assignments={assignments}
+              highlightMember={highlightMember} showTeams={showTeams} mirrored={mirrored}
+            />
           </div>
         ))}
       </div>
@@ -164,16 +212,18 @@ export const BracketTab = ({ matches, members, assignments }) => {
 
   const koMatches = matches.filter(m => m.stage !== 'Group');
   const finalMatch = koMatches.find(m => m.id === 'ko_Final_1');
+  const stageNames = { R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarterfinals', SF: 'Semifinals' };
+
+  // Show team codes + owners once every team has played at least one group game
   const groupMatchesPlayed = matches.filter(m => m.stage === 'Group' && m.isPlayed).length;
   const showTeams = groupMatchesPlayed >= 24;
-  const stageNames = { R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarterfinals', SF: 'Semifinals' };
 
   return (
     <div className="space-y-6 animate-fade-in">
 
       <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <h2 className="text-xl font-black text-emerald-800 flex items-center gap-2 uppercase tracking-wide">
-          <Trophy className="w-6 h-6 text-yellow-500" /> Tournament Bracket
+          <Trophy className="w-6 h-6 text-yellow-500" /> Knockout Stage
         </h2>
         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 w-full sm:w-auto">
           <User className="w-4 h-4 text-emerald-600" />
@@ -193,19 +243,22 @@ export const BracketTab = ({ matches, members, assignments }) => {
         <div className="p-3 sm:p-5 overflow-x-auto">
           <div className="flex gap-2 sm:gap-3 min-w-[1640px] min-h-[900px] items-stretch">
 
+            {/* LEFT HALF — R32 → SF, content points right toward centre */}
             {STAGE_ORDER.map(stageId => (
               <BracketColumn
                 key={`left-${stageId}`}
-                stageId={stageId}
                 matchIds={LEFT_STAGES[stageId]}
                 koMatches={koMatches}
                 members={members}
                 assignments={assignments}
                 highlightMember={highlightMember}
                 labelName={stageNames[stageId]}
+                showTeams={showTeams}
+                mirrored={false}
               />
             ))}
 
+            {/* FINAL — centre column, not mirrored */}
             <div className="flex flex-col flex-1 min-w-[200px] max-w-[240px]">
               <div className="text-center mb-3 h-6 shrink-0">
                 <span className="bg-yellow-600 text-yellow-100 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
@@ -213,20 +266,25 @@ export const BracketTab = ({ matches, members, assignments }) => {
                 </span>
               </div>
               <div className="flex-1 flex flex-col justify-center px-1 py-2">
-                <MatchCard match={finalMatch} members={members} assignments={assignments} highlightMember={highlightMember} showTeams={showTeams} />
+                <MatchCard
+                  match={finalMatch} members={members} assignments={assignments}
+                  highlightMember={highlightMember} showTeams={showTeams} mirrored={false}
+                />
               </div>
             </div>
 
+            {/* RIGHT HALF — SF → R32, content points left toward centre (mirrored) */}
             {[...STAGE_ORDER].reverse().map(stageId => (
               <BracketColumn
                 key={`right-${stageId}`}
-                stageId={stageId}
                 matchIds={RIGHT_STAGES[stageId]}
                 koMatches={koMatches}
                 members={members}
                 assignments={assignments}
                 highlightMember={highlightMember}
                 labelName={stageNames[stageId]}
+                showTeams={showTeams}
+                mirrored={true}
               />
             ))}
           </div>
