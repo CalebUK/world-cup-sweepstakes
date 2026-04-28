@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock, AlertTriangle, RotateCcw, Share2, CheckCircle, Copy, Trophy, ShieldAlert } from 'lucide-react';
+import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock, AlertTriangle, RotateCcw, Share2, CheckCircle, Copy, Trophy, ShieldAlert, Sparkles } from 'lucide-react';
 import { KNOCKOUT_STAGES, DEFAULT_SCORING } from '../../config/data.js';
 
 export const SettingsTab = ({ settings, updateSettings, members, handleAddMember, handleUpdateMember, handleDeleteMember, handleResetData, handleHardReset, userUid }) => {
@@ -272,6 +272,32 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
               className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${settings.autoSync ? 'bg-emerald-500' : 'bg-slate-300'}`}
             >
               <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${settings.autoSync ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
+          {/* Fantasy Mode (Roto) */}
+          <div className="flex items-start justify-between gap-4 bg-purple-50 p-4 rounded-xl border border-purple-200 hover:border-purple-400 transition-colors">
+            <div>
+              <label className="font-black text-slate-800 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-500" /> Fantasy Mode (Roto)
+              </label>
+              <p className="text-sm text-slate-500 font-medium mt-0.5">
+                Switches this league from Sweepstakes to a 4-stat Rotisserie format
+                (Goals, Shots on Target, Cards, Goals Allowed). Replaces the Standings
+                and Teams tabs. The commish runs a random draft, then assigns stats
+                to managers offline.
+              </p>
+              {settings.fantasyMode && (
+                <p className="text-xs text-purple-700 font-bold mt-2 italic">
+                  Fantasy mode is on — Standings and Teams tabs now show Roto.
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => updateSettings({ fantasyMode: !settings.fantasyMode })}
+              className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 mt-1 ${settings.fantasyMode ? 'bg-purple-500' : 'bg-slate-300'}`}
+            >
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${settings.fantasyMode ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
 
