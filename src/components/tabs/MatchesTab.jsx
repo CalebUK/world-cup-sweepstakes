@@ -312,7 +312,7 @@ export const MatchesTab = ({ matches, localTimezone, setLocalTimezone, isViewer,
                       </button>
                       {uiState[stageInfo.id] && (
                         <div className="p-4 space-y-4 bg-slate-50 border-t-2 border-slate-100">
-                          {stageMatches.map(m => <MatchRow key={m.id} match={m} matches={matches} isKnockout={true} localTimezone={localTimezone} isViewer={isViewer} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} fantasyMode={fantasyMode} fantasyMatchStats={fantasyMatchStats} fantasyUpdateMatchStat={fantasyUpdateMatchStat />)}
+                          {stageMatches.map(m => <MatchRow key={m.id} match={m} matches={matches} isKnockout={true} localTimezone={localTimezone} isViewer={isViewer} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} fantasyMode={fantasyMode} fantasyMatchStats={fantasyMatchStats} fantasyUpdateMatchStat={fantasyUpdateMatchStat} />)}
                         </div>
                       )}
                     </div>
@@ -351,7 +351,7 @@ export const MatchesTab = ({ matches, localTimezone, setLocalTimezone, isViewer,
               </div>
             </div>
             <div className="space-y-4">
-              {groupMatches.map(m => <MatchRow key={m.id} match={m} matches={matches} localTimezone={localTimezone} isViewer={isViewer} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} fantasyMode={fantasyMode} fantasyMatchStats={fantasyMatchStats} fantasyUpdateMatchStat={fantasyUpdateMatchStat />)}
+              {groupMatches.map(m => <MatchRow key={m.id} match={m} matches={matches} localTimezone={localTimezone} isViewer={isViewer} handleMatchUpdate={handleMatchUpdate} getOwnerName={getOwnerName} eliminatedTeams={eliminatedTeams} fantasyMode={fantasyMode} fantasyMatchStats={fantasyMatchStats} fantasyUpdateMatchStat={fantasyUpdateMatchStat} />)}
             </div>
           </div>
         )}
