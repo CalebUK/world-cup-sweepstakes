@@ -212,9 +212,12 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
             />
             <div>
               <label htmlFor="autoSync" className="font-black text-slate-800 cursor-pointer text-lg flex items-center gap-2">
-                <Clock className="w-5 h-5 text-emerald-600" /> Auto-Sync ESPN Scores
+                <Clock className="w-5 h-5 text-emerald-600" /> Live ESPN Score Sync
               </label>
-              <p className="text-sm text-slate-500 font-medium mt-1">Automatically checks for live scores in the background every 5 minutes while this page is open.</p>
+              <p className="text-sm text-slate-500 font-medium mt-1">
+                <strong>ON:</strong> Scores are synced automatically from ESPN every 5 minutes — everyone in this league sees the same live data. Only the host account polls ESPN and writes the scores.<br/>
+                <strong>OFF:</strong> You enter and manage scores manually yourself in the Matches tab.
+              </p>
             </div>
           </div>
 
