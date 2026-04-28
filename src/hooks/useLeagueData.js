@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = {
   leagueName: 'My Hosted Sweepstakes',
   autoSync: false,
   fantasyMode: false,
+  fantasyPicksPerCategory: 5,
 };
 
 /**
