@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Medal, Table, Trophy, Info, Copy, CheckCircle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Medal, Table, Trophy, Info, Copy, CheckCircle, Image } from 'lucide-react';
 import { TeamLogo } from '../TeamLogo.jsx';
 import { TEAM_ODDS } from '../../config/odds.js';
 
@@ -25,19 +25,15 @@ const TrophyImg = ({ type, className = 'w-10 h-10' }) => {
   );
 };
 
-// Award podium row — icon, rank text, and member name all in fixed-width slots
-// so every row is perfectly aligned regardless of rank text length
+// Award podium row
 const AwardRow = ({ rank, member, trophyType }) => (
   <div className="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-slate-100 shadow-sm hover:border-green-200 transition-colors">
-    {/* Fixed-width icon slot */}
     <div className="w-12 flex items-center justify-center shrink-0">
       <TrophyImg type={trophyType} className="w-10 h-10" />
     </div>
-    {/* Fixed-width rank label — always shown so names always start at the same x */}
     <span className="w-10 font-bold text-slate-500 uppercase text-xs tracking-wider shrink-0 text-center leading-tight">
       {rank}
     </span>
-    {/* Name + points */}
     <div className="font-black text-slate-800 text-xl flex-1 flex items-center justify-start gap-2 flex-wrap">
       {member ? (
         <>
@@ -55,6 +51,8 @@ const AwardRow = ({ rank, member, trophyType }) => (
 
 export const StandingsTab = ({ settings, awards, memberStats }) => {
   const [copied, setCopied] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const tableRef = useRef(null);
 
   const kidsToShow = settings.kidAwardsType === 'top3'
     ? (awards.kids?.list || []).slice(0, 3)
@@ -69,8 +67,8 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
     return null;
   };
 
-  const handleCopyStandings = () => {
-    const medals = ['🥇', '🥈', '🥉'];
+  // ── Text fallback ──────────────────────────────────────────────────────────
+  const copyAsText = () => {
     const lines = [
       `🏆 ${settings.leagueName || 'World Cup Sweepstakes'} — Standings`,
       '─────────────────────',
@@ -82,14 +80,55 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
       '─────────────────────',
       '📱 world-cup-sweepstakes.vercel.app',
     ];
-    const text = lines.join('\n');
+    return navigator.clipboard.writeText(lines.join('\n'));
+  };
+
+  // ── Image copy with text fallback ──────────────────────────────────────────
+  const handleCopyStandings = async () => {
+    if (copying) return;
+    setCopying(true);
     try {
-      navigator.clipboard.writeText(text).then(() => {
+      // Dynamically import html2canvas so it doesn't bloat the initial bundle
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(tableRef.current, {
+        backgroundColor: '#f8fafc',
+        scale: 2, // retina quality
+        useCORS: true,
+        logging: false,
+      });
+
+      // Try image clipboard first
+      try {
+        canvas.toBlob(async (blob) => {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob }),
+            ]);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2500);
+          } catch {
+            // ClipboardItem not supported (e.g. Safari without permission) — fall back to text
+            await copyAsText();
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2500);
+          }
+        }, 'image/png');
+      } catch {
+        await copyAsText();
         setCopied(true);
         setTimeout(() => setCopied(false), 2500);
-      });
-    } catch (e) {
-      console.error('Clipboard write failed:', e);
+      }
+    } catch {
+      // html2canvas failed entirely — fall back to text
+      try {
+        await copyAsText();
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      } catch (e) {
+        console.error('All clipboard methods failed:', e);
+      }
+    } finally {
+      setCopying(false);
     }
   };
 
@@ -147,16 +186,22 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
           </div>
           <button
             onClick={handleCopyStandings}
-            className="flex items-center gap-2 bg-white hover:bg-green-100 border border-green-200 text-green-700 font-black text-xs px-3 py-1.5 rounded-lg transition-colors shadow-sm uppercase tracking-wider"
-            title="Copy standings to clipboard for sharing"
+            disabled={copying}
+            className="flex items-center gap-2 bg-white hover:bg-green-100 border border-green-200 text-green-700 font-black text-xs px-3 py-1.5 rounded-lg transition-colors shadow-sm uppercase tracking-wider disabled:opacity-60"
+            title="Copy standings to clipboard as an image"
           >
-            {copied
-              ? <><CheckCircle className="w-4 h-4 text-emerald-600" /> Copied!</>
-              : <><Copy className="w-4 h-4" /> Share</>
-            }
+            {copied ? (
+              <><CheckCircle className="w-4 h-4 text-emerald-600" /> Copied!</>
+            ) : copying ? (
+              <><Image className="w-4 h-4 animate-pulse" /> Capturing...</>
+            ) : (
+              <><Image className="w-4 h-4" /> Share</>
+            )}
           </button>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* This ref is what html2canvas captures */}
+        <div ref={tableRef} className="overflow-x-auto bg-white">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-white text-green-700 text-sm border-b-2 border-green-100">
@@ -200,23 +245,11 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
                     <td className="p-4">
                       <div className="font-bold text-slate-800 flex items-center gap-2 text-lg">
                         {member.name}
-                        {/* 1st place trophy icon in the table — matches the podium */}
                         {isFirst && (
-                          <img
-                            src="/standings/first.svg"
-                            alt="1st Place"
-                            className="w-6 h-6 drop-shadow-sm shrink-0"
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                          />
+                          <img src="/standings/first.svg" alt="1st Place" className="w-6 h-6 drop-shadow-sm shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
                         )}
                         {isLastPlace && (
-                          <img
-                            src="/standings/woodenspoon.svg"
-                            alt="Wooden Spoon"
-                            title="Wooden Spoon"
-                            className="w-6 h-6 drop-shadow-sm shrink-0"
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                          />
+                          <img src="/standings/woodenspoon.svg" alt="Wooden Spoon" title="Wooden Spoon" className="w-6 h-6 drop-shadow-sm shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
                         )}
                       </div>
                       {member.isKid && (
