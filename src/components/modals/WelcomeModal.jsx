@@ -29,6 +29,16 @@ export const WelcomeModal = ({ dontShowAgain, setDontShowAgain, handleCloseWelco
           </div>
         </div>
         
+        <div className="px-4 sm:px-5 pb-4 shrink-0">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 leading-relaxed text-center">
+            If you are facing any issues feel free to email me at{' '}
+            <a href="mailto:calebthill@gmail.com" className="font-bold underline hover:text-amber-900">
+              calebthill@gmail.com
+            </a>
+            , but please be nice as this is very much a vibe coded learning experience hobby for me 😊
+          </div>
+        </div>
+
         <div className="bg-slate-50 p-4 border-t border-slate-200 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
           <label className="flex items-center gap-2 cursor-pointer group">
             <input type="checkbox" checked={dontShowAgain} onChange={(e) => setDontShowAgain(e.target.checked)} className="w-5 h-5 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer" />
