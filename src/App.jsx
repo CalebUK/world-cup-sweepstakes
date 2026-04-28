@@ -30,8 +30,6 @@ import { LeaveModal } from './components/modals/LeaveModal.jsx';
 import { JoinModal } from './components/modals/JoinModal.jsx';
 import { SettingsModal } from './components/modals/SettingsModal.jsx';
 
-const TABS = ['standings', 'groups', 'bracket', 'matches', 'teams'];
-
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('standings');
@@ -270,22 +268,41 @@ export default function App() {
         onOpenHelp={() => setShowWelcomeModal(true)}
       />
 
-      {/* Tab bar */}
+      {/* Two-tier tab bar */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-5 relative z-20">
-        <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/50 p-1.5 sm:p-2 flex overflow-x-auto gap-1.5 sm:gap-2 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
-          {TABS.map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`shrink-0 flex-1 min-w-[85px] sm:min-w-0 py-2.5 sm:py-3 px-2 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 snap-start ${
-                activeTab === tab
-                  ? 'bg-green-600 text-white shadow-md sm:scale-[1.02]'
-                  : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700'
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
+        <div className="bg-white rounded-xl shadow-lg border-2 border-green-100/50 p-1.5 sm:p-2 flex flex-col gap-1.5">
+          {/* Top row: Groups · Knockout · Matches */}
+          <div className="flex gap-1.5 sm:gap-2">
+            {['groups', 'bracket', 'matches'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-2.5 sm:py-3 px-2 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 ${
+                  activeTab === tab
+                    ? 'bg-green-600 text-white shadow-md'
+                    : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700'
+                }`}
+              >
+                {tab === 'bracket' ? 'Knockout' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+          {/* Bottom row: Standings · Teams */}
+          <div className="flex gap-1.5 sm:gap-2">
+            {['standings', 'teams'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-2.5 sm:py-3 px-2 sm:px-4 rounded-lg font-black text-[10px] sm:text-sm uppercase tracking-wider transition-all duration-200 ${
+                  activeTab === tab
+                    ? 'bg-green-600 text-white shadow-md'
+                    : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-700'
+                }`}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
