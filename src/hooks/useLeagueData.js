@@ -48,6 +48,9 @@ export const useLeagueData = ({
   const [manualRestores, setManualRestores] = useState({});
   const [matches, setMatches] = useState([]);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  // Prevents the tournament engine from running until this league's
+  // data has fully arrived from Firestore
+  const [leagueDataReady, setLeagueDataReady] = useState(false);
 
   // Track whether we are mid-write so the snapshot doesn't race against us
   const writingRef = useRef(false);
@@ -60,6 +63,7 @@ export const useLeagueData = ({
 
     // ── Reset immediately so stale data from the previous league never
     // bleeds through while we wait for the new league's snapshot ──────
+    setLeagueDataReady(false);
     setMembers([]);
     setAssignments({});
     setEliminatedTeams({});
@@ -107,23 +111,22 @@ export const useLeagueData = ({
         if (newSettings.autoSync) {
           // ── Auto-sync ON: read from shared global matches (super admin writes) ──
           unsubMatches = onSnapshot(globalMatchesRef, (snap) => {
-            if (writingRef.current) return; // ignore snapshots during our own writes
+            if (writingRef.current) return;
             if (snap.exists()) {
               setMatches(snap.data().matches || generateAllMatches());
             } else {
               setMatches(generateAllMatches());
             }
             setLoading(false);
+            setLeagueDataReady(true);
           });
         } else {
           // ── Auto-sync OFF: read from per-league matches (commish edits manually) ──
           unsubMatches = onSnapshot(localMatchesRef, (snap) => {
-            if (writingRef.current) return; // ignore snapshots during our own writes
+            if (writingRef.current) return;
             if (snap.exists()) {
               setMatches(snap.data().matches || generateAllMatches());
             } else {
-              // First time — seed the league's own copy from global, or defaults
-              // We read global once to copy it across if it exists
               const seedMatches = generateAllMatches();
               setMatches(seedMatches);
               if (isOwner) {
@@ -131,6 +134,7 @@ export const useLeagueData = ({
               }
             }
             setLoading(false);
+            setLeagueDataReady(true);
           });
         }
 
@@ -200,6 +204,7 @@ export const useLeagueData = ({
     matches, setMatches,
     settings, setSettings,
     saveState,
+    leagueDataReady,
     DEFAULT_6_USERS,
   };
 };
