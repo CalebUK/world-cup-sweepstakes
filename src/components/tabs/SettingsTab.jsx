@@ -169,7 +169,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
 
             <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
               <h4 className="font-black text-emerald-700 mb-3 uppercase tracking-widest text-xs border-b border-slate-100 pb-2">Group Stage</h4>
-              <div className="flex flex-wrap gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <ScoreInput label="Win" value={activeScoring.group.win} onChange={(v) => handleScoringUpdate('group', null, 'win', v)} />
                 <ScoreInput label="Draw" value={activeScoring.group.draw} onChange={(v) => handleScoringUpdate('group', null, 'draw', v)} />
                 <ScoreInput label="Loss" value={activeScoring.group.loss} onChange={(v) => handleScoringUpdate('group', null, 'loss', v)} />
@@ -185,7 +185,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
                   return (
                     <div key={stage.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-2 hover:bg-slate-50 rounded-lg transition-colors">
                       <span className="w-16 font-black text-sm text-slate-700 uppercase tracking-widest">{stage.id}</span>
-                      <div className="flex flex-wrap gap-2 flex-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
                         <ScoreInput label="Reg Win" value={sData.win} onChange={(v) => handleScoringUpdate('ko', stage.id, 'win', v)} />
                         <ScoreInput label="Reg Loss" value={sData.loss} onChange={(v) => handleScoringUpdate('ko', stage.id, 'loss', v)} />
                         {sData.etWin !== undefined && (
