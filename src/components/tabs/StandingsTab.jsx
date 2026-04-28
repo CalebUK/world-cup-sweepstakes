@@ -120,7 +120,7 @@ export const StandingsTab = ({ settings, awards, memberStats }) => {
         const isLast = settings.woodenSpoon && idx === memberStats.length - 1 && memberStats.length > 1;
         const activeTeams = m.teams.filter(t => t.isActive);
         const teamBadges = activeTeams.map(t =>
-          `<span style="display:inline-block;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:4px;padding:4px 7px 8px 7px;font-size:11px;font-weight:700;margin:2px 2px 2px 0;line-height:1;vertical-align:middle;">${t.id}</span>`
+          `<span style="display:inline-block;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:4px;padding:4px 7px 8px 7px;font-size:11px;font-weight:700;margin:2px 2px 2px 0;line-height:1;vertical-align:middle;position:relative;top:-1px;">${t.id}</span>`
         ).join('') || '<span style="color:#ef4444;font-size:11px;font-weight:700;">Eliminated</span>';
 
         // Total Odds calculation
