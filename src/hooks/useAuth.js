@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   onAuthStateChanged, signInAnonymously, GoogleAuthProvider,
   signInWithPopup, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink,
+  setPersistence, browserLocalPersistence,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, appId } from '../config/firebase.js';
@@ -87,8 +88,17 @@ export const useAuth = ({ setActiveLeagueId, setPendingJoinCode, setShowJoinModa
   // ─── Auth initialisation & state listener ────────────────────────────────
 
   useEffect(() => {
-    // Step 1: Handle magic link before touching anonymous auth to avoid races
     const initAuth = async () => {
+      // FIX 1: Await persistence FIRST, before any sign-in logic runs.
+      // Previously this was fire-and-forgot in firebase.js, meaning Firebase
+      // could initialise a session before persistence was set to localStorage.
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+      } catch (err) {
+        console.error('Failed to set auth persistence:', err);
+      }
+
+      // Step 1: Handle magic link before touching anonymous auth to avoid races
       if (isSignInWithEmailLink(auth, window.location.href)) {
         const email = window.localStorage.getItem('emailForSignIn');
         if (email) {
@@ -122,20 +132,28 @@ export const useAuth = ({ setActiveLeagueId, setPendingJoinCode, setShowJoinModa
         return;
       }
 
-      // Step 2: Normal load
-      if (!auth.currentUser) {
-        try { await signInAnonymously(auth); } catch (err) { console.error(err); }
-      }
+      // FIX 2: Do NOT call signInAnonymously here anymore.
+      // auth.currentUser is synchronously null on page load even when a
+      // persisted session exists, because Firebase hasn't rehydrated yet.
+      // Calling signInAnonymously here would silently overwrite a real
+      // linked account. The onAuthStateChanged listener below is the correct
+      // place to detect "truly no session" and create an anonymous one.
     };
 
     initAuth();
 
-    // Step 3: React to auth state changes
+    // Step 2: React to auth state changes.
+    // FIX 2 (continued): If Firebase resolves u as null, THAT is the safe
+    // signal that there is genuinely no session — create anonymous user here.
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      if (!u) {
+        // Truly no session — create an anonymous one.
+        try { await signInAnonymously(auth); } catch (err) { console.error(err); }
+        return;
+      }
+
       setUser(u);
       setLeaguesLoaded(false);
-
-      if (!u) return;
 
       // Load the user's owned leagues from Firestore
       const registryRef = doc(db, 'artifacts', appId, 'users', u.uid, 'metadata', 'leagues');
