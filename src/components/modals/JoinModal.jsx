@@ -80,7 +80,7 @@ export const JoinModal = ({
               Join a League
             </h3>
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="join-invite-code" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">
                 League Invite Code (or URL)
               </label>
               <input
@@ -97,7 +97,7 @@ export const JoinModal = ({
               )}
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">
+              <label htmlFor="join-nickname" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">
                 Nickname for this League
               </label>
               <input
