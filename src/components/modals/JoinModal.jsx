@@ -84,6 +84,8 @@ export const JoinModal = ({
                 League Invite Code (or URL)
               </label>
               <input
+                id="join-invite-code"
+                name="inviteCode"
                 type="text"
                 placeholder="Paste link here"
                 value={pendingJoinCode}
@@ -99,6 +101,8 @@ export const JoinModal = ({
                 Nickname for this League
               </label>
               <input
+                id="join-nickname"
+                name="leagueNickname"
                 type="text"
                 placeholder="e.g. The Office Pool"
                 value={pendingJoinName}
