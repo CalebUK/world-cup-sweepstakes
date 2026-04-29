@@ -229,6 +229,9 @@ export const BracketTab = ({ matches, members, assignments }) => {
           <User className="w-4 h-4 text-emerald-600" />
           <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Highlight:</span>
           <select
+            id="bracket-highlight-member"
+            name="highlightMember"
+            aria-label="Highlight a member's teams in the bracket"
             value={highlightMember}
             onChange={(e) => handleHighlightChange(e.target.value)}
             className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer ml-1"
