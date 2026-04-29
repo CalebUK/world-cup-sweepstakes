@@ -55,6 +55,9 @@ export const AppHeader = ({
           {/* League dropdown — styled as a visible select with border and chevron */}
           <div className="relative flex-1 min-w-0">
             <select
+              id="active-league-selector"
+              name="activeLeague"
+              aria-label="Select active league"
               value={activeLeagueId || ''}
               onChange={e => onSwitchLeague(e.target.value)}
               className="w-full appearance-none bg-slate-50 hover:bg-slate-100 border-2 border-slate-200 text-slate-900 font-black text-sm sm:text-base py-2.5 pl-3 pr-9 rounded-lg cursor-pointer focus:ring-2 focus:ring-emerald-400 focus:outline-none transition-colors truncate"
