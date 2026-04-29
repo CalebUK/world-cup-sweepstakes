@@ -14,7 +14,7 @@
 // We pivot to team-keyed on render and back to manager-keyed on save.
 
 import React, { useState, useMemo } from 'react';
-import { Filter, ArrowUpDown, Sparkles, Dice5, CheckCircle, AlertTriangle, Trophy, Lock } from 'lucide-react';
+import { Filter, ArrowUpDown, Sparkles, Dice5, CheckCircle, AlertTriangle, Trophy, Lock, X } from 'lucide-react';
 import { TEAMS_DATA } from '../config/data.js';
 import { TeamLogo } from '../components/TeamLogo.jsx';
 import { TeamPixelArt } from '../components/TeamPixelArt.jsx';
@@ -71,10 +71,6 @@ const setPickInStorage = (picks, members, teamId, statId, newManagerId) => {
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
-// teamOwnerIds: array of distinct manager IDs who own this team (from draft).
-// allMembers: full member list, used to look up names by id.
-// blocked: when true, the dropdown shows a red ring to indicate the last
-//          attempt was rejected by the cap.
 const StatDropdown = ({
   stat,
   currentManagerId,
@@ -127,6 +123,32 @@ const STAT_SHORT = {
   goalsAllowed:  'GA',
 };
 
+// Floating toast — fixed to the viewport so it's visible regardless of scroll
+const BlockToast = ({ message, onDismiss }) => (
+  <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:max-w-sm z-[200] animate-fade-in">
+    <div className="bg-white border-2 border-red-300 rounded-xl shadow-2xl overflow-hidden">
+      <div className="bg-red-500 px-3 py-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-white shrink-0" />
+          <span className="text-xs font-black text-white uppercase tracking-widest">
+            Pick blocked
+          </span>
+        </div>
+        <button
+          onClick={onDismiss}
+          className="text-white/80 hover:text-white p-0.5 rounded transition-colors shrink-0"
+          aria-label="Dismiss"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="p-3">
+        <p className="text-sm text-red-900 font-bold leading-snug">{message}</p>
+      </div>
+    </div>
+  </div>
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
@@ -154,8 +176,9 @@ export const FantasyTeamsTab = ({
     try { return localStorage.getItem('wcFantasySort') || 'Group'; } catch { return 'Group'; }
   });
 
-  // Soft-block error state. Keyed by `${teamId}-${statId}` so two errors at
-  // once (rare) display independently. Auto-clears after 3 seconds.
+  // Soft-block state. Keyed by `${teamId}-${statId}` so the dropdown that
+  // was rejected can be ringed in red. The toast is a separate piece of
+  // state so we can dismiss it explicitly without clearing the ring.
   const [blockedSlots, setBlockedSlots] = useState({});
   const [blockMessage, setBlockMessage] = useState('');
 
@@ -201,7 +224,6 @@ export const FantasyTeamsTab = ({
     return out;
   }, [ownership, members]);
 
-  // Set of team IDs that appear in ANY manager's ownership.
   const draftedTeamIds = useMemo(() => {
     const set = new Set();
     Object.keys(teamOwnersMap).forEach(tid => {
@@ -210,8 +232,6 @@ export const FantasyTeamsTab = ({
     return set;
   }, [teamOwnersMap]);
 
-  // Helper: count how many distinct stats are currently assigned for a team
-  // in the team-keyed picks.
   const countAssignedStats = (teamId, picksMap) => {
     const tp = picksMap[teamId] || {};
     return FANTASY_STATS.reduce((acc, s) => acc + (tp[s.id] ? 1 : 0), 0);
@@ -259,33 +279,29 @@ export const FantasyTeamsTab = ({
   const flashBlocked = (slotKey, message) => {
     setBlockedSlots(prev => ({ ...prev, [slotKey]: true }));
     setBlockMessage(message);
+    // Clear the ring (and the toast if it hasn't been replaced) after 4s
     setTimeout(() => {
       setBlockedSlots(prev => {
         const { [slotKey]: _omit, ...rest } = prev;
         return rest;
       });
       setBlockMessage(prev => (prev === message ? '' : prev));
-    }, 3000);
+    }, 4000);
   };
 
   const handlePickChange = (teamId, statId, newManagerId) => {
     if (!isOwner) return;
 
-    // Compute what the picks would look like AFTER this change, so the
-    // cap check is based on the resulting state — not the current state.
     const currentTeamPicks = teamKeyedPicks[teamId] || {};
     const wasAssigned = !!currentTeamPicks[statId];
     const isClearing = !newManagerId;
 
-    // Distinct owners of this team determines the cap (max 4 for the 4 stats).
     const ownerCount = teamOwnersMap[teamId]?.length || 0;
     const cap = Math.min(ownerCount, FANTASY_STATS.length);
 
-    // How many stats would be assigned after this change?
     let nextCount = countAssignedStats(teamId, teamKeyedPicks);
     if (isClearing && wasAssigned) nextCount -= 1;
     else if (!isClearing && !wasAssigned) nextCount += 1;
-    // (swapping one manager for another at an already-assigned stat → no change in count)
 
     if (!isClearing && nextCount > cap) {
       const teamName = TEAMS_DATA.find(t => t.id === teamId)?.name || teamId;
@@ -312,7 +328,6 @@ export const FantasyTeamsTab = ({
       {/* ── Top status row ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-        {/* 1. Draft state */}
         <div className={`rounded-xl border-2 shadow-sm p-4 flex flex-col gap-1 ${
           hasDraft ? 'bg-purple-50 border-purple-200' : 'bg-amber-50 border-amber-200'
         }`}>
@@ -340,7 +355,6 @@ export const FantasyTeamsTab = ({
           )}
         </div>
 
-        {/* 2. Picks validation */}
         <div className={`rounded-xl border-2 shadow-sm p-4 flex flex-col gap-1 ${
           validation.ok ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200'
         }`}>
@@ -358,7 +372,6 @@ export const FantasyTeamsTab = ({
           </span>
         </div>
 
-        {/* 3. Roto reminder */}
         <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-4 flex flex-col gap-1">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
             <Sparkles className="w-3 h-3" /> Roto Format
@@ -372,20 +385,7 @@ export const FantasyTeamsTab = ({
         </div>
       </div>
 
-      {/* ── Soft-block error toast (transient) ──────────────────────── */}
-      {blockMessage && (
-        <div className="bg-red-50 border-2 border-red-300 rounded-xl p-3 flex items-start gap-2 animate-fade-in">
-          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-black text-red-900 uppercase tracking-wide">
-              Pick blocked
-            </p>
-            <p className="text-xs text-red-800 font-medium mt-0.5">{blockMessage}</p>
-          </div>
-        </div>
-      )}
-
-      {/* ── Validation issues (when there are any) ─────────────────── */}
+      {/* ── Validation issues ─────────────────────────────────────── */}
       {!validation.ok && hasDraft && (
         <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4">
           <div className="flex items-start gap-2">
@@ -492,7 +492,6 @@ export const FantasyTeamsTab = ({
             const ownerNames = ownerIds
               .map(id => members.find(m => m.id === id)?.name)
               .filter(Boolean);
-            const allFour = FANTASY_STATS.every(s => !!tp[s.id]);
             const cap = Math.min(ownerIds.length, FANTASY_STATS.length);
             const assignedCount = countAssignedStats(team.id, teamKeyedPicks);
 
@@ -507,20 +506,17 @@ export const FantasyTeamsTab = ({
                       : 'border-purple-200 hover:border-purple-400'
                 }`}
               >
-                {/* Background pixel art */}
                 <div className="absolute inset-0 z-0 bg-slate-800">
                   <TeamPixelArt teamId={team.id} className="w-full h-full object-cover object-center opacity-40" />
                   <div className="absolute inset-0 bg-gradient-to-b from-purple-900/40 via-slate-900/70 to-slate-900/95" />
                 </div>
 
-                {/* Excluded ribbon */}
                 {!isInDraft && (
                   <div className="absolute top-0 left-0 right-0 bg-slate-700 text-slate-200 text-center py-1 text-[10px] font-black uppercase tracking-widest z-20 shadow-md flex items-center justify-center gap-1">
                     <Lock className="w-3 h-3" /> Excluded from draft
                   </div>
                 )}
 
-                {/* Top: identity */}
                 <div className="relative z-10 flex flex-col items-center pt-5 sm:pt-6 px-2 pb-2 w-full min-w-0">
                   <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-full p-2 flex items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.5)] mb-2 shrink-0">
                     <TeamLogo teamId={team.id} className="w-full h-full object-contain" />
@@ -554,7 +550,6 @@ export const FantasyTeamsTab = ({
                   )}
                 </div>
 
-                {/* Bottom: 4 stat dropdowns (only when team is in draft) */}
                 {isInDraft && (
                   <div className="relative z-10 grid grid-cols-2 gap-1.5 p-2 sm:p-3 mt-auto bg-black/30 backdrop-blur-sm border-t border-white/10">
                     {FANTASY_STATS.map(stat => {
@@ -580,11 +575,15 @@ export const FantasyTeamsTab = ({
         </div>
       )}
 
-      {/* ── Empty result hint (filters too tight) ─────────────────── */}
       {hasDraft && displayedTeams.length === 0 && (
         <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 text-center text-sm text-slate-500 font-medium">
           No teams match the current filters.
         </div>
+      )}
+
+      {/* ── Floating block toast ───────────────────────────────────── */}
+      {blockMessage && (
+        <BlockToast message={blockMessage} onDismiss={() => setBlockMessage('')} />
       )}
     </div>
   );
