@@ -109,7 +109,7 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
               aria-label="Filter teams by manager"
               value={managerFilter}
               onChange={(e) => handleFilterChange(e.target.value)} 
-              className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer">
+              className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer"
             >
               <option value="All">All Teams</option>
               <option value="Unassigned">Unassigned Teams</option>
@@ -126,7 +126,7 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
               aria-label="Sort teams by"
               value={sortBy} 
               onChange={(e) => handleSortChange(e.target.value)} 
-              className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer">
+              className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer"
             >
               <option value="Group">Group</option>
               <option value="Rank">FIFA Ranking (High to Low)</option>
