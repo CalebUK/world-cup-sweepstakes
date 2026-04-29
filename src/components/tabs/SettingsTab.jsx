@@ -50,7 +50,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
 
   // Mobile-friendly stepper: large − / + buttons flank the value.
   // Works perfectly on touch screens without needing native spinner arrows.
-  const ScoreInput = ({ label, value, onChange }) => {
+  const ScoreInput = ({ label, value, onChange, stageGroup, stage, field }) => {
     const num = parseInt(value) || 0;
     return (
       <div className="flex flex-col items-center gap-1 flex-1 min-w-[72px]">
@@ -68,6 +68,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
           <input
             id={`scoring-${fieldKey}`}
             name={`scoring-${fieldKey}`}
+            aria-label={label}
             type="number"
             value={value}
             onChange={e => onChange(e.target.value)}
@@ -363,10 +364,10 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
               <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
                 <h4 className="font-black text-emerald-700 mb-3 uppercase tracking-widest text-xs border-b border-slate-100 pb-2">Group Stage</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <ScoreInput label="Win" value={activeScoring.group.win} onChange={(v) => handleScoringUpdate('group', null, 'win', v)} />
-                  <ScoreInput label="Draw" value={activeScoring.group.draw} onChange={(v) => handleScoringUpdate('group', null, 'draw', v)} />
-                  <ScoreInput label="Loss" value={activeScoring.group.loss} onChange={(v) => handleScoringUpdate('group', null, 'loss', v)} />
-                  <ScoreInput label="Top of Group Bonus" value={activeScoring.group.topOfGroup || 0} onChange={(v) => handleScoringUpdate('group', null, 'topOfGroup', v)} />
+                  <ScoreInput label="Win" stageGroup="group" field="win" value={activeScoring.group.win} onChange={(v) => handleScoringUpdate('group', null, 'win', v)} />
+                  <ScoreInput label="Draw" stageGroup="group" field="draw" value={activeScoring.group.draw} onChange={(v) => handleScoringUpdate('group', null, 'draw', v)} />
+                  <ScoreInput label="Loss" stageGroup="group" field="loss" value={activeScoring.group.loss} onChange={(v) => handleScoringUpdate('group', null, 'loss', v)} />
+                  <ScoreInput label="Top of Group Bonus" stageGroup="group" field="topOfGroup" value={activeScoring.group.topOfGroup || 0} onChange={(v) => handleScoringUpdate('group', null, 'topOfGroup', v)} />
                 </div>
               </div>
 
@@ -379,19 +380,19 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
                       <div key={stage.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-2 hover:bg-slate-50 rounded-lg transition-colors">
                         <span className="w-16 font-black text-sm text-slate-700 uppercase tracking-widest">{stage.id}</span>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
-                          <ScoreInput label="Reg Win" value={sData.win} onChange={(v) => handleScoringUpdate('ko', stage.id, 'win', v)} />
-                          <ScoreInput label="Reg Loss" value={sData.loss} onChange={(v) => handleScoringUpdate('ko', stage.id, 'loss', v)} />
+                          <ScoreInput label="Reg Win" stageGroup="ko" stage={stage.id} field="win" value={sData.win} onChange={(v) => handleScoringUpdate('ko', stage.id, 'win', v)} />
+                          <ScoreInput label="Reg Loss" stageGroup="ko" stage={stage.id} field="loss" value={sData.loss} onChange={(v) => handleScoringUpdate('ko', stage.id, 'loss', v)} />
                           {sData.etWin !== undefined && (
-                            <ScoreInput label="ET Win" value={sData.etWin} onChange={(v) => handleScoringUpdate('ko', stage.id, 'etWin', v)} />
+                            <ScoreInput label="ET Win" stageGroup="ko" stage={stage.id} field="etWin" value={sData.etWin} onChange={(v) => handleScoringUpdate('ko', stage.id, 'etWin', v)} />
                           )}
                           {sData.etLoss !== undefined && (
-                            <ScoreInput label="ET Loss" value={sData.etLoss} onChange={(v) => handleScoringUpdate('ko', stage.id, 'etLoss', v)} />
+                            <ScoreInput label="ET Loss" stageGroup="ko" stage={stage.id} field="etLoss" value={sData.etLoss} onChange={(v) => handleScoringUpdate('ko', stage.id, 'etLoss', v)} />
                           )}
                           {sData.penWin !== undefined && (
-                            <ScoreInput label="Pen Win" value={sData.penWin} onChange={(v) => handleScoringUpdate('ko', stage.id, 'penWin', v)} />
+                            <ScoreInput label="Pen Win" stageGroup="ko" stage={stage.id} field="penWin" value={sData.penWin} onChange={(v) => handleScoringUpdate('ko', stage.id, 'penWin', v)} />
                           )}
                           {sData.penLoss !== undefined && (
-                            <ScoreInput label="Pen Loss" value={sData.penLoss} onChange={(v) => handleScoringUpdate('ko', stage.id, 'penLoss', v)} />
+                            <ScoreInput label="Pen Loss" stageGroup="ko" stage={stage.id} field="penLoss" value={sData.penLoss} onChange={(v) => handleScoringUpdate('ko', stage.id, 'penLoss', v)} />
                           )}
                         </div>
                       </div>
