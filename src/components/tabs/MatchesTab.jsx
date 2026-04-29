@@ -273,19 +273,25 @@ export const MatchesTab = ({ matches, localTimezone, setLocalTimezone, isViewer,
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 w-full md:w-auto">
-          <Globe className="w-4 h-4 text-slate-400 shrink-0" />
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:block">Timezone:</span>
-          <select
-            value={localTimezone}
-            onChange={(e) => {
-              setLocalTimezone(e.target.value);
-              try { localStorage.setItem('worldCupTimezone', e.target.value); } catch (err) {}
-            }}
-            className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer w-full sm:w-auto"
-          >
-            {TIMEZONES.map(tz => <option key={tz.id} value={tz.id}>{tz.label}</option>)}
-          </select>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 w-full sm:w-auto">
+            <Globe className="w-4 h-4 text-slate-400 shrink-0" />
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:block">Timezone:</span>
+            <select
+              value={localTimezone}
+              onChange={(e) => {
+                setLocalTimezone(e.target.value);
+                try { localStorage.setItem('worldCupTimezone', e.target.value); } catch (err) {}
+              }}
+              className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer w-full sm:w-auto"
+            >
+              {TIMEZONES.map(tz => <option key={tz.id} value={tz.id}>{tz.label}</option>)}
+            </select>
+          </div>
+          <label className="flex items-center gap-2 text-sm font-bold text-slate-500 cursor-pointer hover:text-emerald-600 transition-colors bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 w-full sm:w-auto">
+            <input type="checkbox" checked={uiState.sortFinishedBottom} onChange={toggleSortFinished} className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer" />
+            Finished to bottom
+          </label>
         </div>
       </div>
 
@@ -344,10 +350,6 @@ export const MatchesTab = ({ matches, localTimezone, setLocalTimezone, isViewer,
                     {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'].map(g => <option key={g} value={`Group ${g}`}>Group {g}</option>)}
                   </select>
                 </div>
-                <label className="flex items-center gap-2 text-sm font-bold text-slate-500 cursor-pointer hover:text-emerald-600 transition-colors bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 w-full sm:w-auto">
-                  <input type="checkbox" checked={uiState.sortFinishedBottom} onChange={toggleSortFinished} className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer" />
-                  Finished to bottom
-                </label>
               </div>
             </div>
             <div className="space-y-4">
