@@ -155,9 +155,9 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
           {!fantasyMode && (
             <div className="flex items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">
               <div>
-                <label className="font-black text-slate-800 flex items-center gap-2">
+                <span className="font-black text-slate-800 flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-amber-500" /> Wooden Spoon Award
-                </label>
+                </span>
                 <p className="text-sm text-slate-500 font-medium mt-0.5">Give a special award to the manager who finishes last.</p>
               </div>
               <button
@@ -174,9 +174,9 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
             <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <label className="font-black text-slate-800 flex items-center gap-2">
+                  <span className="font-black text-slate-800 flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-indigo-500" /> Kid Awards
-                  </label>
+                  </span>
                   <p className="text-sm text-slate-500 font-medium mt-0.5">Separate leaderboard for managers marked as kids.</p>
                 </div>
                 <button
@@ -210,9 +210,9 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
           {/* Auto Sync — kept for both modes (match scores are still useful for fantasy stats) */}
           <div className="flex items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">
             <div>
-              <label className="font-black text-slate-800 flex items-center gap-2">
+              <span className="font-black text-slate-800 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-blue-500" /> Auto-Sync Scores
-              </label>
+              </span>
               <p className="text-sm text-slate-500 font-medium mt-0.5">Automatically pull live scores from ESPN. Disables manual score editing.</p>
             </div>
             <button
@@ -227,9 +227,9 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
           <div className="bg-purple-50 p-4 rounded-xl border border-purple-200 hover:border-purple-400 transition-colors">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <label className="font-black text-slate-800 flex items-center gap-2">
+                <span className="font-black text-slate-800 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-purple-500" /> Fantasy Mode (Roto)
-                </label>
+                </span>
                 <p className="text-sm text-slate-500 font-medium mt-0.5">
                   Switches this league from Sweepstakes to a 4-stat Rotisserie format
                   (Goals, Shots on Target, Cards, Goals Allowed). Replaces the Standings
@@ -254,9 +254,9 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
             {settings.fantasyMode && (
               <div className="mt-4 pt-4 border-t border-purple-200 flex items-center justify-between gap-4">
                 <div>
-                  <label className="font-black text-slate-700 text-sm">
+                  <span className="font-black text-slate-700 text-sm">
                     Picks per Category
-                  </label>
+                  </span>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">
                     How many teams each manager assigns to each of the 4 stats. Default 5.
                   </p>
@@ -356,9 +356,9 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
             {/* Custom scoring */}
             <div className="flex flex-col gap-4 bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">
               <div>
-                <label className="font-black text-slate-800 flex items-center gap-2 text-lg">
+                <span className="font-black text-slate-800 flex items-center gap-2 text-lg">
                   <Calculator className="w-5 h-5 text-indigo-600" /> Custom Scoring System
-                </label>
+                </span>
                 <p className="text-sm text-slate-500 font-medium mt-1">Define how many points managers receive based on their team's performance.</p>
               </div>
 
