@@ -52,6 +52,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
   // Works perfectly on touch screens without needing native spinner arrows.
   const ScoreInput = ({ label, value, onChange, stageGroup, stage, field }) => {
     const num = parseInt(value) || 0;
+    const fieldKey = stage ? `${stageGroup}-${stage}-${field}` : `${stageGroup}-${field}`;
     return (
       <div className="flex flex-col items-center gap-1 flex-1 min-w-[72px]">
         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center leading-tight">{label}</span>
