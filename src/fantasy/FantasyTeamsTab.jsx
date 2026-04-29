@@ -71,7 +71,28 @@ const setPickInStorage = (picks, members, teamId, statId, newManagerId) => {
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
-const StatDropdown = ({ stat, currentManagerId, members, onChange, disabled }) => {
+// teamOwnerIds: array of distinct manager IDs who own this team (from draft).
+// allMembers: full member list, used to look up names by id.
+// blocked: when true, the dropdown shows a red ring to indicate the last
+//          attempt was rejected by the cap.
+const StatDropdown = ({
+  stat,
+  currentManagerId,
+  teamOwnerIds,
+  allMembers,
+  onChange,
+  disabled,
+  blocked,
+}) => {
+  // Build option list = the team's owners, in the order they appear in
+  // allMembers (stable). Always include the current selection even if for
+  // some reason it isn't in the owners (e.g. stale picks before a re-roll).
+  const optionIds = [...teamOwnerIds];
+  if (currentManagerId && !optionIds.includes(currentManagerId)) {
+    optionIds.push(currentManagerId);
+  }
+  const options = allMembers.filter(m => optionIds.includes(m.id));
+
   return (
     <div className="flex flex-col gap-0.5 w-full">
       <span className="text-[8px] font-black text-white/70 uppercase tracking-wider px-1">
@@ -81,12 +102,16 @@ const StatDropdown = ({ stat, currentManagerId, members, onChange, disabled }) =
         value={currentManagerId || ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className={`w-full text-[10px] sm:text-xs font-black text-purple-900 bg-white/95 border border-white/50 rounded-md px-1.5 py-1 focus:outline-none focus:border-purple-500 cursor-pointer truncate ${
-          disabled ? 'cursor-not-allowed opacity-90' : ''
-        } ${currentManagerId ? '' : 'text-slate-400 italic'}`}
+        className={`w-full text-[10px] sm:text-xs font-black text-purple-900 bg-white/95 border rounded-md px-1.5 py-1 focus:outline-none cursor-pointer truncate transition-colors ${
+          blocked
+            ? 'border-red-500 ring-2 ring-red-300 focus:border-red-500'
+            : 'border-white/50 focus:border-purple-500'
+        } ${disabled ? 'cursor-not-allowed opacity-90' : ''} ${
+          currentManagerId ? '' : 'text-slate-400 italic'
+        }`}
       >
-        <option value="">— unassigned —</option>
-        {members.map(m => (
+        <option value="">Assign</option>
+        {options.map(m => (
           <option key={m.id} value={m.id}>{m.name}</option>
         ))}
       </select>
@@ -129,6 +154,11 @@ export const FantasyTeamsTab = ({
     try { return localStorage.getItem('wcFantasySort') || 'Group'; } catch { return 'Group'; }
   });
 
+  // Soft-block error state. Keyed by `${teamId}-${statId}` so two errors at
+  // once (rare) display independently. Auto-clears after 3 seconds.
+  const [blockedSlots, setBlockedSlots] = useState({});
+  const [blockMessage, setBlockMessage] = useState('');
+
   const handleManagerFilterChange = (val) => {
     setManagerFilter(val);
     try { localStorage.setItem('wcFantasyManagerFilter', val); } catch (e) {}
@@ -156,28 +186,36 @@ export const FantasyTeamsTab = ({
 
   const hasDraft = !!draftMeta && Object.keys(ownership || {}).length > 0;
 
-  // Set of team IDs that appear in ANY manager's ownership — these are the
-  // "in play" teams. Teams excluded by FIFA-rank cutoff aren't drafted and
-  // can't be picked for stats.
-  const draftedTeamIds = useMemo(() => {
-    const set = new Set();
-    Object.values(ownership || {}).forEach(arr => arr.forEach(tid => set.add(tid)));
-    return set;
-  }, [ownership]);
-
-  // Owners of each team (for the small "owned by" caption on each card).
-  // A team can have multiple owners due to the multi-pass draft.
-  const teamOwners = useMemo(() => {
+  // For each team, the set of managers who own it (de-duplicated).
+  const teamOwnersMap = useMemo(() => {
     const out = {};
     TEAMS_DATA.forEach(t => { out[t.id] = []; });
     if (!ownership) return out;
     members.forEach(m => {
       (ownership[m.id] || []).forEach(tid => {
-        if (out[tid]) out[tid].push(m.name);
+        if (out[tid] && !out[tid].includes(m.id)) {
+          out[tid].push(m.id);
+        }
       });
     });
     return out;
   }, [ownership, members]);
+
+  // Set of team IDs that appear in ANY manager's ownership.
+  const draftedTeamIds = useMemo(() => {
+    const set = new Set();
+    Object.keys(teamOwnersMap).forEach(tid => {
+      if (teamOwnersMap[tid].length > 0) set.add(tid);
+    });
+    return set;
+  }, [teamOwnersMap]);
+
+  // Helper: count how many distinct stats are currently assigned for a team
+  // in the team-keyed picks.
+  const countAssignedStats = (teamId, picksMap) => {
+    const tp = picksMap[teamId] || {};
+    return FANTASY_STATS.reduce((acc, s) => acc + (tp[s.id] ? 1 : 0), 0);
+  };
 
   // ── Filtering ───────────────────────────────────────────────────────────
 
@@ -189,7 +227,6 @@ export const FantasyTeamsTab = ({
     } else if (managerFilter === 'Excluded') {
       displayedTeams = displayedTeams.filter(t => !draftedTeamIds.has(t.id));
     } else {
-      // by manager name (anyone who owns this team)
       displayedTeams = displayedTeams.filter(t =>
         (ownership?.[managerFilter] || []).includes(t.id)
       );
@@ -217,13 +254,53 @@ export const FantasyTeamsTab = ({
     return 0;
   });
 
-  // ── Action: change a single stat owner ──────────────────────────────────
+  // ── Action: change a single stat owner with cap check ───────────────────
+
+  const flashBlocked = (slotKey, message) => {
+    setBlockedSlots(prev => ({ ...prev, [slotKey]: true }));
+    setBlockMessage(message);
+    setTimeout(() => {
+      setBlockedSlots(prev => {
+        const { [slotKey]: _omit, ...rest } = prev;
+        return rest;
+      });
+      setBlockMessage(prev => (prev === message ? '' : prev));
+    }, 3000);
+  };
 
   const handlePickChange = (teamId, statId, newManagerId) => {
     if (!isOwner) return;
+
+    // Compute what the picks would look like AFTER this change, so the
+    // cap check is based on the resulting state — not the current state.
+    const currentTeamPicks = teamKeyedPicks[teamId] || {};
+    const wasAssigned = !!currentTeamPicks[statId];
+    const isClearing = !newManagerId;
+
+    // Distinct owners of this team determines the cap (max 4 for the 4 stats).
+    const ownerCount = teamOwnersMap[teamId]?.length || 0;
+    const cap = Math.min(ownerCount, FANTASY_STATS.length);
+
+    // How many stats would be assigned after this change?
+    let nextCount = countAssignedStats(teamId, teamKeyedPicks);
+    if (isClearing && wasAssigned) nextCount -= 1;
+    else if (!isClearing && !wasAssigned) nextCount += 1;
+    // (swapping one manager for another at an already-assigned stat → no change in count)
+
+    if (!isClearing && nextCount > cap) {
+      const teamName = TEAMS_DATA.find(t => t.id === teamId)?.name || teamId;
+      const ownerNames = teamOwnersMap[teamId]
+        .map(id => members.find(m => m.id === id)?.name)
+        .filter(Boolean)
+        .join(' & ');
+      flashBlocked(
+        `${teamId}-${statId}`,
+        `${teamName} only has ${ownerCount} owner${ownerCount === 1 ? '' : 's'} (${ownerNames}) — you can assign at most ${cap} stat${cap === 1 ? '' : 's'} for this team.`
+      );
+      return;
+    }
+
     const newPicks = setPickInStorage(picks, members, teamId, statId, newManagerId);
-    // Save the whole picks blob — small enough that it's fine,
-    // and avoids race conditions from partial updates.
     saveFantasyState('picks', newPicks);
   };
 
@@ -294,6 +371,19 @@ export const FantasyTeamsTab = ({
           </span>
         </div>
       </div>
+
+      {/* ── Soft-block error toast (transient) ──────────────────────── */}
+      {blockMessage && (
+        <div className="bg-red-50 border-2 border-red-300 rounded-xl p-3 flex items-start gap-2 animate-fade-in">
+          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-black text-red-900 uppercase tracking-wide">
+              Pick blocked
+            </p>
+            <p className="text-xs text-red-800 font-medium mt-0.5">{blockMessage}</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Validation issues (when there are any) ─────────────────── */}
       {!validation.ok && hasDraft && (
@@ -398,8 +488,13 @@ export const FantasyTeamsTab = ({
           {displayedTeams.map(team => {
             const isInDraft = draftedTeamIds.has(team.id);
             const tp = teamKeyedPicks[team.id] || {};
-            const owners = teamOwners[team.id] || [];
+            const ownerIds = teamOwnersMap[team.id] || [];
+            const ownerNames = ownerIds
+              .map(id => members.find(m => m.id === id)?.name)
+              .filter(Boolean);
             const allFour = FANTASY_STATS.every(s => !!tp[s.id]);
+            const cap = Math.min(ownerIds.length, FANTASY_STATS.length);
+            const assignedCount = countAssignedStats(team.id, teamKeyedPicks);
 
             return (
               <div
@@ -407,12 +502,12 @@ export const FantasyTeamsTab = ({
                 className={`group relative rounded-2xl border-2 shadow-md flex flex-col overflow-hidden transition-all ${
                   !isInDraft
                     ? 'border-slate-200 opacity-60 grayscale'
-                    : allFour
+                    : assignedCount === cap && cap > 0
                       ? 'border-emerald-300'
                       : 'border-purple-200 hover:border-purple-400'
                 }`}
               >
-                {/* Background pixel art (matches existing TeamsTab vibe) */}
+                {/* Background pixel art */}
                 <div className="absolute inset-0 z-0 bg-slate-800">
                   <TeamPixelArt teamId={team.id} className="w-full h-full object-cover object-center opacity-40" />
                   <div className="absolute inset-0 bg-gradient-to-b from-purple-900/40 via-slate-900/70 to-slate-900/95" />
@@ -442,10 +537,19 @@ export const FantasyTeamsTab = ({
                     <span className="text-[8px] font-black uppercase tracking-wider bg-white/90 backdrop-blur-sm text-emerald-800 px-1.5 py-0.5 rounded shadow-sm">
                       Rank {team.rank}
                     </span>
+                    {isInDraft && (
+                      <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-sm ${
+                        assignedCount === cap && cap > 0
+                          ? 'bg-emerald-200 text-emerald-900'
+                          : 'bg-purple-200 text-purple-900'
+                      }`}>
+                        {assignedCount}/{cap} stats
+                      </span>
+                    )}
                   </div>
-                  {owners.length > 0 && (
+                  {ownerNames.length > 0 && (
                     <div className="text-[9px] text-white/90 font-bold uppercase tracking-wider mt-1.5 text-center max-w-full truncate px-1">
-                      Owned by: <span className="text-purple-200">{owners.join(' & ')}</span>
+                      Owned by: <span className="text-purple-200">{ownerNames.join(' & ')}</span>
                     </div>
                   )}
                 </div>
@@ -453,16 +557,21 @@ export const FantasyTeamsTab = ({
                 {/* Bottom: 4 stat dropdowns (only when team is in draft) */}
                 {isInDraft && (
                   <div className="relative z-10 grid grid-cols-2 gap-1.5 p-2 sm:p-3 mt-auto bg-black/30 backdrop-blur-sm border-t border-white/10">
-                    {FANTASY_STATS.map(stat => (
-                      <StatDropdown
-                        key={stat.id}
-                        stat={{ ...stat, shortLabel: STAT_SHORT[stat.id] }}
-                        currentManagerId={tp[stat.id]}
-                        members={members}
-                        disabled={!isOwner}
-                        onChange={(newId) => handlePickChange(team.id, stat.id, newId)}
-                      />
-                    ))}
+                    {FANTASY_STATS.map(stat => {
+                      const slotKey = `${team.id}-${stat.id}`;
+                      return (
+                        <StatDropdown
+                          key={stat.id}
+                          stat={{ ...stat, shortLabel: STAT_SHORT[stat.id] }}
+                          currentManagerId={tp[stat.id]}
+                          teamOwnerIds={ownerIds}
+                          allMembers={members}
+                          disabled={!isOwner}
+                          blocked={!!blockedSlots[slotKey]}
+                          onChange={(newId) => handlePickChange(team.id, stat.id, newId)}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>
