@@ -103,10 +103,14 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
           <div className="flex items-center gap-2 w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
             <Filter className="w-4 h-4 text-slate-400 shrink-0" />
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:block">Manager:</span>
-            <select value={managerFilter} onChange={(e) => handleFilterChange(e.target.value)} className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer">
+            <select 
               id="teams-manager-filter"
               name="managerFilter"
               aria-label="Filter teams by manager"
+              value={managerFilter}
+              onChange={(e) => handleFilterChange(e.target.value)} 
+              className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer">
+            >
               <option value="All">All Teams</option>
               <option value="Unassigned">Unassigned Teams</option>
               <option disabled>──────────</option>
@@ -116,10 +120,14 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
           <div className="flex items-center gap-2 w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
             <ArrowUpDown className="w-4 h-4 text-slate-400 shrink-0" />
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:block">Sort By:</span>
-            <select value={sortBy} onChange={(e) => handleSortChange(e.target.value)} className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer">
+            <select
               id="teams-sort-by"
               name="sortBy"
               aria-label="Sort teams by"
+              value={sortBy} 
+              onChange={(e) => handleSortChange(e.target.value)} 
+              className="bg-transparent text-sm font-black text-emerald-800 focus:outline-none w-full cursor-pointer">
+            >
               <option value="Group">Group</option>
               <option value="Rank">FIFA Ranking (High to Low)</option>
               <option value="Odds">Tournament Odds</option>
