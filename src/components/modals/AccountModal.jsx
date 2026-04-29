@@ -83,6 +83,7 @@ export const AccountModal = ({
                     name="email"
                     aria-label="Email address for magic sign-in link"
                     type="email" 
+                    autoComplete="email"
                     value={authEmail}
                     onChange={e => setAuthEmail(e.target.value)}
                     placeholder="Enter your email address" 
