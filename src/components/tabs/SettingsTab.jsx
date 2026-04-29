@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock, AlertTriangle, RotateCcw, Share2, CheckCircle, Copy, Trophy, ShieldAlert, Sparkles } from 'lucide-react';
+import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock, AlertTriangle, RotateCcw, Share2, CheckCircle, Copy, Trophy, ShieldAlert, Sparkles, Pencil } from 'lucide-react';
 import { KNOCKOUT_STAGES, DEFAULT_SCORING } from '../../config/data.js';
 
 export const SettingsTab = ({ settings, updateSettings, members, handleAddMember, handleUpdateMember, handleDeleteMember, handleResetData, handleHardReset, userUid }) => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showHardResetConfirm, setShowHardResetConfirm] = useState(false);
+
+  const fantasyMode = !!settings.fantasyMode;
 
   const handleCopyLink = () => {
     if (!userUid) return;
@@ -56,7 +58,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
         <div className="flex items-center w-full bg-slate-100 border border-slate-200 rounded-lg overflow-hidden focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all">
           <button
             type="button"
-            onPointerDown={e => e.preventDefault()}  // prevent focus-shift on mobile
+            onPointerDown={e => e.preventDefault()}
             onClick={() => onChange(String(Math.max(0, num - 1)))}
             className="flex items-center justify-center w-9 h-9 shrink-0 text-slate-500 hover:text-white hover:bg-emerald-500 active:bg-emerald-600 transition-colors text-lg font-black select-none"
             aria-label={`Decrease ${label}`}
@@ -71,7 +73,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
           />
           <button
             type="button"
-            onPointerDown={e => e.preventDefault()}  // prevent focus-shift on mobile
+            onPointerDown={e => e.preventDefault()}
             onClick={() => onChange(String(num + 1))}
             className="flex items-center justify-center w-9 h-9 shrink-0 text-slate-500 hover:text-white hover:bg-emerald-500 active:bg-emerald-600 transition-colors text-lg font-black select-none"
             aria-label={`Increase ${label}`}
@@ -88,178 +90,117 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
   return (
     <div className="space-y-8">
 
-      {/* ── Share League Link ──────────────────────────────────────────── */}
+      {/* ── League Identity ─────────────────────────────────────────────
+          Sits at the top: league name input + share link */}
       <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6">
         <h2 className="text-xl font-black text-emerald-800 mb-4 flex items-center gap-2 uppercase tracking-wide border-b-2 border-emerald-50 pb-4">
-          <Share2 className="w-6 h-6 text-slate-500" /> Share Your League
-        </h2>
-        <p className="text-sm text-slate-500 font-medium mb-4">Share this link so others can view your sweepstakes standings in real-time.</p>
-        <button
-          onClick={handleCopyLink}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm uppercase tracking-wider transition-all shadow-sm ${
-            copySuccess
-              ? 'bg-emerald-500 text-white'
-              : 'bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 hover:border-emerald-300'
-          }`}
-        >
-          {copySuccess ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          {copySuccess ? 'Link Copied!' : 'Copy Viewer Link'}
-        </button>
-      </div>
-
-      {/* ── Managers ──────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6">
-        <h2 className="text-xl font-black text-emerald-800 mb-6 flex items-center gap-2 uppercase tracking-wide border-b-2 border-emerald-50 pb-4">
-          <Users className="w-6 h-6 text-slate-500" /> Managers
-        </h2>
-        <div className="space-y-2 mb-4">
-          {members.map(member => (
-            <div key={member.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-200 transition-colors">
-              <input
-                type="text"
-                value={member.name}
-                onChange={e => handleUpdateMember(member.id, 'name', e.target.value)}
-                className="flex-1 bg-transparent font-bold text-slate-800 focus:outline-none text-sm sm:text-base"
-                placeholder="Manager name"
-              />
-              <label className="flex items-center gap-1.5 text-xs font-bold text-slate-400 cursor-pointer hover:text-indigo-600 transition-colors shrink-0">
-                <input
-                  type="checkbox"
-                  checked={member.isKid}
-                  onChange={e => handleUpdateMember(member.id, 'isKid', e.target.checked)}
-                  className="w-3.5 h-3.5 text-indigo-500 rounded border-slate-300 focus:ring-indigo-400 cursor-pointer"
-                />
-                Kid
-              </label>
-              <button
-                onClick={() => handleDeleteMember(member.id)}
-                className="text-slate-300 hover:text-red-500 transition-colors p-1 rounded shrink-0"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-        <button
-          onClick={handleAddMember}
-          disabled={members.length >= 24}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl font-black text-sm uppercase tracking-wider bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <PlusCircle className="w-4 h-4" />
-          {members.length >= 24 ? 'Manager Limit Reached (24)' : 'Add New Manager'}
-        </button>
-      </div>
-
-      {/* ── Scoring & Rules ───────────────────────────────────────────── */}
-      <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6">
-        <h2 className="text-xl font-black text-emerald-800 mb-6 flex items-center gap-2 uppercase tracking-wide border-b-2 border-emerald-50 pb-4">
-          <SettingsIcon className="w-6 h-6 text-slate-500" /> Sweepstakes Rules
+          <Pencil className="w-6 h-6 text-slate-500" /> League Identity
         </h2>
 
-        <div className="space-y-6">
-
-          {/* Custom scoring */}
-          <div className="flex flex-col gap-4 bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">
-            <div>
-              <label className="font-black text-slate-800 flex items-center gap-2 text-lg">
-                <Calculator className="w-5 h-5 text-indigo-600" /> Custom Scoring System
-              </label>
-              <p className="text-sm text-slate-500 font-medium mt-1">Define how many points managers receive based on their team's performance.</p>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-              <h4 className="font-black text-emerald-700 mb-3 uppercase tracking-widest text-xs border-b border-slate-100 pb-2">Group Stage</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <ScoreInput label="Win" value={activeScoring.group.win} onChange={(v) => handleScoringUpdate('group', null, 'win', v)} />
-                <ScoreInput label="Draw" value={activeScoring.group.draw} onChange={(v) => handleScoringUpdate('group', null, 'draw', v)} />
-                <ScoreInput label="Loss" value={activeScoring.group.loss} onChange={(v) => handleScoringUpdate('group', null, 'loss', v)} />
-                <ScoreInput label="Top of Group Bonus" value={activeScoring.group.topOfGroup || 0} onChange={(v) => handleScoringUpdate('group', null, 'topOfGroup', v)} />
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-              <h4 className="font-black text-emerald-700 mb-3 uppercase tracking-widest text-xs border-b border-slate-100 pb-2">Knockout Stages</h4>
-              <div className="space-y-3">
-                {KNOCKOUT_STAGES.map(stage => {
-                  const sData = activeScoring.ko[stage.id];
-                  return (
-                    <div key={stage.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-2 hover:bg-slate-50 rounded-lg transition-colors">
-                      <span className="w-16 font-black text-sm text-slate-700 uppercase tracking-widest">{stage.id}</span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
-                        <ScoreInput label="Reg Win" value={sData.win} onChange={(v) => handleScoringUpdate('ko', stage.id, 'win', v)} />
-                        <ScoreInput label="Reg Loss" value={sData.loss} onChange={(v) => handleScoringUpdate('ko', stage.id, 'loss', v)} />
-                        {sData.etWin !== undefined && (
-                          <ScoreInput label="ET Win" value={sData.etWin} onChange={(v) => handleScoringUpdate('ko', stage.id, 'etWin', v)} />
-                        )}
-                        {sData.etLoss !== undefined && (
-                          <ScoreInput label="ET Loss" value={sData.etLoss} onChange={(v) => handleScoringUpdate('ko', stage.id, 'etLoss', v)} />
-                        )}
-                        {sData.penWin !== undefined && (
-                          <ScoreInput label="Pen Win" value={sData.penWin} onChange={(v) => handleScoringUpdate('ko', stage.id, 'penWin', v)} />
-                        )}
-                        {sData.penLoss !== undefined && (
-                          <ScoreInput label="Pen Loss" value={sData.penLoss} onChange={(v) => handleScoringUpdate('ko', stage.id, 'penLoss', v)} />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+        <div className="space-y-4">
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">League Name</label>
+            <input
+              type="text"
+              value={settings.leagueName || ''}
+              onChange={(e) => updateSettings({ leagueName: e.target.value })}
+              placeholder="My Sweepstakes"
+              maxLength={60}
+              className="w-full bg-slate-50 border-2 border-slate-200 rounded-lg px-3 py-2.5 font-black text-slate-800 focus:border-emerald-500 focus:bg-white focus:outline-none transition-all"
+            />
+            <p className="text-xs text-slate-500 font-medium mt-1">Shown in the league dropdown and share link.</p>
           </div>
 
-          {/* Wooden Spoon */}
-          <div className="flex items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">
+          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
             <div>
-              <label className="font-black text-slate-800 flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-amber-500" /> Wooden Spoon Award
-              </label>
-              <p className="text-sm text-slate-500 font-medium mt-0.5">Give a special award to the manager who finishes last.</p>
+              <p className="font-black text-slate-700 text-sm flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-slate-500" /> Share Your League
+              </p>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Send this link so others can view standings in real-time.
+              </p>
             </div>
             <button
-              onClick={() => updateSettings({ woodenSpoon: !settings.woodenSpoon })}
-              className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${settings.woodenSpoon ? 'bg-emerald-500' : 'bg-slate-300'}`}
+              onClick={handleCopyLink}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-sm shrink-0 ${
+                copySuccess
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 hover:border-emerald-300'
+              }`}
             >
-              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${settings.woodenSpoon ? 'translate-x-6' : 'translate-x-1'}`} />
+              {copySuccess ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copySuccess ? 'Link Copied!' : 'Copy Viewer Link'}
             </button>
           </div>
+        </div>
+      </div>
 
-          {/* Kid Awards */}
-          <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">
-            <div className="flex items-center justify-between gap-4">
+      {/* ── League Options (the four toggles) ───────────────────────────
+          Moved above Managers. Wooden Spoon and Kid Awards are
+          sweepstakes-only and hide when fantasy mode is on. */}
+      <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6">
+        <h2 className="text-xl font-black text-emerald-800 mb-6 flex items-center gap-2 uppercase tracking-wide border-b-2 border-emerald-50 pb-4">
+          <SettingsIcon className="w-6 h-6 text-slate-500" /> League Options
+        </h2>
+
+        <div className="space-y-4">
+
+          {/* Wooden Spoon — sweepstakes only */}
+          {!fantasyMode && (
+            <div className="flex items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">
               <div>
                 <label className="font-black text-slate-800 flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-indigo-500" /> Kid Awards
+                  <Trophy className="w-5 h-5 text-amber-500" /> Wooden Spoon Award
                 </label>
-                <p className="text-sm text-slate-500 font-medium mt-0.5">Separate leaderboard for managers marked as kids.</p>
+                <p className="text-sm text-slate-500 font-medium mt-0.5">Give a special award to the manager who finishes last.</p>
               </div>
               <button
-                onClick={() => updateSettings({ kidAwards: !settings.kidAwards })}
-                className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${settings.kidAwards ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                onClick={() => updateSettings({ woodenSpoon: !settings.woodenSpoon })}
+                className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${settings.woodenSpoon ? 'bg-emerald-500' : 'bg-slate-300'}`}
               >
-                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${settings.kidAwards ? 'translate-x-6' : 'translate-x-1'}`} />
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${settings.woodenSpoon ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </div>
-            {settings.kidAwards && (
-              <div className="flex gap-3 pt-1 border-t border-slate-200">
-                {['all', 'kids_only'].map(opt => (
-                  <label key={opt} className="flex items-center gap-2 cursor-pointer text-sm font-bold text-slate-600 hover:text-emerald-700 transition-colors">
-                    <input
-                      type="radio"
-                      name="kidAwardsType"
-                      value={opt}
-                      checked={(settings.kidAwardsType || 'all') === opt}
-                      onChange={() => updateSettings({ kidAwardsType: opt })}
-                      className="text-emerald-600 border-slate-300 focus:ring-emerald-500 cursor-pointer"
-                    />
-                    {opt === 'all' ? 'Show all managers' : 'Kids only leaderboard'}
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
 
-          {/* Auto Sync */}
+          {/* Kid Awards — sweepstakes only */}
+          {!fantasyMode && (
+            <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <label className="font-black text-slate-800 flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-indigo-500" /> Kid Awards
+                  </label>
+                  <p className="text-sm text-slate-500 font-medium mt-0.5">Separate leaderboard for managers marked as kids.</p>
+                </div>
+                <button
+                  onClick={() => updateSettings({ kidAwards: !settings.kidAwards })}
+                  className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${settings.kidAwards ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                >
+                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${settings.kidAwards ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+              {settings.kidAwards && (
+                <div className="flex gap-3 pt-1 border-t border-slate-200">
+                  {['all', 'kids_only'].map(opt => (
+                    <label key={opt} className="flex items-center gap-2 cursor-pointer text-sm font-bold text-slate-600 hover:text-emerald-700 transition-colors">
+                      <input
+                        type="radio"
+                        name="kidAwardsType"
+                        value={opt}
+                        checked={(settings.kidAwardsType || 'all') === opt}
+                        onChange={() => updateSettings({ kidAwardsType: opt })}
+                        className="text-emerald-600 border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                      />
+                      {opt === 'all' ? 'Show all managers' : 'Kids only leaderboard'}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Auto Sync — kept for both modes (match scores are still useful for fantasy stats) */}
           <div className="flex items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">
             <div>
               <label className="font-black text-slate-800 flex items-center gap-2">
@@ -341,27 +282,135 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
               </div>
             )}
           </div>
-
         </div>
       </div>
 
+      {/* ── Managers ──────────────────────────────────────────────────── */}
+      <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6">
+        <h2 className="text-xl font-black text-emerald-800 mb-6 flex items-center gap-2 uppercase tracking-wide border-b-2 border-emerald-50 pb-4">
+          <Users className="w-6 h-6 text-slate-500" /> Managers
+        </h2>
+        <div className="space-y-2 mb-4">
+          {members.map(member => (
+            <div key={member.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-200 transition-colors">
+              <input
+                type="text"
+                value={member.name}
+                onChange={e => handleUpdateMember(member.id, 'name', e.target.value)}
+                className="flex-1 bg-transparent font-bold text-slate-800 focus:outline-none text-sm sm:text-base"
+                placeholder="Manager name"
+              />
+              {!fantasyMode && (
+                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-400 cursor-pointer hover:text-indigo-600 transition-colors shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={member.isKid}
+                    onChange={e => handleUpdateMember(member.id, 'isKid', e.target.checked)}
+                    className="w-3.5 h-3.5 text-indigo-500 rounded border-slate-300 focus:ring-indigo-400 cursor-pointer"
+                  />
+                  Kid
+                </label>
+              )}
+              <button
+                onClick={() => handleDeleteMember(member.id)}
+                className="text-slate-300 hover:text-red-500 transition-colors p-1 rounded shrink-0"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={handleAddMember}
+          disabled={members.length >= 24}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl font-black text-sm uppercase tracking-wider bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <PlusCircle className="w-4 h-4" />
+          {members.length >= 24 ? 'Manager Limit Reached (24)' : 'Add New Manager'}
+        </button>
+      </div>
+
+      {/* ── Sweepstakes Rules ───────────────────────────────────────────
+          Hidden entirely when fantasy mode is on (Roto doesn't use
+          custom point scoring). */}
+      {!fantasyMode && (
+        <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6">
+          <h2 className="text-xl font-black text-emerald-800 mb-6 flex items-center gap-2 uppercase tracking-wide border-b-2 border-emerald-50 pb-4">
+            <SettingsIcon className="w-6 h-6 text-slate-500" /> Sweepstakes Rules
+          </h2>
+
+          <div className="space-y-6">
+
+            {/* Custom scoring */}
+            <div className="flex flex-col gap-4 bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">
+              <div>
+                <label className="font-black text-slate-800 flex items-center gap-2 text-lg">
+                  <Calculator className="w-5 h-5 text-indigo-600" /> Custom Scoring System
+                </label>
+                <p className="text-sm text-slate-500 font-medium mt-1">Define how many points managers receive based on their team's performance.</p>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                <h4 className="font-black text-emerald-700 mb-3 uppercase tracking-widest text-xs border-b border-slate-100 pb-2">Group Stage</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ScoreInput label="Win" value={activeScoring.group.win} onChange={(v) => handleScoringUpdate('group', null, 'win', v)} />
+                  <ScoreInput label="Draw" value={activeScoring.group.draw} onChange={(v) => handleScoringUpdate('group', null, 'draw', v)} />
+                  <ScoreInput label="Loss" value={activeScoring.group.loss} onChange={(v) => handleScoringUpdate('group', null, 'loss', v)} />
+                  <ScoreInput label="Top of Group Bonus" value={activeScoring.group.topOfGroup || 0} onChange={(v) => handleScoringUpdate('group', null, 'topOfGroup', v)} />
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                <h4 className="font-black text-emerald-700 mb-3 uppercase tracking-widest text-xs border-b border-slate-100 pb-2">Knockout Stages</h4>
+                <div className="space-y-3">
+                  {KNOCKOUT_STAGES.map(stage => {
+                    const sData = activeScoring.ko[stage.id];
+                    return (
+                      <div key={stage.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-2 hover:bg-slate-50 rounded-lg transition-colors">
+                        <span className="w-16 font-black text-sm text-slate-700 uppercase tracking-widest">{stage.id}</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+                          <ScoreInput label="Reg Win" value={sData.win} onChange={(v) => handleScoringUpdate('ko', stage.id, 'win', v)} />
+                          <ScoreInput label="Reg Loss" value={sData.loss} onChange={(v) => handleScoringUpdate('ko', stage.id, 'loss', v)} />
+                          {sData.etWin !== undefined && (
+                            <ScoreInput label="ET Win" value={sData.etWin} onChange={(v) => handleScoringUpdate('ko', stage.id, 'etWin', v)} />
+                          )}
+                          {sData.etLoss !== undefined && (
+                            <ScoreInput label="ET Loss" value={sData.etLoss} onChange={(v) => handleScoringUpdate('ko', stage.id, 'etLoss', v)} />
+                          )}
+                          {sData.penWin !== undefined && (
+                            <ScoreInput label="Pen Win" value={sData.penWin} onChange={(v) => handleScoringUpdate('ko', stage.id, 'penWin', v)} />
+                          )}
+                          {sData.penLoss !== undefined && (
+                            <ScoreInput label="Pen Loss" value={sData.penLoss} onChange={(v) => handleScoringUpdate('ko', stage.id, 'penLoss', v)} />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Danger Zone ───────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl shadow-md border-2 border-red-100 p-4 sm:p-6">
-        <h2 className="text-xl font-black text-red-700 mb-6 flex items-center gap-2 uppercase tracking-wide border-b-2 border-red-50 pb-4">
-          <ShieldAlert className="w-6 h-6 text-red-400" /> Danger Zone
+        <h2 className="text-xl font-black text-red-700 mb-4 flex items-center gap-2 uppercase tracking-wide border-b-2 border-red-50 pb-4">
+          <ShieldAlert className="w-6 h-6 text-red-500" /> Danger Zone
         </h2>
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           {!showResetConfirm ? (
             <button
               onClick={() => setShowResetConfirm(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm uppercase tracking-wider bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-all"
             >
-              <RotateCcw className="w-4 h-4" /> Reset All Scores
+              <RotateCcw className="w-4 h-4" /> Reset Match Data
             </button>
           ) : (
             <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
               <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
-              <span className="text-sm font-bold text-amber-800 flex-1">This will reset all match scores to 0 and clear the knockout bracket. Your managers, team assignments, and settings will not be affected.</span>
+              <span className="text-sm font-bold text-amber-800 flex-1">Reset all match scores and eliminations? Your managers, team assignments, and settings will not be affected.</span>
               <button onClick={confirmReset} className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-black text-xs rounded-lg uppercase tracking-wider transition-colors">Yes, Reset</button>
               <button onClick={() => setShowResetConfirm(false)} className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-xs rounded-lg uppercase tracking-wider transition-colors">Cancel</button>
             </div>
