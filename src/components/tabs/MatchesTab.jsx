@@ -121,9 +121,27 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
               </>
             ) : (
               <>
-                <input type="number" min="0" value={match.scoreA} onChange={(e) => handleMatchUpdate(match.id, 'scoreA', e.target.value)} className="w-12 h-12 text-center bg-slate-100 border-2 border-slate-200 rounded-lg font-black text-2xl text-slate-800 focus:border-emerald-500 focus:bg-white focus:outline-none transition-all shadow-inner" />
+                <input
+                  id={`match-${match.id}-scoreA`}
+                  name={`match-${match.id}-scoreA`}
+                  aria-label={`${tA?.name || 'Team A'} score`}
+                  type="number" 
+                  min="0" 
+                  value={match.scoreA} 
+                  onChange={(e) => handleMatchUpdate(match.id, 'scoreA', e.target.value)} 
+                  className="w-12 h-12 text-center bg-slate-100 border-2 border-slate-200 rounded-lg font-black text-2xl text-slate-800 focus:border-emerald-500 focus:bg-white focus:outline-none transition-all shadow-inner" 
+                />
                 <span className="text-slate-300 font-black text-xl">-</span>
-                <input type="number" min="0" value={match.scoreB} onChange={(e) => handleMatchUpdate(match.id, 'scoreB', e.target.value)} className="w-12 h-12 text-center bg-slate-100 border-2 border-slate-200 rounded-lg font-black text-2xl text-slate-800 focus:border-emerald-500 focus:bg-white focus:outline-none transition-all shadow-inner" />
+                <input
+                  id={`match-${match.id}-scoreB`}
+                  name={`match-${match.id}-scoreB`}
+                  aria-label={`${tB?.name || 'Team B'} score`}
+                  type="number" 
+                  min="0" 
+                  value={match.scoreB} 
+                  onChange={(e) => handleMatchUpdate(match.id, 'scoreB', e.target.value)} 
+                  className="w-12 h-12 text-center bg-slate-100 border-2 border-slate-200 rounded-lg font-black text-2xl text-slate-800 focus:border-emerald-500 focus:bg-white focus:outline-none transition-all shadow-inner" 
+                />
               </>
             )}
             {/* Team B code — only visible on mobile */}
@@ -187,7 +205,16 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
               {isViewer ? (
                 <div className="w-12 h-12 flex items-center justify-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 shadow-inner">{match.penScoreA || '-'}</div>
               ) : (
-                <input type="number" min="0" value={match.penScoreA || ''} onChange={(e) => handleMatchUpdate(match.id, 'penScoreA', e.target.value)} className="w-12 h-12 text-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 focus:border-amber-500 focus:bg-white focus:outline-none transition-all shadow-inner" />
+                <input 
+                  id={`match-${match.id}-penScoreA`}
+                  name={`match-${match.id}-penScoreA`}
+                  aria-label={`${tA?.name || 'Team A'} penalty score`}
+                  type="number" 
+                  min="0" 
+                  value={match.penScoreA || ''} 
+                  onChange={(e) => handleMatchUpdate(match.id, 'penScoreA', e.target.value)} 
+                  className="w-12 h-12 text-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 focus:border-amber-500 focus:bg-white focus:outline-none transition-all shadow-inner" 
+                />
               )}
             </div>
             <span className="text-slate-300 font-black text-xl mt-4">-</span>
@@ -197,7 +224,16 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
               {isViewer ? (
                 <div className="w-12 h-12 flex items-center justify-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 shadow-inner">{match.penScoreB || '-'}</div>
               ) : (
-                <input type="number" min="0" value={match.penScoreB || ''} onChange={(e) => handleMatchUpdate(match.id, 'penScoreB', e.target.value)} className="w-12 h-12 text-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 focus:border-amber-500 focus:bg-white focus:outline-none transition-all shadow-inner" />
+                <input
+                  id={`match-${match.id}-penScoreB`}
+                  name={`match-${match.id}-penScoreB`}
+                  aria-label={`${tB?.name || 'Team B'} penalty score`}
+                  type="number" 
+                  min="0" 
+                  value={match.penScoreB || ''} 
+                  onChange={(e) => handleMatchUpdate(match.id, 'penScoreB', e.target.value)} 
+                  className="w-12 h-12 text-center bg-amber-50 border-2 border-amber-200 rounded-lg font-black text-2xl text-amber-800 focus:border-amber-500 focus:bg-white focus:outline-none transition-all shadow-inner" 
+                />
               )}
             </div>
           </div>
