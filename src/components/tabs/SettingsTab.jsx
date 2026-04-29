@@ -66,6 +66,8 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
             −
           </button>
           <input
+            id={`scoring-${fieldKey}`}
+            name={`scoring-${fieldKey}`}
             type="number"
             value={value}
             onChange={e => onChange(e.target.value)}
@@ -101,6 +103,8 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
           <div>
             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">League Name</label>
             <input
+              id="settings-league-name"
+              name="leagueName"
               type="text"
               value={settings.leagueName || ''}
               onChange={(e) => updateSettings({ leagueName: e.target.value })}
@@ -185,6 +189,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
                   {['all', 'kids_only'].map(opt => (
                     <label key={opt} className="flex items-center gap-2 cursor-pointer text-sm font-bold text-slate-600 hover:text-emerald-700 transition-colors">
                       <input
+                        id={`kid-awards-type-${opt}`}
                         type="radio"
                         name="kidAwardsType"
                         value={opt}
@@ -294,6 +299,9 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
           {members.map(member => (
             <div key={member.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-200 transition-colors">
               <input
+                id={`member-name-${member.id}`}
+                name={`member-name-${member.id}`}
+                aria-label={`Manager ${member.name || 'unnamed'} display name`}
                 type="text"
                 value={member.name}
                 onChange={e => handleUpdateMember(member.id, 'name', e.target.value)}
@@ -303,6 +311,8 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
               {!fantasyMode && (
                 <label className="flex items-center gap-1.5 text-xs font-bold text-slate-400 cursor-pointer hover:text-indigo-600 transition-colors shrink-0">
                   <input
+                    id={`member-iskid-${member.id}`}
+                    name={`member-iskid-${member.id}`}
                     type="checkbox"
                     checked={member.isKid}
                     onChange={e => handleUpdateMember(member.id, 'isKid', e.target.checked)}
