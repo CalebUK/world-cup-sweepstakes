@@ -75,7 +75,14 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
             </div>
             <div className="flex flex-col w-full relative z-10">
               {isKnockout && !isViewer ? (
-                <select value={match.teamA} onChange={(e) => handleMatchUpdate(match.id, 'teamA', e.target.value)} className="p-1 border border-slate-200 rounded text-sm w-full font-bold text-slate-800 focus:border-emerald-500 focus:outline-none mb-1 shadow-sm bg-white cursor-pointer">
+                <select 
+                  id={`match-${match.id}-teamA`}
+                  name={`match-${match.id}-teamA`}
+                  aria-label="Select team A"
+                  value={match.teamA} 
+                  onChange={(e) => handleMatchUpdate(match.id, 'teamA', e.target.value)} 
+                  className="p-1 border border-slate-200 rounded text-sm w-full font-bold text-slate-800 focus:border-emerald-500 focus:outline-none mb-1 shadow-sm bg-white cursor-pointer"
+                >
                   <option value="">-- {match.labelA || 'TBD'} --</option>
                   {eligibleTeamsA.map(t => <option key={t.id} value={t.id}>{t.id} - {t.name}</option>)}
                 </select>
@@ -143,7 +150,14 @@ const MatchRow = ({ match, matches, isKnockout = false, localTimezone, isViewer,
             <TeamLogo teamId={tB?.id} className="w-8 h-8 sm:w-10 sm:h-10 mr-2 sm:mr-3 shrink-0 relative z-10 drop-shadow-md" />
             <div className="flex flex-col w-full relative z-10">
               {isKnockout && !isViewer ? (
-                <select value={match.teamB} onChange={(e) => handleMatchUpdate(match.id, 'teamB', e.target.value)} className="p-1 border border-slate-200 rounded text-sm w-full font-bold text-slate-800 focus:border-emerald-500 focus:outline-none mb-1 shadow-sm bg-white cursor-pointer">
+                <select 
+                  id={`match-${match.id}-teamB`}
+                  name={`match-${match.id}-teamB`}
+                  aria-label="Select team B"
+                  value={match.teamB} 
+                  onChange={(e) => handleMatchUpdate(match.id, 'teamB', e.target.value)} 
+                  className="p-1 border border-slate-200 rounded text-sm w-full font-bold text-slate-800 focus:border-emerald-500 focus:outline-none mb-1 shadow-sm bg-white cursor-pointer"
+                >
                   <option value="">-- {match.labelB || 'TBD'} --</option>
                   {eligibleTeamsB.map(t => <option key={t.id} value={t.id}>{t.id} - {t.name}</option>)}
                 </select>
@@ -278,6 +292,9 @@ export const MatchesTab = ({ matches, localTimezone, setLocalTimezone, isViewer,
             <Globe className="w-4 h-4 text-slate-400 shrink-0" />
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:block">Timezone:</span>
             <select
+              id="matches-timezone"
+              name="timezone"
+              aria-label="Display timezone for match times"
               value={localTimezone}
               onChange={(e) => {
                 setLocalTimezone(e.target.value);
@@ -342,7 +359,12 @@ export const MatchesTab = ({ matches, localTimezone, setLocalTimezone, isViewer,
               <div className="flex flex-wrap items-center gap-3 w-full sm:justify-end">
                 <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 w-full sm:w-auto">
                   <Filter className="w-4 h-4 text-slate-400" />
-                  <select value={matchFilter} onChange={e => {
+                  <select 
+                    id="matches-group-filter"
+                    name="groupFilter"
+                    aria-label="Filter matches by group"
+                    value={matchFilter} 
+                    onChange={e => {
                     setMatchFilter(e.target.value);
                     try { localStorage.setItem('worldCupGroupFilter', e.target.value); } catch (err) {}
                   }} className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer w-full sm:w-auto">
