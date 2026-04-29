@@ -103,7 +103,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
 
         <div className="space-y-4">
           <div>
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">League Name</label>
+            <label htmlFor="settings-league-name" className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">League Name</label>
             <input
               id="settings-league-name"
               name="leagueName"
