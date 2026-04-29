@@ -78,7 +78,10 @@ export const AccountModal = ({
               <div className="flex flex-col gap-2">
                 <div className="relative">
                   <Mail className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input 
+                  <input
+                    id="auth-magic-link-email"
+                    name="email"
+                    aria-label="Email address for magic sign-in link"
                     type="email" 
                     value={authEmail}
                     onChange={e => setAuthEmail(e.target.value)}
