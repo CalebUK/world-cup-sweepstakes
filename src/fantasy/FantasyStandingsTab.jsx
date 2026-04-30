@@ -164,6 +164,11 @@ export const FantasyStandingsTab = ({
     [members, picks, teamTotals]
   );
 
+  const teamTotals = useMemo(
+    () => aggregateTeamStats(matches || [], matchStats || {}),
+    [matches, matchStats]
+  );
+
   const validation = useMemo(
     () => validatePicks(members, picks, picksPerCategory),
     [members, picks, picksPerCategory]
@@ -183,10 +188,6 @@ export const FantasyStandingsTab = ({
     }).length;
   }, [matches, matchStats]);
 
-  const totalPlayed = useMemo(
-    () => (matches || []).filter(m => m.isPlayed).length,
-    [matches]
-  );
 
   // ── Render ──────────────────────────────────────────────────────────────
 
