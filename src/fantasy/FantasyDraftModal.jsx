@@ -72,7 +72,7 @@ export const FantasyDraftModal = ({
   const handleRunDraft = () => {
     setError('');
     try {
-      const tpm = Math.max(1, Math.min(48, parseInt(teamsPerManager) || 10));
+      const tpm = Math.max(1, Math.min(48, parseInt(teamsPerManager) || 20));
       const result = runFantasyDraft(members, tpm);
       setPreviewOwnership(result.ownership);
       setPreviewMeta({
