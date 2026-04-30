@@ -20,18 +20,35 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
   // the "Add Manager" button and to gate the picks/cat stepper so the commish
   // can't bump picks/cat into a value where the cap would be lower than the
   // current member count.
-  const currentPicksPerCategory = settings.fantasyPicksPerCategory || DEFAULT_PICKS_PER_CATEGORY;
+  // Read picks/category but clamp it into the valid range — protects against
+  // stale settings from before the cap existed (e.g. a league saved with 8).
+  // The auto-heal effect below also writes the clamped value back to storage.
+  const rawPicksPerCategory = settings.fantasyPicksPerCategory || DEFAULT_PICKS_PER_CATEGORY;
+  const currentPicksPerCategory = Math.max(
+    MIN_PICKS_PER_CATEGORY,
+    Math.min(MAX_PICKS_PER_CATEGORY, rawPicksPerCategory)
+  );
   const memberCap = getMaxMembers(fantasyMode, currentPicksPerCategory);
 
-  // For the picks/cat stepper: if bumping ppc up would drop the cap below the
-  // current member count, block the increase. The commish has to remove
-  // members first.
+  // For the "+" button: if bumping ppc up would drop the cap below the current
+  // member count, block it. Commish has to remove managers first.
   const nextPicksPerCategory = Math.min(MAX_PICKS_PER_CATEGORY, currentPicksPerCategory + 1);
   const capAtNextPpc = FANTASY_MEMBER_CAPS[nextPicksPerCategory] ?? memberCap;
   const cantIncreasePpc =
     currentPicksPerCategory >= MAX_PICKS_PER_CATEGORY ||
     members.length > capAtNextPpc;
-  const cantDecreasePpc = currentPicksPerCategory <= MIN_PICKS_PER_CATEGORY;  
+  const cantDecreasePpc = currentPicksPerCategory <= MIN_PICKS_PER_CATEGORY;
+
+  // One-shot heal: if a stale out-of-range value is in storage, write the
+  // clamped one back so other parts of the app see consistent state.
+  React.useEffect(() => {
+    if (!fantasyMode) return;
+    if (rawPicksPerCategory !== currentPicksPerCategory) {
+      updateSettings({ fantasyPicksPerCategory: currentPicksPerCategory });
+    }
+    // Only run when the source value or mode changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawPicksPerCategory, fantasyMode]);
 
   const handleCopyLink = () => {
     if (!userUid) return;
@@ -287,7 +304,9 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
                     </span>
                     <p className="text-xs text-slate-500 font-medium mt-0.5">
                       How many teams each manager assigns to each of the 4 stats.
-                      Range {MIN_PICKS_PER_CATEGORY}–{MAX_PICKS_PER_CATEGORY}, default {DEFAULT_PICKS_PER_CATEGORY}.
+                      Must be between {MIN_PICKS_PER_CATEGORY} and {MAX_PICKS_PER_CATEGORY} (default {DEFAULT_PICKS_PER_CATEGORY}).
+                      Higher picks/category lowers the manager cap:
+                      {' '}<span className="font-bold text-slate-700">3 picks → 16 mgrs · 4 → 12 · 5 → 8 · 6 → 8</span>.
                     </p>
                   </div>
                   <div className="flex items-center bg-white border-2 border-purple-200 rounded-lg overflow-hidden shrink-0">
