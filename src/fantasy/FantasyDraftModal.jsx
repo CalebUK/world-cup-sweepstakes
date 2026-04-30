@@ -217,7 +217,6 @@ export const FantasyDraftModal = ({
 
                 {teamsLeftOut > 0 && (
                    <p className="text-xs text-slate-500 font-medium leading-snug">
-                    Note: with {memberCount} managers, the bottom {teamsLeftOut} FIFA-ranked
                     Note: with {memberCount} managers, the last bucket will hold the bottom {memberCount + teamsLeftOut} FIFA-ranked teams.
                   </p>
                 )}
