@@ -35,6 +35,7 @@ import { useFantasyData } from './fantasy/useFantasyData.js';
 import { FantasyDraftModal } from './fantasy/FantasyDraftModal.jsx';
 import { FantasyTeamsTab } from './fantasy/FantasyTeamsTab.jsx';
 import { FantasyStandingsTab } from './fantasy/FantasyStandingsTab.jsx';
+import { getMaxMembers } from './fantasy/fantasyLogic.js';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
