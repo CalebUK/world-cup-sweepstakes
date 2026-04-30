@@ -117,6 +117,16 @@ const setOwnerPickForTeam = (picks, members, teamId, managerId, newStatId) => {
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Compact labels for the per-owner stat dropdown. SoT and GA get abbreviated
+// to keep the selector narrow on mobile; Goals and Cards stay as-is since
+// they're already short.
+const SELECTOR_STAT_LABEL = {
+  goals:         'Goals',
+  shotsOnTarget: 'SoT',
+  cards:         'Cards',
+  goalsAllowed:  'GA',
+};
+
 // One row per owner of a team. Shows the owner's draft-order ordinal +
 // name, plus a dropdown to pick which Roto stat (Goals / SoT / Cards / GA)
 // they want for this team. Stats already claimed by another owner of this
@@ -158,7 +168,7 @@ const OwnerStatRow = ({
           currentStatId ? '' : 'text-slate-400 italic'
         }`}
       >
-        <option value="">— Pick stat —</option>
+        <option value="">Pick stat</option>
         {FANTASY_STATS.map(stat => {
           const claimerId = teamPicks?.[stat.id];
           const isMine = claimerId === manager?.id;
@@ -166,13 +176,14 @@ const OwnerStatRow = ({
           const takenByName = takenByOther
             ? (members.find(m => m.id === claimerId)?.name || 'Someone')
             : null;
+          const label = SELECTOR_STAT_LABEL[stat.id] || stat.label;
           return (
             <option
               key={stat.id}
               value={stat.id}
               disabled={takenByOther}
             >
-              {stat.label}{takenByOther ? ` — ${takenByName}` : ''}
+              {label}{takenByOther ? ` — ${takenByName}` : ''}
             </option>
           );
         })}
@@ -424,16 +435,32 @@ export const FantasyTeamsTab = ({
           </span>
         </div>
 
-        <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-4 flex flex-col gap-1">
+        <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-4 flex flex-col gap-1.5">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
             <Sparkles className="w-3 h-3" /> Roto Format
           </span>
-          <span className="text-sm font-black text-slate-800">
-            Goals · SoT · Cards · GA
-          </span>
-          <span className="text-xs text-slate-500 font-medium leading-snug">
-            Cards & GA are bad — lower is better.
-          </span>
+          <ul className="text-[11px] text-slate-600 font-medium leading-snug space-y-1">
+            <li>
+              <span className="font-black text-slate-800">Goals (G)</span>
+              {' '}— total goals scored
+              {' '}<span className="text-emerald-700 font-bold">(higher is better)</span>
+            </li>
+            <li>
+              <span className="font-black text-slate-800">Shots on Target (SoT)</span>
+              {' '}— shots that hit the frame
+              {' '}<span className="text-emerald-700 font-bold">(higher is better)</span>
+            </li>
+            <li>
+              <span className="font-black text-slate-800">Cards</span>
+              {' '}— yellow ×1 + red ×3 penalty
+              {' '}<span className="text-rose-700 font-bold">(lower is better)</span>
+            </li>
+            <li>
+              <span className="font-black text-slate-800">Goals Allowed (GA)</span>
+              {' '}— goals conceded by your teams
+              {' '}<span className="text-rose-700 font-bold">(lower is better)</span>
+            </li>
+          </ul>
         </div>
       </div>
 
