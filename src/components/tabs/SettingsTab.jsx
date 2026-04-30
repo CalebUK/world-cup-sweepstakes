@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { Users, Trash2, PlusCircle, Settings as SettingsIcon, Calculator, Clock, AlertTriangle, RotateCcw, Share2, CheckCircle, Copy, Trophy, ShieldAlert, Sparkles, Pencil } from 'lucide-react';
 import { KNOCKOUT_STAGES, DEFAULT_SCORING } from '../../config/data.js';
+import {
+  getMaxMembers,
+  MIN_PICKS_PER_CATEGORY,
+  MAX_PICKS_PER_CATEGORY,
+  DEFAULT_PICKS_PER_CATEGORY,
+  FANTASY_MEMBER_CAPS,
+} from '../../fantasy/fantasyLogic.js';
 
 export const SettingsTab = ({ settings, updateSettings, members, handleAddMember, handleUpdateMember, handleDeleteMember, handleResetData, handleHardReset, userUid }) => {
   const [copySuccess, setCopySuccess] = useState(false);
@@ -8,6 +15,23 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
   const [showHardResetConfirm, setShowHardResetConfirm] = useState(false);
 
   const fantasyMode = !!settings.fantasyMode;
+
+// Resolve the current member cap based on mode + picks/cat. Used to disable
+  // the "Add Manager" button and to gate the picks/cat stepper so the commish
+  // can't bump picks/cat into a value where the cap would be lower than the
+  // current member count.
+  const currentPicksPerCategory = settings.fantasyPicksPerCategory || DEFAULT_PICKS_PER_CATEGORY;
+  const memberCap = getMaxMembers(fantasyMode, currentPicksPerCategory);
+
+  // For the picks/cat stepper: if bumping ppc up would drop the cap below the
+  // current member count, block the increase. The commish has to remove
+  // members first.
+  const nextPicksPerCategory = Math.min(MAX_PICKS_PER_CATEGORY, currentPicksPerCategory + 1);
+  const capAtNextPpc = FANTASY_MEMBER_CAPS[nextPicksPerCategory] ?? memberCap;
+  const cantIncreasePpc =
+    currentPicksPerCategory >= MAX_PICKS_PER_CATEGORY ||
+    members.length > capAtNextPpc;
+  const cantDecreasePpc = currentPicksPerCategory <= MIN_PICKS_PER_CATEGORY;  
 
   const handleCopyLink = () => {
     if (!userUid) return;
@@ -250,47 +274,82 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
               </button>
             </div>
 
-            {/* Picks per category — only visible when fantasy mode is ON */}
+            {/* Picks per category — only visible when fantasy mode is ON.
+                Range is locked to MIN..MAX (3-6). The "+" button is also
+                blocked if bumping it up would put the cap below current
+                member count — the commish has to drop managers first. */}
             {settings.fantasyMode && (
-              <div className="mt-4 pt-4 border-t border-purple-200 flex items-center justify-between gap-4">
-                <div>
-                  <span className="font-black text-slate-700 text-sm">
-                    Picks per Category
-                  </span>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    How many teams each manager assigns to each of the 4 stats. Default 5.
-                  </p>
+              <div className="mt-4 pt-4 border-t border-purple-200 space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <span className="font-black text-slate-700 text-sm">
+                      Picks per Category
+                    </span>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      How many teams each manager assigns to each of the 4 stats.
+                      Range {MIN_PICKS_PER_CATEGORY}–{MAX_PICKS_PER_CATEGORY}, default {DEFAULT_PICKS_PER_CATEGORY}.
+                    </p>
+                  </div>
+                  <div className="flex items-center bg-white border-2 border-purple-200 rounded-lg overflow-hidden shrink-0">
+                    <button
+                      type="button"
+                      disabled={cantDecreasePpc}
+                      onClick={() => updateSettings({
+                        fantasyPicksPerCategory: Math.max(
+                          MIN_PICKS_PER_CATEGORY,
+                          currentPicksPerCategory - 1
+                        )
+                      })}
+                      className="w-9 h-9 flex items-center justify-center text-purple-600 hover:bg-purple-100 transition-colors text-lg font-black disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                      aria-label="Decrease picks per category"
+                    >
+                      −
+                    </button>
+                    <span className="w-10 text-center font-black text-purple-800 text-lg">
+                      {currentPicksPerCategory}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={cantIncreasePpc}
+                      onClick={() => updateSettings({
+                        fantasyPicksPerCategory: Math.min(
+                          MAX_PICKS_PER_CATEGORY,
+                          currentPicksPerCategory + 1
+                        )
+                      })}
+                      className="w-9 h-9 flex items-center justify-center text-purple-600 hover:bg-purple-100 transition-colors text-lg font-black disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                      aria-label="Increase picks per category"
+                      title={
+                        currentPicksPerCategory >= MAX_PICKS_PER_CATEGORY
+                          ? `Maximum is ${MAX_PICKS_PER_CATEGORY}`
+                          : members.length > capAtNextPpc
+                            ? `Remove managers down to ${capAtNextPpc} first`
+                            : ''
+                      }
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center bg-white border-2 border-purple-200 rounded-lg overflow-hidden shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => updateSettings({
-                      fantasyPicksPerCategory: Math.max(1, (settings.fantasyPicksPerCategory || 5) - 1)
-                    })}
-                    className="w-9 h-9 flex items-center justify-center text-purple-600 hover:bg-purple-100 transition-colors text-lg font-black"
-                    aria-label="Decrease picks per category"
-                  >
-                    −
-                  </button>
-                  <span className="w-10 text-center font-black text-purple-800 text-lg">
-                    {settings.fantasyPicksPerCategory || 5}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => updateSettings({
-                      fantasyPicksPerCategory: Math.min(48, (settings.fantasyPicksPerCategory || 5) + 1)
-                    })}
-                    className="w-9 h-9 flex items-center justify-center text-purple-600 hover:bg-purple-100 transition-colors text-lg font-black"
-                    aria-label="Increase picks per category"
-                  >
-                    +
-                  </button>
+
+                {/* Cap explainer — surfaces the current cap and why it might
+                    be blocked from going up, so the commish isn't surprised. */}
+                <div className="bg-white/70 border border-purple-200 rounded-lg p-2.5">
+                  <p className="text-[11px] text-slate-600 font-medium leading-snug">
+                    <span className="font-black text-purple-800">Manager cap at this setting: {memberCap}.</span>
+                    {' '}Higher picks/category = lower cap (3 picks → 16 mgrs, 4 → 12, 5 or 6 → 8)
+                    so each stat category has enough teams behind it to be meaningful.
+                    {currentPicksPerCategory < MAX_PICKS_PER_CATEGORY && members.length > capAtNextPpc && (
+                      <>
+                        {' '}<span className="font-black text-rose-700">
+                          To bump this to {nextPicksPerCategory}, drop managers to {capAtNextPpc} first.
+                        </span>
+                      </>
+                    )}
+                  </p>
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      </div>
 
       {/* ── Managers ──────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6">
@@ -337,11 +396,18 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
         </div>
         <button
           onClick={handleAddMember}
-          disabled={members.length >= 24}
+          disabled={members.length >= memberCap}
           className="flex items-center gap-2 px-4 py-2 rounded-xl font-black text-sm uppercase tracking-wider bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          title={
+            members.length >= memberCap && fantasyMode
+              ? `Cap is ${memberCap} at ${currentPicksPerCategory} picks/category. Lower picks/category to raise the cap.`
+              : ''
+          }
         >
           <PlusCircle className="w-4 h-4" />
-          {members.length >= 24 ? 'Manager Limit Reached (24)' : 'Add New Manager'}
+          {members.length >= memberCap
+            ? `Manager Limit Reached (${memberCap})`
+            : 'Add New Manager'}
         </button>
       </div>
 
