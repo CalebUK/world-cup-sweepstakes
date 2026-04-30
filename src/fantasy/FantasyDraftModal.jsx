@@ -14,7 +14,6 @@
 
 import React, { useState, useMemo } from 'react';
 import { X, Sparkles, Dice5, Save, RotateCcw, AlertTriangle, Trophy } from 'lucide-react';
-import { runFantasyDraft } from './fantasyLogic.js';
 import { TEAMS_DATA } from '../config/data.js';
 import { runFantasyDraft, FANTASY_STATS } from './fantasyLogic.js';
 
