@@ -365,10 +365,13 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
                         </span>
                       </>
                     )}
-                  </p>
+                 </p>
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      </div>
 
       {/* ── Managers ──────────────────────────────────────────────────── */}
       <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6">
