@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
-<svg fill="#000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+<svg fill="url(#silverGloss)" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
 	 viewBox="0 0 512 512" xml:space="preserve">
+<defs>
+	<linearGradient id="silverGloss" x1="0%" y1="0%" x2="100%" y2="100%">
+		<stop offset="0%" stop-color="#F5F5F5" />
+		<stop offset="40%" stop-color="#C0C0C0" />
+		<stop offset="100%" stop-color="#7A7A7A" />
+	</linearGradient>
+</defs>
 <g>
 	<g>
 		<path d="M384,449.963v-12.629c0-17.643-14.357-32-32-32h-15.104c-19.989-34.176-27.52-93.973-27.563-127.659
