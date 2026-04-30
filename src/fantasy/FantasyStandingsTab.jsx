@@ -29,6 +29,12 @@ const STAT_ICON = {
   goalsAllowed:  Shield,
 };
 
+const PODIUM_SVG = {
+  1: { src: '/standings/first.svg',  alt: '1st Place' },
+  2: { src: '/standings/second.svg', alt: '2nd Place' },
+  3: { src: '/standings/third.svg',  alt: '3rd Place' },
+};
+
 const STAT_COLOR = {
   goals:         { text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
   shotsOnTarget: { text: 'text-sky-700',     bg: 'bg-sky-50',     border: 'border-sky-200' },
@@ -54,19 +60,26 @@ const podiumIcon = (place) => {
 
 const PodiumCard = ({ standing, place }) => {
   const style = podiumIcon(place);
+  const svg = PODIUM_SVG[place];
   if (!standing || !style) return null;
   return (
     <div className={`rounded-xl border-2 shadow-md p-4 flex flex-col gap-2 ${style.bg} ${style.border}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Trophy className={`w-6 h-6 ${style.color}`} />
+          <img
+            src={svg.src}
+            alt={svg.alt}
+            className="w-8 h-8 drop-shadow-md shrink-0"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
           <span className={`text-xs font-black uppercase tracking-widest ${style.color}`}>{style.label}</span>
         </div>
         <span className="text-2xl font-black text-slate-800">{fmtPts(standing.rotoTotal)}</span>
       </div>
+      </div>
       <div className="text-base font-black text-slate-800 truncate">{standing.name}</div>
       <div className="grid grid-cols-4 gap-1 mt-1">
-        {FANTASY_STATS.map(stat => (
+        {FANTASY_.map(stat => (
           <div key={stat.id} className={`text-center rounded px-1 py-1 ${STAT_COLOR[stat.id].bg} border ${STAT_COLOR[stat.id].border}`}>
             <div className={`text-[8px] font-black uppercase tracking-wider ${STAT_COLOR[stat.id].text}`}>
               {stat.id === 'shotsOnTarget' ? 'SoT' : stat.id === 'goalsAllowed' ? 'GA' : stat.label}
@@ -138,7 +151,7 @@ export const FantasyStandingsTab = ({
   members,
   matches,
   picks,
-  matchStats,
+  match,
   draftMeta,
   picksPerCategory = 5,
 }) => {
@@ -146,11 +159,6 @@ export const FantasyStandingsTab = ({
     || !!draftMeta;  // even if picks empty, we can still render once drafted
 
   // ── Compute everything ──────────────────────────────────────────────────
-
-  const teamTotals = useMemo(
-    () => aggregateTeamStats(matches || [], matchStats || {}),
-    [matches, matchStats]
-  );
 
   const standings = useMemo(
     () => calculateRotoStandings(members, picks, teamTotals),
@@ -214,7 +222,7 @@ export const FantasyStandingsTab = ({
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 border border-slate-200 px-2 py-1 rounded">
-            {playedMatchesWithStats} / {totalPlayed} played matches with stats
+            {playedMatchesWithStats} / 103 played matches with stats
           </span>
           <span className="text-[10px] font-black text-purple-700 uppercase tracking-widest bg-purple-50 border border-purple-200 px-2 py-1 rounded">
             {picksPerCategory} picks per category
