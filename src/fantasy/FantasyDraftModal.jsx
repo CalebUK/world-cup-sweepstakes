@@ -16,6 +16,7 @@ import React, { useState, useMemo } from 'react';
 import { X, Sparkles, Dice5, Save, RotateCcw, AlertTriangle, Trophy } from 'lucide-react';
 import { runFantasyDraft } from './fantasyLogic.js';
 import { TEAMS_DATA } from '../config/data.js';
+import { runFantasyDraft, FANTASY_STATS } from './fantasyLogic.js';
 
 // Tiny helpers ──────────────────────────────────────────────────────────────
 
@@ -42,13 +43,17 @@ export const FantasyDraftModal = ({
   ownership,         // current committed ownership from Firestore
   draftMeta,         // current committed meta { teamsPerManager, draftedAt, groupCount } | null
   commitDraft,       // (newOwnership, newMeta) => Promise
+  picksPerCategory = 5,
   onClose,
 }) => {
   const hasCommittedDraft = draftMeta && Object.keys(ownership || {}).length > 0;
 
-  // teamsPerManager input: defaults to existing meta or 10
+  const statCount = FANTASY_STATS.length;
+  const recommendedTeams = picksPerCategory * statCount;
+
+  // teamsPerManager input: defaults to existing meta or the recommended value
   const [teamsPerManager, setTeamsPerManager] = useState(
-    draftMeta?.teamsPerManager || 10
+    draftMeta?.teamsPerManager || recommendedTeams
   );
 
   // Local preview ownership (not committed yet)
@@ -106,6 +111,8 @@ export const FantasyDraftModal = ({
 
   const memberCount = members?.length || 0;
   const minMembers = 2;
+  const tpmNumber = parseInt(teamsPerManager) || 0;
+  const belowMinimum = tpmNumber > 0 && tpmNumber < recommendedTeams;
   const maxTeamsAllowed = useMemo(() => {
     if (memberCount === 0) return 0;
     const groupSize = memberCount;
@@ -181,17 +188,34 @@ export const FantasyDraftModal = ({
                   </div>
 
                   <div className="flex flex-col items-start">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                    <label 
+                      htmlFor="draft-teams-per-manager"
+                      className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1"
+                    >
                       Teams per Manager
                     </label>
                     <input
+                      id="draft-teams-per-manager"
+                      name="teamsPerManager"
+                      aria-label="Teams per manager"
+                      aria-describedby="draft-teams-per-manager-help"
                       type="number"
                       min="1"
                       max={maxTeamsAllowed}
                       value={teamsPerManager}
                       onChange={(e) => setTeamsPerManager(e.target.value)}
-                      className="w-24 p-2 bg-white border-2 border-purple-200 rounded-lg font-black text-lg text-purple-800 focus:border-purple-500 outline-none"
+                      className={`w-24 p-2 bg-white border-2 rounded-lg font-black text-lg focus:outline-none transition-colors ${
+                        belowMinimum
+                          ? 'border-red-400 text-red-700 focus:border-red-500'
+                          : 'border-purple-200 text-purple-800 focus:border-purple-500'
+                      }`}
                     />
+                    <p
+                      id="draft-teams-per-manager-help"
+                      className="text-[10px] text-slate-500 font-medium mt-1 max-w-[10rem] leading-tight"
+                    >
+                     Default {recommendedTeams} ({picksPerCategory} pick{picksPerCategory === 1 ? '' : 's'} × {statCount} stats)
+                    </p>
                   </div>
                 </div>
 
@@ -204,6 +228,17 @@ export const FantasyDraftModal = ({
               </div>
 
               {/* ── Action buttons (top) ───────────────────────────── */}
+              {belowMinimum && (
+                <div className="bg-red-50 border-2 border-red-300 rounded-xl p-3 text-xs font-bold text-red-800 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>
+                    Each manager needs at least <strong>{recommendedTeams} teams</strong> to
+                    fill {picksPerCategory} pick{picksPerCategory === 1 ? '' : 's'} across
+                    all {statCount} stats. Drafting fewer will leave managers unable to
+                    assign all their picks.
+                  </span>
+                </div>
+              )}
               {!showingPreview && (
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
@@ -276,7 +311,12 @@ export const FantasyDraftModal = ({
                     {members.map(m => {
                       const teamIds = displayedOwnership[m.id] || [];
                       return (
-                        <div key={m.id} className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-start gap-3">
+                        <div 
+                          key={m.id} 
+                          id={`draft-manager-row-${m.id}`}
+                          aria-label={`${m.name}: ${teamIds.length} drafted team${teamIds.length === 1 ? '' : 's'}`}
+                          className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-start gap-3"
+                        >
                           <div className="sm:w-32 shrink-0">
                             <div className="font-black text-slate-800 truncate">{m.name}</div>
                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
