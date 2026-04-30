@@ -423,6 +423,7 @@ export default function App() {
           members={members}
           ownership={fantasyOwnership}
           draftMeta={fantasyDraftMeta}
+          picksPerCategory={settings.fantasyPicksPerCategory || 5}
           commitDraft={fantasyCommitDraft}
           onClose={() => setShowFantasyDraftModal(false)}
         />
