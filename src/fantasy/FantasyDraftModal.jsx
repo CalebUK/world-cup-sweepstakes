@@ -181,9 +181,6 @@ export const FantasyDraftModal = ({
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ranked Groups</p>
                     <p className="text-2xl font-black text-slate-800">{groupCountForDisplay}</p>
-                    <p className="text-[10px] text-slate-500 font-bold">
-                      {teamsUsedByGroups} teams used · {teamsLeftOut} excluded
-                    </p>
                   </div>
 
                   <div className="flex flex-col items-start">
@@ -219,9 +216,9 @@ export const FantasyDraftModal = ({
                 </div>
 
                 {teamsLeftOut > 0 && (
-                  <p className="text-xs text-slate-500 font-medium leading-snug">
+                   <p className="text-xs text-slate-500 font-medium leading-snug">
                     Note: with {memberCount} managers, the bottom {teamsLeftOut} FIFA-ranked
-                    {teamsLeftOut === 1 ? ' team is' : ' teams are'} excluded from the draft.
+                    Note: with {memberCount} managers, the last bucket will hold the bottom {memberCount + teamsLeftOut} FIFA-ranked teams.
                   </p>
                 )}
               </div>
