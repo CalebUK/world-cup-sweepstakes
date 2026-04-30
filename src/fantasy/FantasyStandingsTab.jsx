@@ -159,14 +159,14 @@ export const FantasyStandingsTab = ({
 
   // ── Compute everything ──────────────────────────────────────────────────
 
-  const standings = useMemo(
-    () => calculateRotoStandings(members, picks, teamTotals),
-    [members, picks, teamTotals]
-  );
-
   const teamTotals = useMemo(
     () => aggregateTeamStats(matches || [], matchStats || {}),
     [matches, matchStats]
+  );
+
+  const standings = useMemo(
+    () => calculateRotoStandings(members, picks, teamTotals),
+    [members, picks, teamTotals]
   );
 
   const validation = useMemo(
