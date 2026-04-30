@@ -37,15 +37,15 @@ export const CARD_WEIGHTS = { yellow: 1, red: 3 };
 // Internal: build the FIFA-rank groups
 //
 // Step 1: sort all 48 teams by FIFA rank (ascending — rank 1 is the best).
-// Step 2: split them into N groups of size = members.length, where N is the
-//         largest number of complete groups we can fit (i.e. floor(48 / N)).
+// Step 2: split them into N buckets of size = members.length, where N is the
+//         largest number of complete buckets we can fit (i.e. floor(48 / N)).
+//         Any leftover teams (when 48 doesn't divide evenly) get folded into
+//         the LAST bucket — so nothing is ever excluded from the draft.
 //
-// Example with 8 members: 48 / 8 = 6 groups of 8.
-// Example with 7 members: 48 / 7 = 6 groups of 7  (6 teams left out).
-// Example with 6 members: 48 / 6 = 8 groups of 6.
-//
-// Group 0 contains the strongest teams, group N-1 the weakest, so cycling
-// through all groups gives every manager a roughly balanced portfolio.
+// Example with 8 members: 48 / 8 = 6 buckets of 8.
+// Example with 7 members: floor(48 / 7) = 6 buckets — first 5 hold 7 each,
+//                         last bucket absorbs the leftover 6 → 13 teams.
+// Example with 6 members: 48 / 6 = 8 buckets of 6.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const buildRankedGroups = (memberCount) => {
@@ -58,7 +58,11 @@ const buildRankedGroups = (memberCount) => {
 
   const groups = [];
   for (let g = 0; g < groupCount; g++) {
-    groups.push(sorted.slice(g * memberCount, (g + 1) * memberCount));
+    const start = g * memberCount;
+    // Last bucket scoops up everything from `start` to the end of the list,
+    // so any leftover lowest-ranked teams are still in play.
+    const end = (g === groupCount - 1) ? sorted.length : start + memberCount;
+    groups.push(sorted.slice(start, end));
   }
   return groups;
 };
