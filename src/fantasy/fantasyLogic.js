@@ -34,6 +34,43 @@ export const FANTASY_STATS = [
 export const CARD_WEIGHTS = { yellow: 1, red: 3 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Member & picks-per-category caps
+//
+// Hard cap of 16 members regardless of mode — keeps the UI manageable.
+// In fantasy mode the cap scales DOWN as picksPerCategory goes UP, because
+// each manager grabs (picksPerCategory × 4) teams from a pool of 48, and at
+// the top end the math gets tight + the per-team owner stack gets messy.
+//
+//   3 picks/cat (12 teams per manager) → up to 16 members
+//   4 picks/cat (16 teams per manager) → up to 12 members
+//   5 picks/cat (20 teams per manager) → up to  8 members
+//   6 picks/cat (24 teams per manager) → up to  8 members
+//
+// These are CAPS, not minimums — the commish can run 3 picks/cat with only
+// 4 managers if they want. The cap just blocks the messy / data-thin extremes.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const MAX_MEMBERS_ABSOLUTE       = 16;
+export const MIN_PICKS_PER_CATEGORY     = 3;
+export const MAX_PICKS_PER_CATEGORY     = 6;
+export const DEFAULT_PICKS_PER_CATEGORY = 5;
+
+export const FANTASY_MEMBER_CAPS = {
+  3: 16,
+  4: 12,
+  5: 8,
+  6: 8,
+};
+
+// Returns the max number of members allowed for the current mode + picks/cat.
+// In sweepstakes mode the absolute cap (16) always applies.
+export const getMaxMembers = (fantasyMode, picksPerCategory) => {
+  if (!fantasyMode) return MAX_MEMBERS_ABSOLUTE;
+  const ppc = parseInt(picksPerCategory) || DEFAULT_PICKS_PER_CATEGORY;
+  return FANTASY_MEMBER_CAPS[ppc] ?? MAX_MEMBERS_ABSOLUTE;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Internal: build the FIFA-rank groups
 //
 // Step 1: sort all 48 teams by FIFA rank (ascending — rank 1 is the best).
