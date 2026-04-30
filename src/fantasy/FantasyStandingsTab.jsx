@@ -76,10 +76,9 @@ const PodiumCard = ({ standing, place }) => {
         </div>
         <span className="text-2xl font-black text-slate-800">{fmtPts(standing.rotoTotal)}</span>
       </div>
-      </div>
       <div className="text-base font-black text-slate-800 truncate">{standing.name}</div>
       <div className="grid grid-cols-4 gap-1 mt-1">
-        {FANTASY_.map(stat => (
+        {FANTASY_STATS.map(stat => (
           <div key={stat.id} className={`text-center rounded px-1 py-1 ${STAT_COLOR[stat.id].bg} border ${STAT_COLOR[stat.id].border}`}>
             <div className={`text-[8px] font-black uppercase tracking-wider ${STAT_COLOR[stat.id].text}`}>
               {stat.id === 'shotsOnTarget' ? 'SoT' : stat.id === 'goalsAllowed' ? 'GA' : stat.label}
