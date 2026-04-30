@@ -296,6 +296,9 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
       <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 p-4 sm:p-6">
         <h2 className="text-xl font-black text-emerald-800 mb-6 flex items-center gap-2 uppercase tracking-wide border-b-2 border-emerald-50 pb-4">
           <Users className="w-6 h-6 text-slate-500" /> Managers
+          <span className="ml-auto text-sm font-black text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full normal-case tracking-normal">
+            {members.length}
+          </span>
         </h2>
         <div className="space-y-2 mb-4">
           {members.map(member => (
