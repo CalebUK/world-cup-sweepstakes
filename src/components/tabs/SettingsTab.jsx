@@ -304,9 +304,12 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
                     </span>
                     <p className="text-xs text-slate-500 font-medium mt-0.5">
                       How many teams each manager assigns to each of the 4 stats.
+                    </p>
+                    <p className="text-xs text-slate-500 font-medium">
                       Must be between {MIN_PICKS_PER_CATEGORY} and {MAX_PICKS_PER_CATEGORY} (default {DEFAULT_PICKS_PER_CATEGORY}).
-                      Higher picks/category lowers the manager cap:
-                      {' '}<span className="font-bold text-slate-700">3 picks → 16 mgrs · 4 → 12 · 5 → 8 · 6 → 8</span>.
+                    </p>
+                    <p className="text-xs text-slate-600 font-bold">
+                      3 picks → max 16 managers · 4 → 12 · 5 → 8 · 6 → 8
                     </p>
                   </div>
                   <div className="flex items-center bg-white border-2 border-purple-200 rounded-lg overflow-hidden shrink-0">
@@ -356,8 +359,6 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
                 <div className="bg-white/70 border border-purple-200 rounded-lg p-2.5">
                   <p className="text-[11px] text-slate-600 font-medium leading-snug">
                     <span className="font-black text-purple-800">Manager cap at this setting: {memberCap}.</span>
-                    {' '}Higher picks/category = lower cap (3 picks → 16 mgrs, 4 → 12, 5 or 6 → 8)
-                    so each stat category has enough teams behind it to be meaningful.
                     {currentPicksPerCategory < MAX_PICKS_PER_CATEGORY && members.length > capAtNextPpc && (
                       <>
                         {' '}<span className="font-black text-rose-700">
