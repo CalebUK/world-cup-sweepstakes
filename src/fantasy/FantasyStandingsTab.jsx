@@ -150,7 +150,7 @@ export const FantasyStandingsTab = ({
   members,
   matches,
   picks,
-  match,
+  matchStats,
   draftMeta,
   picksPerCategory = 5,
 }) => {
