@@ -202,7 +202,8 @@ export default function App() {
   };
 
   const handleAddMember = () => {
-    if (members.length >= 24) return;
+    const cap = getMaxMembers(!!settings.fantasyMode, settings.fantasyPicksPerCategory);
+    if (members.length >= cap) return;
     const next = [...members, { id: `m${Date.now()}`, name: `User ${members.length + 1}`, isKid: false }];
     setMembers(next);
     saveState('members', next);
