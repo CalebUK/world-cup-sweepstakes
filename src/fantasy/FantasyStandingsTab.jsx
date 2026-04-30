@@ -119,8 +119,8 @@ const StatLeaderboard = ({ stat, standings }) => {
               <td className="px-3 py-1.5 text-right font-black text-slate-800 tabular-nums">
                 {s.categoryTotals[stat.id]}
               </td>
-              <td className="px-3 py-1.5 text-right w-14">
-                <span className={`text-[10px] font-black ${color.text} ${color.bg} px-1.5 py-0.5 rounded border ${color.border}`}>
+              <td className="px-3 py-1.5 text-right w-20">
+                <span className={`text-[10px] font-black whitespace-nowrap inline-block ${color.text} ${color.bg} px-1.5 py-0.5 rounded border ${color.border}`}>
                   {fmtPts(s.categoryPoints[stat.id])} pts
                 </span>
               </td>
