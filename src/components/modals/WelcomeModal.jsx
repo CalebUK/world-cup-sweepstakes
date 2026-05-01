@@ -25,6 +25,7 @@ export const WelcomeModal = ({ dontShowAgain, setDontShowAgain, handleCloseWelco
               <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>The Teams:</strong> Once all teams have been drawn head to the Teams tab to assign everyone.</span></li>
               <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>Live Scoring:</strong> You earn points every time your teams win, draw, score goals, or keep a clean sheet. Make sure to check the settings tab to customise your scoring.</span></li>
               <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>Matches:</strong> As matches finish the groups and knockout tabs will automatically update and populate the routes for the winners.</span></li>
+              <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" /> <span><strong>Fantasy:</strong> If fantasy is more your style head over to the settings tab and toggle the option for Roto based scoring.</span></li>
             </ul>
           </div>
         </div>
@@ -33,7 +34,7 @@ export const WelcomeModal = ({ dontShowAgain, setDontShowAgain, handleCloseWelco
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 leading-relaxed text-center">
             If you are facing any issues feel free to email me at{' '}
             <a href="mailto:calebthill@gmail.com" className="font-bold underline hover:text-amber-900">
-              calebthill@gmail.com
+              worldcupsweepstakes2026@gmail.com
             </a>
             , but please be nice as this is very much a vibe coded learning experience hobby for me 😊
           </div>
