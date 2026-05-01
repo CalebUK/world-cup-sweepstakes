@@ -33,7 +33,7 @@ export const WelcomeModal = ({ dontShowAgain, setDontShowAgain, handleCloseWelco
         <div className="px-4 sm:px-5 pb-4 shrink-0">
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 leading-relaxed text-center">
             If you are facing any issues feel free to email me at{' '}
-            <a href="mailto:calebthill@gmail.com" className="font-bold underline hover:text-amber-900">
+            <a href="mailto:worldcupsweepstakes2026@gmail.com" className="font-bold underline hover:text-amber-900">
               worldcupsweepstakes2026@gmail.com
             </a>
             , but please be nice as this is very much a vibe coded learning experience hobby for me 😊
