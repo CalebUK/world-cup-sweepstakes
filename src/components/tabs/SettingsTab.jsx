@@ -254,7 +254,7 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
               <span className="font-black text-slate-800 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-blue-500" /> Auto-Sync Scores
               </span>
-              <p className="text-sm text-slate-500 font-medium mt-0.5">Automatically pull live scores from ESPN. Disables manual score editing.</p>
+              <p className="text-sm text-slate-500 font-medium mt-0.5">Automatically pull live scores from ESPN. Disables manual score editing. This is currently in Beta and will be fully tested and hopefully functional once the first games have started.</p>
             </div>
             <button
               onClick={() => updateSettings({ autoSync: !settings.autoSync })}
