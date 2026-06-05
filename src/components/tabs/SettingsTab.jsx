@@ -75,19 +75,24 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
   };
 
   const handleScoringUpdate = (stageGroup, stage, field, value) => {
-    const numVal = parseInt(value) || 0;
-    const currentScoring = settings.scoring || DEFAULT_SCORING;
-    const updatedScoring = { ...currentScoring };
-    if (stageGroup === 'group') {
-      updatedScoring.group = { ...updatedScoring.group, [field]: numVal };
-    } else {
-      updatedScoring.ko = {
-        ...updatedScoring.ko,
-        [stage]: { ...updatedScoring.ko[stage], [field]: numVal },
-      };
-    }
-    updateSettings({ scoring: updatedScoring });
-  };
+  const numVal = parseInt(value) || 0;
+  const currentScoring = settings.scoring || DEFAULT_SCORING;
+  const updatedScoring = { ...currentScoring };
+  if (stageGroup === 'group') {
+    updatedScoring.group = { ...updatedScoring.group, [field]: numVal };
+  } else if (stageGroup === 'bonus') {
+    updatedScoring.bonus = {
+      ...(updatedScoring.bonus || DEFAULT_SCORING.bonus),
+      [field]: numVal,
+    };
+  } else {
+    updatedScoring.ko = {
+      ...updatedScoring.ko,
+      [stage]: { ...updatedScoring.ko[stage], [field]: numVal },
+    };
+  }
+  updateSettings({ scoring: updatedScoring });
+};
 
   // Mobile-friendly stepper: large − / + buttons flank the value.
   // Works perfectly on touch screens without needing native spinner arrows.
@@ -493,6 +498,28 @@ export const SettingsTab = ({ settings, updateSettings, members, handleAddMember
                   })}
                 </div>
               </div>
+              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+  <h4 className="font-black text-emerald-700 mb-3 uppercase tracking-widest text-xs border-b border-slate-100 pb-2">Bonus Points</h4>
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <ScoreInput
+      label="Per Goal Scored"
+      stageGroup="bonus"
+      field="perGoal"
+      value={(activeScoring.bonus || DEFAULT_SCORING.bonus).perGoal}
+      onChange={(v) => handleScoringUpdate('bonus', null, 'perGoal', v)}
+    />
+    <ScoreInput
+      label="Clean Sheet"
+      stageGroup="bonus"
+      field="cleanSheet"
+      value={(activeScoring.bonus || DEFAULT_SCORING.bonus).cleanSheet}
+      onChange={(v) => handleScoringUpdate('bonus', null, 'cleanSheet', v)}
+    />
+  </div>
+  <p className="text-[11px] text-slate-500 font-medium mt-3 italic">
+    Applied in every match, group and knockout. A clean sheet means the team's opponent didn't score.
+  </p>
+</div>
             </div>
           </div>
         </div>
