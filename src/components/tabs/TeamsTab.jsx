@@ -86,7 +86,7 @@ export const TeamsTab = ({ eliminatedTeams, isViewer, assignments, members, hand
         {/* 2. FIFA Rankings */}
         <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-4 flex flex-col gap-1">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">FIFA Rankings</span>
-          <span className="text-sm font-black text-slate-800">April 2026</span>
+          <span className="text-sm font-black text-slate-800">June 7th 2026</span>
           <span className="text-xs text-slate-500 font-medium mt-1 leading-snug">Rankings locked for the duration of the tournament.</span>
         </div>
 
