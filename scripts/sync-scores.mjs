@@ -12,7 +12,7 @@
 
 import admin from "firebase-admin";
 
-const APP_ID = "1:788152604877:web:b67b3f7763b136cfc07184";
+const APP_ID = "world-cup-family-2026";
 const SA = process.env.FIREBASE_SERVICE_ACCOUNT;
 
 if (!SA) {
