@@ -38,5 +38,4 @@ jobs:
       - name: Push ESPN scores to Firestore
         run: node scripts/sync-scores.mjs
         env:
-          APP_ID: ${{ secrets.APP_ID }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
