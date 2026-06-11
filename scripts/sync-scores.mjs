@@ -12,11 +12,11 @@
 
 import admin from "firebase-admin";
 
-const APP_ID = process.env.APP_ID;
+const APP_ID = 1:788152604877:web:b67b3f7763b136cfc07184;
 const SA = process.env.FIREBASE_SERVICE_ACCOUNT;
 
-if (!APP_ID || !SA) {
-  console.error("Missing APP_ID or FIREBASE_SERVICE_ACCOUNT env var.");
+if (!SA) {
+  console.error("Missing FIREBASE_SERVICE_ACCOUNT env var.");
   process.exit(1);
 }
 
