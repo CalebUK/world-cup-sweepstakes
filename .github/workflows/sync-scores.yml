@@ -1,0 +1,42 @@
+# .github/workflows/sync-scores.yml
+#
+# Runs server-side on GitHub's infrastructure — no browser/admin tab needed.
+# Every ~5 minutes it fetches the ESPN scoreboard and writes finished/live
+# scores into the same Firestore doc your app already reads when Auto-Sync
+# is on (artifacts/{appId}/public/data/globalMatches/worldCup2026).
+#
+# Heads-up: GitHub's scheduled cron is best-effort. */5 is a minimum, not a
+# guarantee — at busy times a run can be delayed 10-15 min or, rarely, skipped.
+# Fine for a sweepstakes; just not as punctual as a paid scheduler.
+
+name: Sync ESPN scores
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # every 5 minutes (best-effort)
+  workflow_dispatch: {}      # adds a "Run workflow" button in the Actions tab
+                             # — this is your manual "force a fetch"
+
+# Prevent overlapping runs if one is slow.
+concurrency:
+  group: sync-scores
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin@^12
+
+      - name: Push ESPN scores to Firestore
+        run: node scripts/sync-scores.mjs
+        env:
+          APP_ID: ${{ secrets.APP_ID }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
