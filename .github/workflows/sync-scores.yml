@@ -13,9 +13,8 @@ name: Sync ESPN scores
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # every 5 minutes (best-effort)
-  workflow_dispatch: {}      # adds a "Run workflow" button in the Actions tab
-                             # — this is your manual "force a fetch"
+    - cron: "3,8,13,18,23,28,33,38,43,48,53 * * * *"
+  workflow_dispatch: {}
 
 # Prevent overlapping runs if one is slow.
 concurrency:
