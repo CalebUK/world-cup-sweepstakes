@@ -33,6 +33,10 @@ const BASE = `artifacts/${APP_ID}/public/data`;
 const GLOBAL_MATCHES_PATH = `${BASE}/globalMatches/worldCup2026`;
 const LEAGUE_MATCHES_COLLECTION = `${BASE}/leagueMatches`;
 
+// The bare scoreboard endpoint is anchored to the tournament's opening day and
+// won't include today's games, so we request a rolling ±1 day UTC window. The
+// window (rather than a single day) covers kickoffs that land on either side of
+// UTC midnight, so a match that just finished is always on the board.
 const fmt = (d) => d.toISOString().slice(0, 10).replace(/-/g, "");
 const now = new Date();
 const start = new Date(now); start.setUTCDate(now.getUTCDate() - 1);
@@ -41,23 +45,6 @@ const end   = new Date(now); end.setUTCDate(now.getUTCDate() + 1);
 const ESPN_URL =
   "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard" +
   `?dates=${fmt(start)}-${fmt(end)}&limit=100`;
-
-// team id -> exact name ESPN uses (your espnName || name). Keep in sync with
-// TEAMS_DATA in src/config/data.js.
-const ESPN_NAME = {
-  MEX: "Mexico", RSA: "South Africa", KOR: "South Korea", CZE: "Czechia",
-  CAN: "Canada", BIH: "Bosnia-Herzegovina", QAT: "Qatar", SUI: "Switzerland",
-  BRA: "Brazil", HAI: "Haiti", MAR: "Morocco", SCO: "Scotland",
-  USA: "United States", AUS: "Australia", PAR: "Paraguay", TUR: "Turkey",
-  CUW: "Curacao", ECU: "Ecuador", GER: "Germany", CIV: "Ivory Coast",
-  NED: "Netherlands", JPN: "Japan", SWE: "Sweden", TUN: "Tunisia",
-  BEL: "Belgium", EGY: "Egypt", IRN: "Iran", NZL: "New Zealand",
-  CPV: "Cape Verde", KSA: "Saudi Arabia", ESP: "Spain", URU: "Uruguay",
-  FRA: "France", NOR: "Norway", SEN: "Senegal", IRQ: "Iraq",
-  ALG: "Algeria", ARG: "Argentina", AUT: "Austria", JOR: "Jordan",
-  COL: "Colombia", COD: "DR Congo", POR: "Portugal", UZB: "Uzbekistan",
-  CRO: "Croatia", ENG: "England", GHA: "Ghana", PAN: "Panama",
-};
 
 // Get the global matches array, seeding the doc from a leagueMatches template
 // (wiped clean) if it doesn't exist yet.
@@ -123,25 +110,24 @@ async function main() {
   const matches = await loadOrSeedMatches(ref);
   if (!matches) return;
 
-  // 3. Overlay scores onto unplayed matches.
+  // 3. Overlay scores onto unplayed matches. Matching is done on ESPN's team
+  //    abbreviation (e.g. GER, CUW), which equals your team id (m.teamA), so we
+  //    don't depend on exact country-name spelling.
   let changed = false;
   const next = matches.map((m) => {
     if (m.isPlayed) return m; // never overwrite a match already marked FT
-
-    const nameA = ESPN_NAME[m.teamA];
-    const nameB = ESPN_NAME[m.teamB];
-    if (!nameA || !nameB) return m;
+    if (!m.teamA || !m.teamB) return m; // knockout slots not yet filled
 
     const event = events.find((e) => {
-      const names =
-        e.competitions?.[0]?.competitors?.map((c) => c.team.name) || [];
-      return names.includes(nameA) && names.includes(nameB);
+      const abbrs =
+        e.competitions?.[0]?.competitors?.map((c) => c.team.abbreviation) || [];
+      return abbrs.includes(m.teamA) && abbrs.includes(m.teamB);
     });
     if (!event) return m;
 
     const comps = event.competitions[0].competitors;
-    const compA = comps.find((c) => c.team.name === nameA);
-    const compB = comps.find((c) => c.team.name === nameB);
+    const compA = comps.find((c) => c.team.abbreviation === m.teamA);
+    const compB = comps.find((c) => c.team.abbreviation === m.teamB);
     if (!compA || !compB) return m;
 
     const scoreA = parseInt(compA.score) || 0;
