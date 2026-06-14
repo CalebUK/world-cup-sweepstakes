@@ -33,8 +33,14 @@ const BASE = `artifacts/${APP_ID}/public/data`;
 const GLOBAL_MATCHES_PATH = `${BASE}/globalMatches/worldCup2026`;
 const LEAGUE_MATCHES_COLLECTION = `${BASE}/leagueMatches`;
 
+const fmt = (d) => d.toISOString().slice(0, 10).replace(/-/g, "");
+const now = new Date();
+const start = new Date(now); start.setUTCDate(now.getUTCDate() - 1);
+const end   = new Date(now); end.setUTCDate(now.getUTCDate() + 1);
+
 const ESPN_URL =
-  "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
+  "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard" +
+  `?dates=${fmt(start)}-${fmt(end)}&limit=100`;
 
 // team id -> exact name ESPN uses (your espnName || name). Keep in sync with
 // TEAMS_DATA in src/config/data.js.
