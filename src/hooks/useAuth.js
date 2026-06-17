@@ -15,7 +15,7 @@ const DEFAULT_LEAGUE_NAME = 'My First Sweepstakes';
  * logic that runs immediately after sign-in.
  *
  * Returns everything App.jsx needs to know about the current user and
- * their league list, plus the auth action handlers.
+ * their league list, plus the auth action handlers. ch
  */
 export const useAuth = ({ setActiveLeagueId, setPendingJoinCode, setShowJoinModal }) => {
   const [user, setUser] = useState(null);
