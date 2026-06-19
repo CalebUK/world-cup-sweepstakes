@@ -35,7 +35,7 @@ export const useTournamentEngine = ({
       groupMatchesPlayed += playedInGroup;
 
       if (gMatches.length === 6 && playedInGroup === 6) {
-        const gTeams = .values(teamStats).filter(t => t.group === g);
+        const gTeams = Object.values(teamStats).filter(t => t.group === g);
         const sortedGTeams = sortGroupTeams(gTeams, nextMatches, settings);
         if (sortedGTeams.length === 4) {
           recomputedEliminations[sortedGTeams[3].id] = true;
