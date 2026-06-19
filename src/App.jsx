@@ -138,17 +138,12 @@ export default function App() {
 
   // ─── Sync & engine ────────────────────────────────────────────────────────
 
-  useEspnSync(isSuperAdmin, settings, setMatches, saveState);
-  useTournamentEngine({
-    matches, setMatches,
-    teamStats: calculateStats(matches, eliminatedTeams, settings, members, assignments).teamStats,
-    eliminatedTeams, setEliminatedTeams,
-    manualRestores, settings, isOwner, isSuperAdmin, saveState,
-    leagueDataReady,
-  });
+   useEspnSync(isSuperAdmin, settings, setMatches, saveState);
 
   // ─── Computed stats ───────────────────────────────────────────────────────
-
+  // Memoized FIRST so the same teamStats reference is reused across renders.
+  // The engine depends on this; a fresh object each render made its effect
+  // fire every render and churn writes (bracket flicker).
   const { teamStats, memberStats, awards } = useMemo(() => {
     const stats = calculateStats(matches, eliminatedTeams, settings, members, assignments);
     if (stats.awards?.overall) {
@@ -164,6 +159,15 @@ export default function App() {
     }
     return stats;
   }, [members, assignments, matches, eliminatedTeams, settings]);
+
+  // ─── Engine ────────────────────────────────────────────────────────────────
+  useTournamentEngine({
+    matches, setMatches,
+    teamStats,
+    eliminatedTeams, setEliminatedTeams,
+    manualRestores, settings, isOwner, isSuperAdmin, saveState,
+    leagueDataReady,
+  });
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
