@@ -7,6 +7,10 @@ export const useTournamentEngine = ({
   matches, setMatches, teamStats, eliminatedTeams, setEliminatedTeams,
   manualRestores, settings, isOwner, isSuperAdmin, saveState, leagueDataReady,
 }) => {
+  // Signature of the matches array we last wrote, so an echo or a pre-echo
+  // re-run can't trigger an identical write.
+  const lastWrittenMatchesRef = useRef(null);
+
   useEffect(() => {
     if (!leagueDataReady) return;
     if (matches.length === 0 || Object.keys(teamStats).length === 0) return;
@@ -48,16 +52,23 @@ export const useTournamentEngine = ({
       });
     }
 
-    // ─── Step 2: Propagate winners into the next knockout matches ─────────────
-    if (groupMatchesPlayed >= 24) {
+   // ─── Step 2: Propagate winners into the next knockout matches ─────────────
+    // Only run once we have a full set of team stats. A partial/transient
+    // teamStats pass makes getR32Mappings return undefined IDs, which would
+    // wipe already-populated slots and cause the bracket to flicker.
+    const statsComplete = Object.keys(teamStats).length >= TEAMS_DATA.length;
+    if (groupMatchesPlayed >= 24 && statsComplete) {
       const r32Mappings = getR32Mappings(teamStats, nextMatches, settings);
       r32Mappings.forEach(mapping => {
         const matchIndex = nextMatches.findIndex(m => m.id === mapping.id);
         if (matchIndex !== -1) {
-          const tA = mapping.tA || '';
-          const tB = mapping.tB || '';
-          if (nextMatches[matchIndex].teamA !== tA || nextMatches[matchIndex].teamB !== tB) {
-            nextMatches[matchIndex] = { ...nextMatches[matchIndex], teamA: tA, teamB: tB };
+          const cur = nextMatches[matchIndex];
+          // Fall back to the existing team if the mapping resolves empty, so a
+          // transient computation never clears a real team from a slot.
+          const tA = mapping.tA || cur.teamA || '';
+          const tB = mapping.tB || cur.teamB || '';
+          if (cur.teamA !== tA || cur.teamB !== tB) {
+            nextMatches[matchIndex] = { ...cur, teamA: tA, teamB: tB };
             hasMatchesChanges = true;
           }
         }
@@ -154,8 +165,12 @@ export const useTournamentEngine = ({
     }
 
     if (hasMatchesChanges && isSuperAdmin) {
-      setMatches(nextMatches);
-      saveState('matches', nextMatches);
+      const matchesSig = JSON.stringify(nextMatches);
+      if (lastWrittenMatchesRef.current !== matchesSig) {
+        lastWrittenMatchesRef.current = matchesSig;
+        setMatches(nextMatches);
+        saveState('matches', nextMatches);
+      }
     }
   }, [matches, teamStats, eliminatedTeams, isOwner, isSuperAdmin, settings, manualRestores, leagueDataReady]);
 };
