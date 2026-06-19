@@ -168,6 +168,7 @@ export default function App() {
     manualRestores, settings, isOwner, isSuperAdmin, saveState,
     leagueDataReady,
   });
+  console.log('MY UID:', user?.uid, '| SUPER_ADMIN_UID:', SUPER_ADMIN_UID);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
