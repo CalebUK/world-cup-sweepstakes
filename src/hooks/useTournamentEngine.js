@@ -57,6 +57,8 @@ export const useTournamentEngine = ({
     // wipe already-populated slots and cause the bracket to flicker.
     if (groupMatchesPlayed >= 24) {
       const r32Mappings = getR32Mappings(teamStats, nextMatches, settings);
+      console.log('engine groupMatchesPlayed:', groupMatchesPlayed);
+      console.log('R32 mappings:', r32Mappings.map(m => `${m.id}: ${m.tA || 'EMPTY'}/${m.tB || 'EMPTY'}`));
       r32Mappings.forEach(mapping => {
         const matchIndex = nextMatches.findIndex(m => m.id === mapping.id);
         if (matchIndex !== -1) {
