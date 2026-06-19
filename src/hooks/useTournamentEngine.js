@@ -35,7 +35,7 @@ export const useTournamentEngine = ({
       groupMatchesPlayed += playedInGroup;
 
       if (gMatches.length === 6 && playedInGroup === 6) {
-        const gTeams = Object.values(teamStats).filter(t => t.group === g);
+        const gTeams = .values(teamStats).filter(t => t.group === g);
         const sortedGTeams = sortGroupTeams(gTeams, nextMatches, settings);
         if (sortedGTeams.length === 4) {
           recomputedEliminations[sortedGTeams[3].id] = true;
@@ -55,8 +55,7 @@ export const useTournamentEngine = ({
     // Only run once we have a full set of team stats. A partial/transient
     // teamStats pass makes getR32Mappings return undefined IDs, which would
     // wipe already-populated slots and cause the bracket to flicker.
-    const statsComplete = Object.keys(teamStats).length >= TEAMS_DATA.length;
-    if (groupMatchesPlayed >= 24 && statsComplete) {
+    if (groupMatchesPlayed >= 24) {
       const r32Mappings = getR32Mappings(teamStats, nextMatches, settings);
       r32Mappings.forEach(mapping => {
         const matchIndex = nextMatches.findIndex(m => m.id === mapping.id);
