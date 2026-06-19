@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { TEAMS_DATA } from '../config/data.js';
 import { sortGroupTeams, getThirdPlaceStandings, getR32Mappings } from '../utils/tournamentLogic.js';
+import { useEffect, useRef } from 'react';
 
 export const useTournamentEngine = ({
   matches, setMatches, teamStats, eliminatedTeams, setEliminatedTeams,
