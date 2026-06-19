@@ -164,6 +164,8 @@ export const useTournamentEngine = ({
       saveState('eliminatedTeams', recomputedEliminations);
     }
 
+    console.log('write attempt:', { autoSync: settings.autoSync, isSuperAdmin, hasMatchesChanges });
+    console.log('uid check:', { uid: user?.uid });
     if (hasMatchesChanges && isSuperAdmin) {
       const matchesSig = JSON.stringify(nextMatches);
       if (lastWrittenMatchesRef.current !== matchesSig) {
