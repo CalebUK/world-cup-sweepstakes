@@ -136,9 +136,17 @@ export const useTournamentEngine = ({
       }
     });
 
-    // ─── Step 3: Apply manualRestores overrides ───────────────────────────────
-    // Any team that a commissioner manually restored is removed from the
-    // computed eliminations, regardless of match results.
+    // ─── Step 3a: Apply manualEliminations overrides ──────────────────────────
+    // Teams the commish force-eliminated (mathematically out before their group
+    // finishes, or a shootout loser the ESPN sync can't resolve). Added on top
+    // of the match-derived set so they survive every recompute.
+    Object.keys(manualEliminations).forEach(teamId => {
+      if (manualEliminations[teamId]) {
+        recomputedEliminations[teamId] = true;
+      }
+    });
+
+    // ─── Step 3b: Apply manualRestores overrides ───────────────────────────────
     Object.keys(manualRestores).forEach(teamId => {
       if (manualRestores[teamId]) {
         delete recomputedEliminations[teamId];
@@ -173,5 +181,5 @@ export const useTournamentEngine = ({
         saveState('matches', nextMatches);
       }
     }
-  }, [matches, teamStats, eliminatedTeams, isOwner, isSuperAdmin, settings, manualRestores, leagueDataReady]);
+  }, [matches, teamStats, eliminatedTeams, isOwner, isSuperAdmin, settings, manualRestores, manualEliminations, leagueDataReady]);
 };
