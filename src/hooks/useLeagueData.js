@@ -35,7 +35,7 @@ const DEFAULT_SETTINGS = {
  * they just write to Firestore and let onSnapshot propagate the change back.
  * A short debounce ref prevents the snapshot from firing during a local write.
  */
-export  useLeagueData = ({
+export const useLeagueData = ({
   user,
   activeLeagueId,
   isOwner,
