@@ -108,7 +108,7 @@ export default function App() {
     assignments, setAssignments,
     eliminatedTeams, setEliminatedTeams,
     manualRestores, setManualRestores,
-    manualEliminations, setManualEliminations,
+    manualEliminations, setManualEliminations,   // ← this line must be present
     matches, setMatches,
     settings, setSettings,
     saveState,
