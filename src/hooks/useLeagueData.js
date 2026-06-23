@@ -21,7 +21,6 @@ const DEFAULT_SETTINGS = {
   fantasyMode: false,
   fantasyPicksPerCategory: 5,
 };
-
 /**
  * Subscribes to the active league's Firestore document and the correct
  * matches source depending on the league's autoSync setting:
@@ -36,7 +35,7 @@ const DEFAULT_SETTINGS = {
  * they just write to Firestore and let onSnapshot propagate the change back.
  * A short debounce ref prevents the snapshot from firing during a local write.
  */
-export const useLeagueData = ({
+export  useLeagueData = ({
   user,
   activeLeagueId,
   isOwner,
@@ -50,6 +49,7 @@ export const useLeagueData = ({
   const [manualRestores, setManualRestores] = useState({});
   const [matches, setMatches] = useState([]);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [manualEliminations, setManualEliminations] = useState({});
   // Prevents the tournament engine from running until this league's
   // data has fully arrived from Firestore
   const [leagueDataReady, setLeagueDataReady] = useState(false);
@@ -70,6 +70,7 @@ export const useLeagueData = ({
     setAssignments({});
     setEliminatedTeams({});
     setManualRestores({});
+    setManualEliminations({});
     setSettings(DEFAULT_SETTINGS);
 
     const leagueRef = doc(db, 'artifacts', appId, 'public', 'data', 'sweepstakes', activeLeagueId);
@@ -86,6 +87,7 @@ export const useLeagueData = ({
         setAssignments(data.assignments || {});
         setEliminatedTeams(data.eliminatedTeams || {});
         setManualRestores(data.manualRestores || {});
+        setManualEliminations(data.manualEliminations || {});
         setSettings(newSettings);
 
         // Keep the league name in sync in the header dropdown
@@ -146,6 +148,7 @@ export const useLeagueData = ({
           assignments: {},
           eliminatedTeams: {},
           manualRestores: {},
+          manualEliminations: {},
           settings: { ...DEFAULT_SETTINGS, leagueName: 'New Sweepstakes' },
         });
       }
@@ -203,6 +206,7 @@ export const useLeagueData = ({
     assignments, setAssignments,
     eliminatedTeams, setEliminatedTeams,
     manualRestores, setManualRestores,
+    manualEliminations, setManualEliminations,
     matches, setMatches,
     settings, setSettings,
     saveState,
