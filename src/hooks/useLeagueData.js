@@ -206,7 +206,7 @@ export const useLeagueData = ({
     assignments, setAssignments,
     eliminatedTeams, setEliminatedTeams,
     manualRestores, setManualRestores,
-    manualEliminations, setManualEliminations,
+    manualEliminations, setManualEliminations,   // ← must be in the returned object
     matches, setMatches,
     settings, setSettings,
     saveState,
