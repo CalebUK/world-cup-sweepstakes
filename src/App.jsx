@@ -108,6 +108,7 @@ export default function App() {
     assignments, setAssignments,
     eliminatedTeams, setEliminatedTeams,
     manualRestores, setManualRestores,
+    manualEliminations, setManualEliminations,
     matches, setMatches,
     settings, setSettings,
     saveState,
@@ -163,9 +164,9 @@ export default function App() {
   // ─── Engine ────────────────────────────────────────────────────────────────
   useTournamentEngine({
     matches, setMatches,
-    teamStats,
+    teamStats: calculateStats(matches, eliminatedTeams, settings, members, assignments).teamStats,
     eliminatedTeams, setEliminatedTeams,
-    manualRestores, settings, isOwner, isSuperAdmin, saveState,
+    manualRestores, manualEliminations, settings, isOwner, isSuperAdmin, saveState,   // ← add manualEliminations
     leagueDataReady,
   });
   console.log('MY UID:', user?.uid, '| SUPER_ADMIN_UID:', SUPER_ADMIN_UID);
@@ -199,11 +200,16 @@ export default function App() {
   const toggleEliminated = (teamId) => {
     const isCurrentlyEliminated = !!eliminatedTeams[teamId];
     const nextElims = { ...eliminatedTeams, [teamId]: !isCurrentlyEliminated };
+    // Eliminating → set the eliminate flag, clear any restore flag.
+    // Restoring  → set the restore flag, clear any eliminate flag.
     const nextRestores = { ...manualRestores, [teamId]: isCurrentlyEliminated };
+    const nextManualElims = { ...manualEliminations, [teamId]: !isCurrentlyEliminated };
     setEliminatedTeams(nextElims);
     setManualRestores(nextRestores);
+    setManualEliminations(nextManualElims);
     saveState('eliminatedTeams', nextElims);
     saveState('manualRestores', nextRestores);
+    saveState('manualEliminations', nextManualElims);
   };
 
   const handleAddMember = () => {
@@ -238,17 +244,17 @@ export default function App() {
   };
 
   const handleResetData = () => {
-  if (isViewer) return;
-  // Only reset match scores and eliminations — leave managers,
-  // assignments, and settings completely untouched.
-  const reset = generateAllMatches();
-  setMatches(reset);
-  setEliminatedTeams({});
-  setManualRestores({});
-  saveState('matches', reset);
-  saveState('eliminatedTeams', {});
-  saveState('manualRestores', {});
-  setShowSettingsModal(false);
+    if (isViewer) return;
+    const reset = generateAllMatches();
+    setMatches(reset);
+    setEliminatedTeams({});
+    setManualRestores({});
+    setManualEliminations({});                 // ← add
+    saveState('matches', reset);
+    saveState('eliminatedTeams', {});
+    saveState('manualRestores', {});
+    saveState('manualEliminations', {});       // ← add
+    setShowSettingsModal(false);
   };
 
   const handleHardReset = async () => {
