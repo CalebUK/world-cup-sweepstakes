@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 
 export const useTournamentEngine = ({
   matches, setMatches, teamStats, eliminatedTeams, setEliminatedTeams,
-  manualRestores, settings, isOwner, isSuperAdmin, saveState, leagueDataReady,
+  manualRestores, manualEliminations, settings, isOwner, isSuperAdmin, saveState, leagueDataReady,
 }) => {
   // Signature of the matches array we last wrote, so an echo or a pre-echo
   // re-run can't trigger an identical write.
