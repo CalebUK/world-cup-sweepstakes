@@ -182,7 +182,7 @@ const KNOCKOUT_MATCHES_SCHEDULE = [
   { id: 'ko_R32_6', stage: 'R32', labelA: 'Runner-Up Group E', labelB: 'Runner-Up Group I', datetime: '2026-06-30T17:00:00Z', location: 'AT&T Stadium, Arlington', nextMatch: 'ko_R16_3', nextSlot: 'teamB' },
   { id: 'ko_R32_7', stage: 'R32', labelA: 'Winner Group A', labelB: '3rd Place C/E/F/H/I', datetime: '2026-07-01T01:00:00Z', location: 'Estadio Azteca, Mexico City', nextMatch: 'ko_R16_4', nextSlot: 'teamA' },
   { id: 'ko_R32_8', stage: 'R32', labelA: 'Winner Group L', labelB: '3rd Place E/H/I/J/K', datetime: '2026-07-01T16:00:00Z', location: 'Mercedes-Benz Stadium, Atlanta', nextMatch: 'ko_R16_4', nextSlot: 'teamB' },
-  { id: 'ko_R32_9', stage: 'R32', labelA: 'Winner Group D', labelB: '3rd Place B/E/G/I/J', datetime: '2026-07-01T00:00:00Z', location: 'Levi\'s Stadium, San Francisco', nextMatch: 'ko_R16_6', nextSlot: 'teamA' },
+  { id: 'ko_R32_9', stage: 'R32', labelA: 'Winner Group D', labelB: '3rd Place B/E/G/I/J', datetime: '2026-07-02T00:00:00Z', location: 'Levi\'s Stadium, San Francisco', nextMatch: 'ko_R16_6', nextSlot: 'teamA' },
   { id: 'ko_R32_10', stage: 'R32', labelA: 'Winner Group G', labelB: '3rd Place A/E/H/I/J', datetime: '2026-07-01T20:00:00Z', location: 'Lumen Field, Seattle', nextMatch: 'ko_R16_6', nextSlot: 'teamB' },
   { id: 'ko_R32_11', stage: 'R32', labelA: 'Runner-Up Group K', labelB: 'Runner-Up Group L', datetime: '2026-07-02T23:00:00Z', location: 'BMO Field, Toronto', nextMatch: 'ko_R16_5', nextSlot: 'teamA' },
   { id: 'ko_R32_12', stage: 'R32', labelA: 'Winner Group H', labelB: 'Runner-Up Group J', datetime: '2026-07-02T19:00:00Z', location: 'SoFi Stadium, Inglewood', nextMatch: 'ko_R16_5', nextSlot: 'teamB' },
